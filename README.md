@@ -243,7 +243,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## 📧 Contact
 
-Your Name - Satya Pratheek Tata
+Name - Satya Pratheek Tata
 
 Email - satyapratheek.tata@edhec.com
 
