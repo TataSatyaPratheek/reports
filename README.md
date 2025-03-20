@@ -247,4 +247,4 @@ Name - Satya Pratheek Tata
 
 Email - satyapratheek.tata@edhec.com
 
-Project Link: [https://github.com/TataSatyaPratheek/pdf-analyzer](https://github.com/TataSatyaPratheek/pdf-analyzer)
+Project Link: [https://github.com/TataSatyaPratheek/pdf-analyzer](https://github.com/TataSatyaPratheek/reports)
