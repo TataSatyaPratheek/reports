@@ -1,2 +1,5 @@
 /.DS_Store
 /old attempts
+modules/__pycache__
+/chroma*
+__pycache__

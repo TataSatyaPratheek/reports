@@ -2,489 +2,342 @@ import streamlit as st
 import time
 import os
 import sys
+from typing import Tuple
 
 # Import modules
-from modules.system_setup import ensure_dependencies, setup_ollama, refresh_available_models
-from modules.vector_store import initialize_vector_db, reset_vector_db
+from modules.system_setup import (
+    ensure_dependencies, setup_ollama, refresh_available_models,
+    install_package, download_model, DEFAULT_MODEL_NAME
+)
+# Import the REVISED vector_store functions
+from modules.vector_store import initialize_vector_db, reset_vector_db, get_chroma_collection
 from modules.nlp_models import load_nltk_resources, load_spacy_model, load_embedding_model
-from modules.pdf_processor import process_uploaded_pdf, smart_chunking
-from modules.vector_store import add_chunks_to_collection, get_chroma_collection
+from modules.pdf_processor import process_uploaded_pdf
+from modules.vector_store import add_chunks_to_collection # get_chroma_collection already imported
 from modules.llm_interface import query_llm
 from modules.ui_components import display_chat, show_system_resources
 from modules.utils import log_error, PerformanceMonitor
 
-# Constants
-DEFAULT_MODEL = "llama3.2:latest"
-DEFAULT_CHUNK_SIZE = 250
-DEFAULT_OVERLAP = 50
-DEFAULT_TOP_N = 10
-DEFAULT_CONVERSATION_MEMORY = 3
+# --- Constants and AGENT_ROLES ---
+DEFAULT_CHUNK_SIZE = 250; DEFAULT_OVERLAP = 50; DEFAULT_TOP_N = 10; DEFAULT_CONVERSATION_MEMORY = 3
+AGENT_ROLES = { "Financial Analyst": "...", "Academic Research Assistant": "...", "Technical Documentation Expert": "...", "Legal Document Analyzer": "...", "Medical Literature Assistant": "...", "General Assistant": "...", "Custom": "..." }
 
-# Predefined agent roles
-AGENT_ROLES = {
-    "Financial Analyst": "You are an expert at analyzing financial reports. Provide insights, explanations, and summaries based on the financial data available.",
-    "Academic Research Assistant": "You are a research assistant helping with academic papers and scholarly content. Focus on extracting key findings, methodologies, and conclusions.",
-    "Technical Documentation Expert": "You are an expert at explaining technical documentation. Break down complex concepts and provide clear explanations of technical content.",
-    "Legal Document Analyzer": "You are a legal document specialist. Identify key clauses, explain legal terminology, and summarize important legal points in accessible language.",
-    "Medical Literature Assistant": "You are a medical literature assistant. Help interpret medical publications, research findings, and clinical guidelines while being clear about limitations.",
-    "General Assistant": "You are a helpful assistant. Provide clear, informative answers based on the content of the documents."
-}
-
+# --- initialize_session_state (Unchanged) ---
 def initialize_session_state():
     """Initialize or reset session state variables."""
-    if "processed_files" not in st.session_state:
-        st.session_state.processed_files = set()  # store filenames of processed PDFs
-    
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
-    
-    if "system_initialized" not in st.session_state:
-        st.session_state.system_initialized = False
-    
-    if "error_log" not in st.session_state:
-        st.session_state.error_log = []
-    
-    if "available_models" not in st.session_state:
-        st.session_state.available_models = [DEFAULT_MODEL]
-        
-    if "current_agent_role" not in st.session_state:
-        st.session_state.current_agent_role = "General Assistant"
-    
-    if "custom_prompt" not in st.session_state:
-        st.session_state.custom_prompt = AGENT_ROLES["General Assistant"]
-        
-    if "initialization_complete" not in st.session_state:
-        st.session_state.initialization_complete = False
-        
-    if "permissions" not in st.session_state:
-        st.session_state.permissions = {
-            "allow_system_check": False,
-            "allow_package_install": False,
-            "allow_ollama_install": False,
-            "allow_model_download": False
-        }
+    st.session_state.setdefault("processed_files", set())
+    st.session_state.setdefault("messages", [])
+    st.session_state.setdefault("system_initialized", False)
+    st.session_state.setdefault("initialization_complete", False)
+    st.session_state.setdefault("initialization_status", "Pending")
+    st.session_state.setdefault("error_log", [])
+    st.session_state.setdefault("available_models", [DEFAULT_MODEL_NAME])
+    st.session_state.setdefault("current_agent_role", "General Assistant")
+    st.session_state.setdefault("custom_prompt", AGENT_ROLES.get("General Assistant", ""))
+    st.session_state.setdefault("permissions", { "allow_system_check": True, "allow_package_install": False, "allow_ollama_install": False, "allow_model_download": False })
 
-def initialize_system(with_progress=True):
-    """Initialize all system components with user permission tracking."""
-    if st.session_state.initialization_complete:
-        return True
-    
-    if with_progress:
-        progress_bar = st.progress(0)
-        status_text = st.empty()
-        
-        # 1. Check dependencies (10%)
-        status_text.info("Checking system dependencies...")
-        missing_packages = ensure_dependencies()
-        progress_bar.progress(0.1)
-        
-        if missing_packages and not st.session_state.permissions["allow_package_install"]:
-            status_text.warning(f"Missing packages: {', '.join(missing_packages)}. Please approve installation.")
-            return False
-        elif missing_packages:
-            status_text.info(f"Installing missing packages: {', '.join(missing_packages)}")
-            # Installation is handled in the UI based on permissions
-        
-        # 2. Check Ollama (20%)
-        status_text.info("Checking if Ollama is installed...")
-        ollama_installed = setup_ollama(install=st.session_state.permissions["allow_ollama_install"])
-        progress_bar.progress(0.2)
-        
-        if not ollama_installed and not st.session_state.permissions["allow_ollama_install"]:
-            status_text.warning("Ollama is not installed. Please approve installation.")
-            return False
-        
-        # 3. Load NLP models (50%)
-        status_text.info("Loading NLP resources...")
-        load_nltk_resources()
-        nlp = load_spacy_model()
-        embedding_model = load_embedding_model()
-        progress_bar.progress(0.5)
-        
-        if not nlp or not embedding_model:
-            status_text.error("Failed to load NLP models")
-            return False
-        
-        # 4. Initialize vector DB (70%)
-        status_text.info("Initializing vector database...")
-        success = initialize_vector_db()
-        progress_bar.progress(0.7)
-        
-        if not success:
-            status_text.warning("Vector database initialization failed. Will create on first document upload.")
-        
-        # 5. Check available models (90%)
-        status_text.info("Checking available Ollama models...")
-        st.session_state.available_models = refresh_available_models()
-        progress_bar.progress(0.9)
-        
-        # 6. Complete (100%)
-        status_text.success("System initialization complete!")
-        progress_bar.progress(1.0)
-    
-    st.session_state.initialization_complete = True
-    st.session_state.system_initialized = True
-    return True
+# --- initialize_system (Uses REVISED vector_store.initialize_vector_db) ---
+def initialize_system() -> Tuple[bool, str]:
+    """ Initialize system components. Returns (success, message). """
+    func_name = "initialize_system"
+    log_error(f"{func_name}: Starting...")
+    st.session_state.system_initialized = False
+    st.session_state.initialization_status = "In Progress..."
+    overall_success = True; error_messages = []
 
-def render_sidebar():
-    """Render the sidebar UI with collapsible sections."""
-    with st.sidebar:
-        # System Status Section
-        if not st.session_state.system_initialized:
-            st.markdown("### 🚀 System Setup")
-            
-            # Permission checks
-            st.write("Please approve the following operations:")
-            
-            col1, col2 = st.columns(2)
-            with col1:
-                st.session_state.permissions["allow_system_check"] = st.checkbox(
-                    "Check system", value=True, 
-                    help="Allow checking system for required dependencies")
-                
-                st.session_state.permissions["allow_package_install"] = st.checkbox(
-                    "Install packages", 
-                    help="Allow installing required Python packages")
-            
-            with col2:
-                st.session_state.permissions["allow_ollama_install"] = st.checkbox(
-                    "Install Ollama", 
-                    help="Allow installing Ollama if needed")
-                
-                st.session_state.permissions["allow_model_download"] = st.checkbox(
-                    "Download models", 
-                    help="Allow downloading LLM models")
-            
-            if st.button("Initialize System", use_container_width=True):
-                if not st.session_state.permissions["allow_system_check"]:
-                    st.error("System check permission is required to proceed.")
-                    return
-                initialize_system()
-        else:
-            with st.expander("📊 System Status", expanded=False):
-                show_system_resources()
-                if st.button("Refresh Status", key="refresh_status", use_container_width=True):
-                    st.experimental_rerun()
-        
-        # Divider for visual separation
-        st.markdown("---")
-        
-        # Document Management Section - Always visible
-        st.markdown("### 📄 Document Management")
-        
-        uploaded_files = st.file_uploader(
-            "Upload PDF Files", 
-            type=["pdf"], 
-            accept_multiple_files=True,
-            help="Upload one or more PDF files to analyze"
-        )
-        
-        # Only show processed files if there are any
-        if st.session_state.processed_files:
-            with st.expander(f"📋 Processed Files ({len(st.session_state.processed_files)})", expanded=False):
-                for filename in sorted(st.session_state.processed_files):
-                    st.text(f"• {filename}")
-        
-        # Vector DB reset with confirmation in a compact design
-        with st.expander("🗑️ Reset Database", expanded=False):
-            st.warning("This will delete all stored document data.")
-            if st.button("Reset Vector Database", key="reset_vector_db", use_container_width=True):
-                success, message = reset_vector_db()
-                if success:
-                    st.session_state.processed_files.clear()
-                    st.success(message)
-                else:
-                    st.error(message)
-        
-        # Divider for visual separation
-        st.markdown("---")
-        
-        # Configuration Section in a compact, collapsible interface
-        st.markdown("### ⚙️ Configuration")
-        
-        # Agent Role (LLM Behavior)
-        st.session_state.current_agent_role = st.selectbox(
-            "Assistant Role",
-            options=list(AGENT_ROLES.keys()),
-            index=list(AGENT_ROLES.keys()).index(st.session_state.current_agent_role)
-        )
-        
-        # Update the custom prompt when the role changes
-        if st.session_state.current_agent_role != "Custom" and st.session_state.current_agent_role in AGENT_ROLES:
-            st.session_state.custom_prompt = AGENT_ROLES[st.session_state.current_agent_role]
-        
-        # Add custom prompt option
-        with st.expander("🔍 Custom Prompt", expanded=False):
-            custom_prompt = st.text_area(
-                "System Prompt", 
-                value=st.session_state.custom_prompt,
-                height=100,
-                help="Define the behavior and knowledge of the AI assistant"
-            )
-            if st.button("Apply Prompt", use_container_width=True):
-                st.session_state.custom_prompt = custom_prompt
-                st.success("Custom prompt applied.")
-        
-        # LLM Model Selection
-        with st.expander("🤖 LLM Model Settings", expanded=False):
-            # Get available models and ensure default is included
-            model_options = st.session_state.available_models
-            if not model_options:
-                model_options = [DEFAULT_MODEL]
-            
-            if DEFAULT_MODEL not in model_options:
-                model_options = [DEFAULT_MODEL] + model_options
-            
-            local_llm_model = st.selectbox(
-                "Select LLM Model",
-                options=model_options,
-                index=0
-            )
-            
-            if st.button("Refresh Models", use_container_width=True):
-                st.session_state.available_models = refresh_available_models()
-                st.success(f"Found {len(st.session_state.available_models)} models")
-            
-            # Model download option
-            if st.session_state.permissions["allow_model_download"]:
-                new_model = st.text_input("Model to download (e.g., llama3.2:latest)")
-                if st.button("Download Model", use_container_width=True) and new_model:
-                    with st.spinner(f"Downloading {new_model}..."):
-                        # Download logic would go here and update available_models
-                        st.success(f"Model {new_model} downloaded")
-        
-        # Processing Settings
-        with st.expander("⚡ Processing Settings", expanded=False):
-            chunk_size = st.slider(
-                "Chunk Size (words)", 
-                min_value=50, max_value=1000, value=DEFAULT_CHUNK_SIZE,
-                help="Number of words per text chunk. Larger chunks provide more context but may reduce relevance precision."
-            )
-            
-            overlap = st.slider(
-                "Overlap (words)", 
-                min_value=0, max_value=200, value=DEFAULT_OVERLAP,
-                help="Word overlap between consecutive chunks. Higher overlap reduces context loss but increases processing time."
-            )
-            
-            top_n = st.slider(
-                "Top Results", 
-                min_value=1, max_value=50, value=DEFAULT_TOP_N,
-                help="Number of most relevant text chunks to retrieve for each query."
-            )
-            
-            conversation_memory_count = st.slider(
-                "Conversation Memory", 
-                min_value=0, max_value=10, value=DEFAULT_CONVERSATION_MEMORY,
-                help="Number of previous Q&A pairs to include as context. Increases answer relevance but may slow responses."
-            )
-        
-        # Advanced Options (for debugging and maintenance)
-        with st.expander("🛠️ Advanced Options", expanded=False):
-            if st.button("Clear Error Log", use_container_width=True):
-                st.session_state.error_log = []
-                st.success("Error log cleared")
-            
-            if st.session_state.error_log:
-                with st.expander("📝 Error Log", expanded=False):
-                    for error in st.session_state.error_log:
-                        st.text(error)
-        
-        # Return needed parameters for the main app
-        return {
-            "uploaded_files": uploaded_files,
-            "chunk_size": chunk_size if 'chunk_size' in locals() else DEFAULT_CHUNK_SIZE,
-            "overlap": overlap if 'overlap' in locals() else DEFAULT_OVERLAP,
-            "top_n": top_n if 'top_n' in locals() else DEFAULT_TOP_N,
-            "conversation_memory_count": conversation_memory_count if 'conversation_memory_count' in locals() else DEFAULT_CONVERSATION_MEMORY,
-            "local_llm_model": local_llm_model if 'local_llm_model' in locals() else DEFAULT_MODEL
-        }
+    # --- Dependency Check ---
+    log_error(f"{func_name}: Checking dependencies...")
+    mismatched = ensure_dependencies()
+    if mismatched:
+        # ... (dependency check/install logic - unchanged) ...
+        missing_required = [f"{p}=={r} (Found: {i})" if i != "Missing" else f"{p}=={r} (Missing)" for p, r, i in mismatched if p != 'en_core_web_sm']
+        missing_spacy_model = any(p == 'en_core_web_sm' for p, r, i in mismatched)
+        if missing_required:
+            if st.session_state.permissions["allow_package_install"]:
+                if not all(install_package(f"{pkg}=={req_v}") for pkg, req_v, _ in mismatched if pkg != 'en_core_web_sm'):
+                    overall_success = False; error_messages.append("Package install failed.")
+            else: overall_success = False; error_messages.append("Dependency issues. Grant permission.")
+        if missing_spacy_model:
+            if st.session_state.permissions["allow_package_install"]:
+                if not install_package("en_core_web_sm"):
+                    overall_success = False; error_messages.append("SpaCy model download failed.")
+            else: overall_success = False; error_messages.append("SpaCy model missing. Grant permission.")
+    if not overall_success: log_error(f"{func_name}: Failed - Dependency check."); return False, "\n".join(error_messages)
+    log_error(f"{func_name}: Dependencies OK.")
 
-def process_documents(uploaded_files, chunk_size, overlap):
-    """Process uploaded PDF documents."""
-    if not uploaded_files:
-        return
-    
-    st.subheader("📝 Document Processing")
-    file_progress = st.progress(0)
-    status_text = st.empty()
-    total_files = len(uploaded_files)
-    
-    files_processed = 0
-    for i, pdf_file in enumerate(uploaded_files):
-        # If we've already processed this PDF, skip
-        if pdf_file.name in st.session_state.processed_files:
-            status_text.info(f"**{pdf_file.name}** already processed; skipping.")
-            files_processed += 1
-            continue
-        
-        status_text.write(f"Processing file {i+1} of {total_files}: **{pdf_file.name}**")
-        
-        # Ensure vector DB exists before processing
-        if not initialize_vector_db():
-            status_text.error("Failed to initialize vector database. Cannot process documents.")
-            return
-        
-        # Get system resources for optimized processing
-        resources = PerformanceMonitor.get_system_resources()
-        
-        # Process the PDF
-        with st.container():
-            st.write(f"Processing {pdf_file.name}...")
-            st.write("Extracting text from PDF...")
-            
-            new_chunks = process_uploaded_pdf(pdf_file, chunk_size, overlap)
-            
-            if new_chunks:
-                st.write(f"Generated {len(new_chunks)} chunks from **{pdf_file.name}**.")
-                
-                st.write("Adding text chunks to the vector database...")
-                collection = get_chroma_collection()
-                embedding_model = load_embedding_model()
-                
-                if collection and embedding_model:
-                    add_chunks_to_collection(new_chunks, embedding_model, collection)
-                    # Mark as processed
-                    st.session_state.processed_files.add(pdf_file.name)
-                    files_processed += 1
-                else:
-                    st.error("Vector database or embedding model not available.")
-            else:
-                st.warning(f"No text chunks generated from {pdf_file.name}.")
-        
-        file_progress.progress((i + 1) / total_files)
-    
-    if files_processed > 0:
-        status_text.success(f"Processed {files_processed} new files successfully.")
+    # --- Ollama Check ---
+    log_error(f"{func_name}: Checking Ollama...")
+    ollama_ready = setup_ollama(install=st.session_state.permissions["allow_ollama_install"])
+    if not ollama_ready: overall_success = False; error_messages.append("Ollama setup failed.")
+    if not overall_success: log_error(f"{func_name}: Failed - Ollama setup."); return False, "\n".join(error_messages)
+    log_error(f"{func_name}: Ollama OK.")
+
+    # --- Load Resources (Models are cached via @st.cache_resource) ---
+    log_error(f"{func_name}: Loading NLTK...")
+    load_nltk_resources()
+    log_error(f"{func_name}: Loading SpaCy model...")
+    nlp_model = load_spacy_model()
+    log_error(f"{func_name}: Loading Embedding model...")
+    embedding_model = load_embedding_model()
+    if not nlp_model or not embedding_model:
+        overall_success = False; error_messages.append("NLP model load failed.")
+    if not overall_success: log_error(f"{func_name}: Failed - NLP model load."); return False, "\n".join(error_messages)
+    log_error(f"{func_name}: NLP Models OK.")
+
+    # --- Vector DB Initialization (Uses REVISED initialize_vector_db) ---
+    log_error(f"{func_name}: Initializing Vector DB...")
+    # This now just calls the function that ensures the cached client/collection exists
+    db_success = initialize_vector_db()
+    if not db_success:
+        overall_success = False; error_messages.append("Vector DB initialization failed.") # Message from initialize_vector_db shown in UI
+    if not overall_success: log_error(f"{func_name}: Failed - Vector DB init."); return False, "\n".join(error_messages)
+    log_error(f"{func_name}: Vector DB OK.")
+
+    # --- Refresh Models ---
+    log_error(f"{func_name}: Refreshing Ollama models...")
+    st.session_state.available_models = refresh_available_models()
+    log_error(f"{func_name}: Found {len(st.session_state.available_models)} models.")
+
+    # --- Final ---
+    if overall_success:
+        st.session_state.initialization_complete = True
+        st.session_state.system_initialized = True
+        st.session_state.initialization_status = "Completed Successfully"
+        log_error(f"{func_name}: System initialization completed successfully.")
+        return True, "System initialization complete!"
     else:
-        status_text.empty()
-    
-    # Clear progress bar after completion
-    file_progress.empty()
+        st.session_state.initialization_status = "Failed"
+        log_error(f"{func_name}: System initialization failed. Errors: {error_messages}")
+        return False, "System initialization failed. See errors above or check logs."
 
-def render_chat_interface(local_llm_model, top_n, conversation_memory_count):
-    """Render the chat interface and handle queries."""
+
+# --- render_sidebar (Reset logic forces manual re-init - Unchanged) ---
+def render_sidebar():
+    """Render the sidebar UI..."""
+    with st.sidebar:
+        st.markdown("## 📄 PDF Analyzer Settings"); st.markdown("---")
+        # --- Initialization Block ---
+        show_init_block = not st.session_state.initialization_complete or st.session_state.initialization_status == "Failed"
+        if show_init_block:
+            st.markdown("### 🚀 System Setup")
+            if st.session_state.initialization_status == "Failed":
+                 st.error("Previous initialization failed. Please check permissions and retry.")
+            else: st.info("System requires initialization.")
+            st.markdown("**Permissions:**"); st.caption("Grant permissions for automated setup.")
+            col1, col2 = st.columns(2)
+            with col1: st.session_state.permissions["allow_package_install"] = st.checkbox("Allow Package Install/Update", value=st.session_state.permissions["allow_package_install"], help="...")
+            with col2: st.session_state.permissions["allow_ollama_install"] = st.checkbox("Allow Ollama Install", value=st.session_state.permissions["allow_ollama_install"], help="..."); st.session_state.permissions["allow_model_download"] = st.checkbox("Allow Model Download", value=st.session_state.permissions["allow_model_download"], help="...")
+            if st.button("Initialize System", key="init_button", use_container_width=True, type="primary"):
+                 with st.status("Initializing system...", expanded=True) as status:
+                     success, message = initialize_system()
+                     if success: status.update(label=message, state="complete", expanded=False); st.success("Initialization successful!"); time.sleep(1.5); st.rerun()
+                     else: status.update(label="Initialization Failed", state="error", expanded=True); st.error(f"Details: {message}")
+            st.markdown(f"**Status:** `{st.session_state.initialization_status}`"); st.markdown("---")
+
+        # --- Initialized Sections ---
+        if st.session_state.system_initialized:
+            with st.expander("📊 System Status", expanded=False): show_system_resources()
+            st.markdown("---")
+            st.markdown("### 📄 Document Management")
+            uploaded_files = st.file_uploader("Upload PDF Files", type=["pdf"], accept_multiple_files=True, help="...")
+            if st.session_state.processed_files:
+                with st.expander(f"📋 Processed Files ({len(st.session_state.processed_files)})", expanded=False):
+                    for filename in sorted(list(st.session_state.processed_files)): st.caption(f"• {filename}")
+
+            # --- Reset Database Section (Forces Manual Re-init) ---
+            with st.expander("🗑️ Reset Database", expanded=False):
+                st.warning("Permanently deletes analyzed data & requires re-initialization.")
+                reset_placeholder = st.empty()
+                if st.button("Confirm Reset", key="reset_vector_db", use_container_width=True, type="secondary"):
+                    try:
+                        with st.spinner("Resetting database and clearing cache..."):
+                            reset_success, reset_message = reset_vector_db() # Calls new reset
+                        if reset_success:
+                            reset_placeholder.success(reset_message)
+                            st.session_state.processed_files.clear(); st.session_state.messages = []
+                            # Reset flags to force manual re-init via UI
+                            st.session_state.system_initialized = False
+                            st.session_state.initialization_complete = False
+                            st.session_state.initialization_status = "Pending"
+                            log_error("Reset successful. Flags set for user re-initialization.")
+                            time.sleep(2); st.rerun() # Rerun shows init block
+                        else:
+                            reset_placeholder.error(f"Database reset failed: {reset_message}")
+                    except Exception as e:
+                         log_error(f"Critical error during reset button action: {str(e)}")
+                         reset_placeholder.error(f"An unexpected error occurred during reset: {str(e)}")
+            # --- End Reset Database Section ---
+
+            st.markdown("---")
+            st.markdown("### ⚙️ Configuration")
+            # ... (Configuration sections remain the same) ...
+            # --- Role Selector ---
+            current_role = st.session_state.get("current_agent_role", "General Assistant"); role_options = list(AGENT_ROLES.keys())
+            try: current_role_index = role_options.index(current_role)
+            except ValueError: current_role_index = role_options.index("General Assistant")
+            selected_role = st.selectbox("Assistant Role", options=role_options, index=current_role_index, key="agent_role_selector", help="...")
+            if selected_role != st.session_state.current_agent_role: st.session_state.current_agent_role = selected_role; st.session_state.custom_prompt = AGENT_ROLES.get(selected_role, "") if selected_role != "Custom" else st.session_state.custom_prompt; st.rerun()
+            # --- Custom Prompt ---
+            is_custom_role = (st.session_state.current_agent_role == "Custom")
+            with st.expander("🔍 Custom System Prompt", expanded=is_custom_role):
+                custom_prompt_input = st.text_area("System Prompt", value=st.session_state.custom_prompt, height=150, key="custom_prompt_text_area", help="...")
+                if is_custom_role and custom_prompt_input != st.session_state.custom_prompt: st.session_state.custom_prompt = custom_prompt_input
+            # --- LLM Model ---
+            with st.expander("🤖 LLM Model", expanded=False):
+                model_options = st.session_state.available_models or [DEFAULT_MODEL_NAME]; current_model = st.session_state.get("local_llm_model", DEFAULT_MODEL_NAME)
+                if DEFAULT_MODEL_NAME not in model_options: model_options.insert(0, DEFAULT_MODEL_NAME)
+                try: current_model_index = model_options.index(current_model)
+                except ValueError: current_model_index = 0
+                selected_model = st.selectbox("Select LLM Model", options=model_options, index=current_model_index, key="model_selector", help="...")
+                st.session_state.local_llm_model = selected_model
+                col1, col2 = st.columns(2)
+                with col1:
+                    if st.button("Refresh List", key="refresh_models", use_container_width=True):
+                        with st.spinner("Checking Ollama models..."): st.session_state.available_models = refresh_available_models(); st.rerun()
+                with col2:
+                    if st.session_state.permissions["allow_model_download"] and DEFAULT_MODEL_NAME not in st.session_state.available_models:
+                        if st.button(f"Download {DEFAULT_MODEL_NAME}", key="download_default", use_container_width=True):
+                            with st.status(f"Downloading {DEFAULT_MODEL_NAME}...", expanded=True) as dl_status:
+                                success, msg = download_model(DEFAULT_MODEL_NAME)
+                                if success: dl_status.update(label=f"{DEFAULT_MODEL_NAME} Downloaded!", state="complete", expanded=False); st.session_state.available_models = refresh_available_models(); time.sleep(1); st.rerun()
+                                else: dl_status.update(label="Download Failed", state="error", expanded=True); st.error(msg)
+                    elif not st.session_state.permissions["allow_model_download"]: st.caption("Model download disabled.")
+            # --- Processing Settings ---
+            with st.expander("⚡ Processing", expanded=False):
+                st.session_state.chunk_size = st.slider("Chunk Size", 50, 1000, st.session_state.get("chunk_size", DEFAULT_CHUNK_SIZE), 50, help="...")
+                st.session_state.overlap = st.slider("Overlap", 0, 200, st.session_state.get("overlap", DEFAULT_OVERLAP), 10, help="...")
+                st.session_state.top_n = st.slider("Top Results", 1, 20, st.session_state.get("top_n", DEFAULT_TOP_N), help="...")
+                st.session_state.conversation_memory_count = st.slider("Memory Turns", 0, 10, st.session_state.get("conversation_memory_count", DEFAULT_CONVERSATION_MEMORY), help="...")
+            # --- Advanced Options ---
+            with st.expander("🛠️ Advanced", expanded=False):
+                if st.button("Clear Error Log", key="clear_errors", use_container_width=True): st.session_state.error_log = []; st.success("Error log cleared.")
+                if st.session_state.error_log: st.markdown("**Error Log:**"); st.text_area("Log Messages:", value="\n".join(st.session_state.error_log), height=200, disabled=True)
+
+        # --- Return Params ---
+        return {
+            "uploaded_files": uploaded_files if 'uploaded_files' in locals() else None,
+            "chunk_size": st.session_state.get("chunk_size", DEFAULT_CHUNK_SIZE),
+            "overlap": st.session_state.get("overlap", DEFAULT_OVERLAP),
+            "top_n": st.session_state.get("top_n", DEFAULT_TOP_N),
+            "conversation_memory_count": st.session_state.get("conversation_memory_count", DEFAULT_CONVERSATION_MEMORY),
+            "local_llm_model": st.session_state.get("local_llm_model", DEFAULT_MODEL_NAME),
+            "system_prompt": st.session_state.get("custom_prompt", AGENT_ROLES.get("General Assistant", "")),
+            "system_initialized": st.session_state.get("system_initialized", False)
+        }
+
+
+# --- process_documents (Uses REVISED get_chroma_collection) ---
+def process_documents(uploaded_files, chunk_size, overlap):
+    """Process uploaded PDF documents using st.status for feedback."""
+    if st.session_state.messages and st.session_state.messages[-1]["role"] == "user": return
+    if not uploaded_files: return
+
+    st.markdown("---"); st.subheader("📝 Document Processing")
+    col1, col2 = st.columns([3, 1]); batch_status_text = col1.empty(); batch_progress = col2.empty()
+    files_to_process = [f for f in uploaded_files if f.name not in st.session_state.processed_files]; total_new_files = len(files_to_process)
+    if total_new_files == 0: batch_status_text.info("No new files to process."); time.sleep(1.5); batch_status_text.empty(); return
+
+    embedding_model = load_embedding_model()
+    collection = get_chroma_collection() # Uses the new logic
+
+    if not embedding_model or not collection:
+        st.error("Core components (embedding model or DB collection) not available for processing.")
+        log_error("Processing failed: Missing embedding model or collection.")
+        return
+
+    files_processed_count = 0; errors_occurred = False; batch_progress.progress(0)
+    for i, pdf_file in enumerate(files_to_process):
+        with st.status(f"Processing {pdf_file.name}...", expanded=True) as file_status:
+            try:
+                new_chunks = process_uploaded_pdf(pdf_file, chunk_size, overlap, status=file_status)
+                if new_chunks:
+                    add_success = add_chunks_to_collection(new_chunks, embedding_model, collection, status=file_status)
+                    if add_success:
+                        st.session_state.processed_files.add(pdf_file.name); files_processed_count += 1
+                        file_status.update(label=f"Successfully processed {pdf_file.name}", state="complete", expanded=False)
+                    else: errors_occurred = True
+                else:
+                    errors_occurred = True
+                    if file_status._label.startswith("Generated"): file_status.update(label=f"No text chunks extracted from {pdf_file.name}", state="warning", expanded=False)
+            except Exception as e:
+                log_error(f"Critical error processing {pdf_file.name} in main loop: {str(e)}"); errors_occurred = True
+                file_status.update(label=f"Unexpected error processing {pdf_file.name}", state="error", expanded=True); st.error(f"Details: {str(e)}")
+        batch_progress.progress((i + 1) / total_new_files)
+
+    if files_processed_count > 0 and not errors_occurred: batch_status_text.success(f"Successfully processed {files_processed_count} new file(s).")
+    elif files_processed_count > 0 and errors_occurred: batch_status_text.warning(f"Processed {files_processed_count} file(s), but errors occurred.")
+    elif errors_occurred: batch_status_text.error("Failed to process new files. Check status messages.")
+    time.sleep(3); batch_status_text.empty(); batch_progress.empty()
+
+
+# --- render_chat_interface (Uses REVISED get_chroma_collection) ---
+def render_chat_interface(local_llm_model, top_n, conversation_memory_count, system_prompt):
+    """Render the chat interface..."""
+    st.markdown("---"); st.subheader("💬 Chat with Your Documents")
+    chat_display_area = st.container()
+    with chat_display_area: display_chat(st.session_state.messages, current_role=st.session_state.get("current_agent_role", "Assistant"))
     st.markdown("---")
-    st.subheader("💬 Chat with Your Documents")
-    
-    # Display a warning if no files have been processed
-    if not st.session_state.processed_files:
-        st.warning("⚠️ No documents have been processed yet. Please upload and process PDF files first.")
-    
-    # Display existing conversation
-    chat_container = st.container()
-    with chat_container:
-        if st.session_state.messages:
-            display_chat(st.session_state.messages)
-    
-    # Input box at the bottom in a form
-    st.markdown("---")  # a subtle divider before input
-    
+    chat_input_disabled = not bool(st.session_state.processed_files); input_placeholder = "Ask a question..." if not chat_input_disabled else "Please process documents first"
     with st.form("chat_form", clear_on_submit=True):
-        col1, col2 = st.columns([5, 1])
-        with col1:
-            user_query = st.text_area("Ask a question about your documents:", height=100)
-        with col2:
-            st.write("")
-            st.write("")
-            submitted = st.form_submit_button("Submit", use_container_width=True)
-    
-    if submitted and user_query.strip():
-        # Check if we have processed any files
-        if not st.session_state.processed_files:
-            st.error("Please upload and process documents before asking questions.")
-            return
-        
-        # Build conversation memory from the last (conversation_memory_count * 2) messages
-        memory_slice = st.session_state.messages[-(conversation_memory_count * 2):] if conversation_memory_count > 0 else []
-        conversation_memory = "\n".join(
-            f"{'User' if m['role'] == 'user' else 'Assistant'}: {m['content']}" for m in memory_slice
-        )
-        
-        # Get required models
-        embedding_model = load_embedding_model()
-        collection = get_chroma_collection()
-        
-        with st.spinner("Processing query..."):
-            answer = query_llm(
-                user_query=user_query,
-                top_n=top_n,
-                local_llm_model=local_llm_model,
-                embedding_model=embedding_model,
-                collection=collection,
-                conversation_memory=conversation_memory,
-                system_prompt=st.session_state.custom_prompt
-            )
-        
-        # Append user query & assistant answer
-        st.session_state.messages.append({"role": "user", "content": user_query})
-        st.session_state.messages.append({"role": "assistant", "content": answer})
-        
-        # Update the UI by recreating the chat display
-        st.markdown("### Updated Conversation:")
-        display_chat(st.session_state.messages)
+        user_query = st.text_area("Your question:", height=100, placeholder=input_placeholder, disabled=chat_input_disabled, key="chat_input")
+        submitted = st.form_submit_button("Send", use_container_width=True, disabled=chat_input_disabled)
 
+    if submitted and user_query.strip() and not chat_input_disabled:
+        st.session_state.messages.append({"role": "user", "content": user_query}); st.rerun()
+
+    if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
+        last_user_query = st.session_state.messages[-1]["content"]
+        memory_limit = conversation_memory_count * 2; memory_slice = st.session_state.messages[-(memory_limit + 1) : -1] if memory_limit > 0 else []
+        conversation_memory = "\n".join(f"{'User' if m['role'] == 'user' else 'Assistant'}: {m['content']}" for m in memory_slice)
+
+        embedding_model = load_embedding_model()
+        collection = get_chroma_collection() # Uses the new logic
+
+        if not embedding_model or not collection:
+             answer = "Error: Cannot query LLM - core components missing (model or DB collection)."
+             log_error(answer)
+             st.session_state.messages.append({"role": "assistant", "content": answer}); st.rerun()
+        else:
+            answer = query_llm(user_query=last_user_query, top_n=top_n, local_llm_model=local_llm_model, embedding_model=embedding_model, collection=collection, conversation_memory=conversation_memory, system_prompt=system_prompt)
+            st.session_state.messages.append({"role": "assistant", "content": answer}); st.rerun()
+
+
+# --- main (UI fixes retained, central init check) ---
 def main():
     """Main application entry point."""
-    # Page configuration
-    st.set_page_config(
-        page_title="PDF Analyzer",
-        page_icon="📄",
-        layout="wide",
-        initial_sidebar_state="expanded"
-    )
-    
-    # App header with styling
+    st.set_page_config(page_title="PDF Analyzer", page_icon="📄", layout="wide", initial_sidebar_state="expanded")
+    # Apply custom CSS
     st.markdown("""
     <style>
-    .main-header {
-        font-size: 2.5rem;
-        font-weight: 600;
-        color: #1E88E5;
-        margin-bottom: 0.5rem;
-    }
-    .sub-header {
-        font-size: 1rem;
-        color: #424242;
-        margin-bottom: 1.5rem;
-    }
+        /* ... scrollbar styles ... */
+        ::-webkit-scrollbar { width: 8px; height: 8px; } ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; } ::-webkit-scrollbar-thumb { background: #888; border-radius: 10px; } ::-webkit-scrollbar-thumb:hover { background: #555; }
+        .main-header { font-size: 2.5rem; font-weight: 600; color: #1E88E5; margin-bottom: 0.2rem; text-align: center; }
+        .sub-header { font-size: 1.1rem; color: #555; margin-bottom: 1.5rem; text-align: center; }
+        .stChatMessage { border-radius: 10px; padding: 0.75rem; margin-bottom: 0.5rem; }
+        .stButton>button { border-radius: 8px; }
+        .stStatusWidget-content { padding-top: 0.5rem; padding-bottom: 0.5rem; overflow-wrap: break-word; word-wrap: break-word; }
     </style>
     """, unsafe_allow_html=True)
-    
-    st.markdown('<p class="main-header">PDF Analyzer</p>', unsafe_allow_html=True)
-    st.markdown('<p class="sub-header">Upload PDFs and chat with them using local LLMs</p>', unsafe_allow_html=True)
-    
-    # Initialize session state
-    initialize_session_state()
-    
-    # Render sidebar and get parameters
-    sidebar_params = render_sidebar()
-    
-    # System initialization check
-    if not st.session_state.system_initialized:
-        st.warning("⚠️ System not initialized. Please approve required permissions and click 'Initialize System' in the sidebar.")
-        return  # Exit the main function until initialized
-    
-    # Process Documents
-    process_documents(
-        sidebar_params["uploaded_files"],
-        sidebar_params["chunk_size"],
-        sidebar_params["overlap"]
-    )
-    
-    # Render Chat Interface
-    render_chat_interface(
-        sidebar_params["local_llm_model"],
-        sidebar_params["top_n"],
-        sidebar_params["conversation_memory_count"]
-    )
+    st.markdown('<p class="main-header">Local PDF Analyzer</p>', unsafe_allow_html=True)
+    st.markdown('<p class="sub-header">Chat with your documents using local AI models via Ollama</p>', unsafe_allow_html=True)
 
-# Run the main application
+    if "system_initialized" not in st.session_state:
+        initialize_session_state()
+
+    sidebar_params = render_sidebar()
+
+    if not sidebar_params["system_initialized"]:
+        if st.session_state.initialization_status in ["Pending", "Failed"]:
+             st.warning("System not ready. Please initialize the system via the sidebar.")
+    else:
+        process_documents(sidebar_params["uploaded_files"], sidebar_params["chunk_size"], sidebar_params["overlap"])
+        render_chat_interface(sidebar_params["local_llm_model"], sidebar_params["top_n"], sidebar_params["conversation_memory_count"], sidebar_params["system_prompt"])
+
+# --- Entry Point ---
 if __name__ == "__main__":
-    try:
-        main()
+    try: main()
     except Exception as e:
-        st.error(f"Application error: {str(e)}")
-        if "error_log" in st.session_state:
-            log_error(f"Unhandled application error: {str(e)}")
-            st.error("Check the error log in Advanced Options for details.")
+        error_time = time.strftime("%Y-%m-%d %H:%M:%S"); error_details = f"Unhandled application error at {error_time}: {str(e)}"
+        print(f"ERROR: {error_details}", file=sys.stderr)
+        if "error_log" in st.session_state: log_error(error_details); st.error(f"A critical error occurred. Check logs or restart. Error: {str(e)}")
+        else: st.error(f"A critical application error occurred: {str(e)}")
