@@ -1,16 +1,19 @@
-# PDF Analyzer Project Dependencies
-# Pin versions for stability and security. Check for updates periodically.
-
-streamlit==1.44.0
-nltk==3.8.1
-spacy==3.8.0
-openparse==0.7.0 
-sentence-transformers==2.7.0
-numpy==1.26.4
-chromadb==0.5.3
-ollama==0.2.1
-psutil==5.9.8
-pydantic>=2.0.0,<3.0.0 # Add this line to enforce Pydantic v2
-
-# Note: The spaCy model 'en_core_web_sm' is downloaded separately via a spacy command.
-# Ensure the version downloaded matches the spacy version if necessary (e.g., 3.7.x).
+streamlit>=1.45.0
+chromadb>=0.5.3
+jina-reranker-client>=2.0.0",  # Fixed package name as suggested
+rank-bm25>=0.2.2
+langchain-core>=0.2.0
+openparse>=1.2.0",      # Updated for modern parsing
+sentence-transformers>=2.7.0
+ollama>=0.3.0",         # Updated LLM interface
+pydantic>=2.7.0
+cachetools>=5.3.1
+flash-attn>=2.5.0",     # For improved attention mechanism
+jina>=3.25.0",          # Full framework
+nltk>=3.8.1
+spacy>=3.8.0
+psutil>=5.9.8
+PyMuPDF>=1.23.0",       # For PDF image extraction
+altair>=5.2.0",         # For tourism data visualization
+pandas>=2.1.0",         # For tourism data analysis
+chainlit>=1.0.0",       # For enhanced RAG interface

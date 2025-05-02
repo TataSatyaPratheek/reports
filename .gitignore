@@ -3,3 +3,6 @@
 modules/__pycache__
 /chroma*
 __pycache__
+req*
+assets/
+logs/

@@ -1,23 +1,26 @@
-# PDF Analyzer: Converse with Your Documents using Local LLMs
+# Enhanced PDF Analyzer: Converse with Your Documents using Local LLMs
 
-A powerful, modular application that allows you to chat with PDF documents using local Large Language Models (LLMs) through Ollama. This application leverages vector embeddings, semantic search, and local language models to provide a secure, private way to analyze and extract information from PDF documents without sending your data to external APIs.
+A powerful, modular application that allows you to chat with PDF documents using local Large Language Models (LLMs) through Ollama. This application leverages advanced Retrieval-Augmented Generation (RAG) techniques including hybrid vector and keyword search, query reformulation, and neural reranking to provide a secure, private way to analyze and extract information from PDF documents without sending your data to external APIs.
 
 ## 🌟 Key Features
 
 - **Fully Local Processing**: All data stays on your machine - no external API calls
 - **Modular Architecture**: Well-organized codebase for easy maintenance and extension
-- **Vector Search**: Efficient retrieval of relevant document sections
+- **Hybrid Retrieval**: Combines vector similarity and BM25 keyword search for optimal results
+- **Neural Reranking**: Uses Jina Reranker to improve search result relevance
 - **Smart Chunking**: Intelligent document splitting for better context preservation
+- **Dynamic Query Reformulation**: Automatically improves queries based on conversation context
+- **Context-Aware Memory**: Sliding window approach for maintaining conversation context
 - **Customizable LLM Roles**: Configure the assistant's expertise based on document type
 - **Resource Monitoring**: Adaptive performance optimization based on system resources
-- **User-Friendly Interface**: Clean, intuitive UI with three-panel layout
+- **User-Friendly Interface**: Clean, intuitive UI with configurable advanced features
 - **Permission System**: Transparent initialization with user-approved actions
 
 ## 📋 Requirements
 
 - Python 3.8+
 - [Ollama](https://ollama.ai/) for running local language models
-- Required Python packages (installed automatically):
+- Required Python packages (installed automatically via PDM):
   - streamlit
   - openparse
   - sentence-transformers
@@ -26,6 +29,10 @@ A powerful, modular application that allows you to chat with PDF documents using
   - spacy
   - ollama (Python client)
   - psutil
+  - jina-reranker
+  - rank-bm25
+  - langchain-core
+  - cachetools
 
 ## 🚀 Quick Start
 
@@ -35,19 +42,24 @@ A powerful, modular application that allows you to chat with PDF documents using
    cd pdf-analyzer
    ```
 
-2. Install dependencies:
+2. Install PDM (if not already installed):
    ```bash
-   pip install -r requirements.txt
+   pip install pdm
    ```
 
-3. Run the application:
+3. Install dependencies:
    ```bash
-   streamlit run app.py
+   pdm install
    ```
 
-4. Open your browser at `http://localhost:8501`
+4. Run the application:
+   ```bash
+   pdm run start
+   ```
 
-5. Follow the initialization steps in the interface:
+5. Open your browser at `http://localhost:8501`
+
+6. Follow the initialization steps in the interface:
    - Approve required permissions
    - Click "Initialize System"
    - Upload your PDF documents
@@ -59,72 +71,81 @@ The application is built with a modular design for maintainability and extensibi
 
 ```
 pdf-analyzer/
-├── app.py                  # Main application entry point
-├── modules/                # Modular components
-│   ├── __init__.py         # Package initialization
-│   ├── system_setup.py     # Dependency and Ollama management
-│   ├── nlp_models.py       # NLP model loading and management
-│   ├── vector_store.py     # ChromaDB integration
-│   ├── pdf_processor.py    # PDF parsing and chunking
-│   ├── llm_interface.py    # Ollama integration
-│   ├── ui_components.py    # Reusable UI elements
-│   └── utils.py            # Utility functions
-├── chroma_vector_db/       # Vector database storage (created at runtime)
-├── requirements.txt        # Dependencies list
-└── README.md               # Project documentation
+├── app.py (main.py)      # Main application entry point
+├── modules/              # Modular components
+│   ├── __init__.py       # Package initialization
+│   ├── system_setup.py   # Dependency and Ollama management
+│   ├── nlp_models.py     # NLP model loading and management
+│   ├── vector_store.py   # ChromaDB integration with hybrid search
+│   ├── pdf_processor.py  # PDF parsing and chunking
+│   ├── llm_interface.py  # Enhanced Ollama integration
+│   ├── ui_components.py  # Reusable UI elements
+│   └── utils.py          # Utility functions
+├── chroma_vector_db/     # Vector database storage (created at runtime)
+├── pyproject.toml        # Project configuration and dependencies
+└── README.md             # Project documentation
 ```
 
-### Processing Pipeline
+### Enhanced Processing Pipeline
 
 1. **Document Upload**: PDFs are uploaded through the Streamlit interface
 2. **Text Extraction**: [OpenParse](https://github.com/hyperonym/openparse) extracts text while preserving structure
 3. **Smart Chunking**: Documents are split into semantic chunks with overlap for context preservation
 4. **Vector Embedding**: [Sentence-Transformers](https://www.sbert.net/) convert chunks into vector embeddings
 5. **Database Storage**: [ChromaDB](https://docs.trychroma.com/) stores embeddings for efficient retrieval
-6. **Query Processing**: User questions are embedded and matched against document chunks
-7. **Context Compilation**: Top matching chunks are combined to create context
-8. **LLM Response**: [Ollama](https://ollama.ai/) generates responses based on the context and query
+6. **Neural Caching**: Caches embeddings to avoid redundant processing
+7. **Query Reformulation**: Dynamically improves queries based on conversation context
+8. **Hybrid Retrieval**: Combines vector similarity and BM25 keyword search
+9. **Reranking**: [Jina Reranker](https://jina.ai/) improves search result relevance
+10. **Context Compilation**: Top matching chunks are combined to create context
+11. **LLM Response**: [Ollama](https://ollama.ai/) generates responses based on the context and query
 
 ## 📊 Features in Detail
 
-### Document Processing
+### Advanced Retrieval Pipeline
 
-The application uses a sophisticated document processing pipeline:
+The application uses state-of-the-art retrieval techniques:
 
-- **PDF Parsing**: Extracts text with structural awareness
-- **Smart Chunking Algorithm**: Creates semantic chunks that preserve context
-- **Overlap Strategy**: Ensures context flows between chunks
-- **Batch Processing**: Handles large documents efficiently
-- **Progress Tracking**: Real-time feedback on processing status
+- **Hybrid Search**: Combines the strengths of dense vector retrieval (semantic understanding) and sparse retrieval (keyword matching)
+- **Configurable Balance**: Adjust the weight between vector similarity and BM25 keyword search
+- **Neural Reranking**: Reorders search results to prioritize most relevant content
+- **Dynamic Query Reformulation**: Automatically enhances queries based on conversation context
 
-### Vector Search
+### Context-Aware Memory
 
-The vector database enables semantic search capabilities:
+The memory system maintains conversation context while managing token usage:
 
-- **Semantic Understanding**: Matches concepts, not just keywords
-- **Relevance Ranking**: Retrieves the most relevant document sections
-- **Efficient Storage**: Optimized for quick retrieval and minimum disk usage
-- **Persistence**: Retains document knowledge between sessions
+- **Sliding Window Memory**: Maintains recent conversation turns within token limits
+- **Dynamic Sizing**: Automatically adjusts memory based on conversation complexity
+- **Conversation Persistence**: Maintains context across multiple questions
 
-### Local LLM Integration
+### Neural Caching
 
-Integration with Ollama provides powerful local language model capabilities:
+The caching system improves performance for repeated operations:
 
-- **Model Selection**: Choose from available local models
-- **Role Customization**: Configure the assistant's expertise and behavior
-- **Conversation Memory**: Maintains context across multiple questions
-- **System Prompts**: Custom instructions for specialized knowledge domains
+- **Embedding Cache**: Avoids redundant text encoding operations
+- **Reranker Cache**: Stores reranking results for similar queries
+- **TTL-Based Expiry**: Automatically manages cache freshness and size
 
-### User Interface
+### User Interface Enhancements
 
-The three-panel interface provides an intuitive user experience:
+The interface provides intuitive controls for advanced features:
 
-- **Left Sidebar**: Document management and uploads
-- **Main Panel**: Chat interface with conversation history
-- **Right Sidebar**: Configuration options and settings
-- **Top Status Bar**: System resource monitoring
+- **Feature Toggles**: Enable/disable hybrid retrieval, reranking, and query reformulation
+- **Parameter Controls**: Fine-tune retrieval balance and other parameters
+- **Resource Monitoring**: View system resource usage in real-time
+- **Detailed Status Updates**: Clear feedback during processing operations
 
 ## ⚙️ Configuration Options
+
+### Advanced Retrieval Settings
+
+Fine-tune the document retrieval behavior:
+
+- **Hybrid Retrieval**: Toggle between standard vector search and hybrid vector+BM25
+- **Vector/Keyword Balance**: Adjust the balance between semantic and keyword search
+- **Reranker**: Enable/disable neural reranking of search results
+- **Query Reformulation**: Enable/disable automatic query improvement
 
 ### Assistant Roles
 
@@ -192,27 +213,25 @@ This application is designed with privacy in mind:
 
 ## 🔍 How It Works: Technical Details
 
-### Vector Embeddings
+### Hierarchical NSW Indexing
 
-The application uses the Sentence-Transformers library with the "all-MiniLM-L6-v2" model to convert text chunks into vector embeddings. These vectors represent the semantic meaning of text in a high-dimensional space, allowing for similarity matching based on meaning rather than exact keyword matches.
+The application uses Hierarchical Navigable Small World (HNSW) graph indexing in ChromaDB for extremely fast approximated nearest neighbor search. This approach significantly improves search performance for large document collections.
 
-### Retrieval-Augmented Generation (RAG)
+### Neural Reranking
 
-The application implements the RAG pattern:
+After initial retrieval, the Jina Reranker applies a neural model to reorder results based on a more sophisticated relevance assessment, dramatically improving the quality of context provided to the LLM.
 
-1. **Retrieval**: Finding the most relevant chunks from documents
-2. **Augmentation**: Using these chunks to provide context to the LLM
-3. **Generation**: Generating a response based on the query and context
+### Hybrid BM25 + Vector Search
 
-This approach combines the knowledge from your documents with the language model's capabilities, resulting in responses that are both relevant and coherent.
+The application combines two complementary search methods:
 
-### Adaptive Processing
+1. **Vector Search**: Captures semantic meaning and conceptual relationships
+2. **BM25 Okapi**: Captures keyword matches and rare/unique terms
+3. **Weighted Combination**: Blends results for optimal retrieval
 
-The application monitors system resources and adjusts its behavior:
+### Query Reformulation
 
-- **Batch Size Adaptation**: Adjusts processing batch sizes based on available memory
-- **Worker Thread Optimization**: Scales thread usage based on CPU load
-- **Memory Management**: Implements efficient cleanup to prevent memory leaks
+The application can intelligently reformulate user queries to incorporate conversation context, resolve references, and make implicit questions explicit, resulting in better document retrieval.
 
 ## 📚 Credits and References
 
@@ -225,7 +244,10 @@ This project builds upon several open-source libraries and tools:
 - [Ollama](https://ollama.ai/) - Local LLM runtime
 - [NLTK](https://www.nltk.org/) - Natural Language Toolkit for text processing
 - [spaCy](https://spacy.io/) - NLP framework
+- [Jina Reranker](https://jina.ai/) - Neural reranking library
+- [Rank-BM25](https://github.com/dorianbrown/rank_bm25) - BM25 keyword search implementation
 - [psutil](https://github.com/giampaolo/psutil) - System monitoring
+- [PDM](https://pdm.fming.dev/) - Python dependency manager
 
 ## 📄 License
 
