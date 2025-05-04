@@ -1,16 +1,25 @@
-# Optimized vector_store.py with hybrid search and reranking
-
+# modules/vector_store.py
+"""
+Optimized vector store with progressive indexing and memory-efficient retrieval.
+"""
 import os
 import time
 import streamlit as st
 import chromadb
 from chromadb.config import Settings
 import numpy as np
+import torch
 from rank_bm25 import BM25Okapi
 from typing import List, Dict, Any, Optional
 from FlagEmbedding import FlagReranker
 
 from modules.utils import log_error, create_directory_if_not_exists
+from modules.memory_utils import (
+    get_available_memory_mb, 
+    get_available_gpu_memory_mb,
+    memory_monitor,
+    get_gpu_memory_info
+)
 
 # Constants
 VECTOR_DB_PATH = "chroma_vector_db"
@@ -43,17 +52,71 @@ def get_chroma_client() -> Optional[chromadb.Client]:
         log_error(f"Failed to initialize ChromaDB client: {str(e)}")
         return None
 
-def get_reranker():
-    """Get or initialize the BGE Reranker."""
+def get_reranker(max_memory_gb=4):
+    """Get or initialize the BGE Reranker with memory constraints."""
     global _reranker
     if _reranker is None:
         try:
-            _reranker = FlagReranker('BAAI/bge-reranker-large', use_fp16=True)
-            log_error("BGE Reranker initialized successfully.")
+            # Check if we have sufficient memory
+            gpu_info = get_gpu_memory_info()
+            
+            if gpu_info["available"] and gpu_info["free_mb"] > max_memory_gb * 1024:
+                # Use large model on GPU
+                _reranker = FlagReranker('BAAI/bge-reranker-large', use_fp16=True)
+                log_error("Large BGE Reranker initialized on GPU.")
+            elif gpu_info["available"] and gpu_info["free_mb"] > (max_memory_gb * 1024) / 2:
+                # Use base model on GPU
+                _reranker = FlagReranker('BAAI/bge-reranker-base', use_fp16=True)
+                log_error("Base BGE Reranker initialized on GPU.")
+            else:
+                # Use smaller model on CPU
+                _reranker = FlagReranker('BAAI/bge-reranker-base', use_fp16=False, device='cpu')
+                log_error("Base BGE Reranker initialized on CPU.")
+                
         except Exception as e:
             log_error(f"Failed to initialize BGE Reranker: {str(e)}")
             return None
     return _reranker
+
+def _initialize_bm25_index_progressive(collection, batch_size=1000):
+    """Initialize BM25 index progressively with memory efficiency."""
+    global _bm25_index
+    try:
+        # Get total count first
+        count = collection.count()
+        if count == 0:
+            _bm25_index = BM25Okapi([])
+            return
+        
+        all_texts = []
+        
+        # Process in batches
+        for offset in range(0, count, batch_size):
+            # Check memory before loading batch
+            memory_monitor.check()
+            
+            limit = min(batch_size, count - offset)
+            batch_results = collection.get(
+                include=["metadatas"],
+                limit=limit,
+                offset=offset
+            )
+            
+            if batch_results and batch_results.get("metadatas"):
+                for meta in batch_results["metadatas"]:
+                    if meta and "text" in meta:
+                        all_texts.append(meta["text"].split())
+            
+            # Log progress
+            if offset % (batch_size * 5) == 0:
+                log_error(f"BM25 index progress: {offset}/{count}")
+        
+        _bm25_index = BM25Okapi(all_texts)
+        log_error(f"BM25 index initialized with {len(all_texts)} documents.")
+        
+    except Exception as e:
+        log_error(f"Error initializing BM25 index: {str(e)}")
+        _bm25_index = None
 
 def initialize_vector_db(dimensions: int = None) -> bool:
     """Initialize the vector database collection."""
@@ -66,9 +129,9 @@ def initialize_vector_db(dimensions: int = None) -> bool:
         try:
             collection = client.get_collection(name=COLLECTION_NAME)
             
-            # If collection exists and has data, initialize BM25
+            # If collection exists and has data, initialize BM25 progressively
             if collection.count() > 0:
-                _initialize_bm25_index(collection)
+                _initialize_bm25_index_progressive(collection)
                 
         except:
             collection = client.create_collection(
@@ -81,28 +144,6 @@ def initialize_vector_db(dimensions: int = None) -> bool:
     except Exception as e:
         log_error(f"Failed to initialize vector database: {str(e)}")
         return False
-
-def _initialize_bm25_index(collection):
-    """Initialize BM25 index from existing ChromaDB collection."""
-    global _bm25_index
-    try:
-        results = collection.get(include=["metadatas"])
-        
-        if not results or not results.get("metadatas"):
-            _bm25_index = BM25Okapi([])
-            return
-            
-        texts = []
-        for meta in results["metadatas"]:
-            if meta and "text" in meta:
-                texts.append(meta["text"].split())
-        
-        if texts:
-            _bm25_index = BM25Okapi(texts)
-            log_error(f"BM25 index initialized with {len(texts)} documents.")
-    except Exception as e:
-        log_error(f"Error initializing BM25 index: {str(e)}")
-        _bm25_index = None
 
 def get_chroma_collection():
     """Get the ChromaDB collection."""
@@ -122,7 +163,7 @@ def add_chunks_to_collection(
     collection,
     status = None
 ) -> bool:
-    """Add text chunks to the collection with BM25 indexing."""
+    """Add text chunks to the collection with memory-efficient processing."""
     if not chunks or not embedding_model or not collection:
         return False
 
@@ -131,44 +172,39 @@ def add_chunks_to_collection(
             status.update(label=label)
 
     try:
-        # Generate embeddings
-        _update_status("Generating embeddings...")
-        embeddings = embedding_model.encode(chunks)
+        # Check available memory and adjust batch size
+        available_memory = get_available_gpu_memory_mb() if torch.cuda.is_available() else get_available_memory_mb()
+        batch_size = max(10, min(100, int(available_memory / 50)))  # Rough estimate
         
-        # Generate IDs
-        timestamp = int(time.time() * 1000)
-        ids = [f"chunk_{timestamp}_{i}" for i in range(len(chunks))]
-        
-        # Create metadata
-        metadatas = [{"text": chunk} for chunk in chunks]
-        
-        # Add to collection
-        _update_status("Storing in vector database...")
-        collection.add(
-            ids=ids,
-            embeddings=embeddings.tolist(),
-            metadatas=metadatas
-        )
+        # Process in batches
+        for i in range(0, len(chunks), batch_size):
+            batch_chunks = chunks[i:i+batch_size]
+            
+            # Generate embeddings for batch
+            _update_status(f"Generating embeddings... ({i}/{len(chunks)})")
+            batch_embeddings = embedding_model.encode(batch_chunks)
+            
+            # Generate IDs
+            timestamp = int(time.time() * 1000)
+            batch_ids = [f"chunk_{timestamp}_{i+j}" for j in range(len(batch_chunks))]
+            
+            # Create metadata
+            batch_metadatas = [{"text": chunk} for chunk in batch_chunks]
+            
+            # Add to collection
+            _update_status(f"Storing in vector database... ({i}/{len(chunks)})")
+            collection.add(
+                ids=batch_ids,
+                embeddings=batch_embeddings.tolist(),
+                metadatas=batch_metadatas
+            )
+            
+            # Check memory and clear if needed
+            memory_monitor.check()
         
         # Update BM25 index
         _update_status("Updating BM25 index...")
-        bm25_tokenized_texts = [text.split() for text in chunks]
-        
-        global _bm25_index
-        if _bm25_index is None:
-            _bm25_index = BM25Okapi(bm25_tokenized_texts)
-        else:
-            # Recreate index with all documents
-            results = collection.get(include=["metadatas"])
-            all_texts = []
-            
-            if results and results.get("metadatas"):
-                for meta in results["metadatas"]:
-                    if meta and "text" in meta:
-                        all_texts.append(meta["text"].split())
-                
-                _bm25_index = BM25Okapi(all_texts)
-                log_error(f"Updated BM25 index with {len(all_texts)} documents.")
+        _initialize_bm25_index_progressive(collection)
         
         _update_status(f"Successfully stored {len(chunks)} chunks.")
         return True
@@ -187,20 +223,24 @@ def hybrid_retrieval(
     alpha: float = 0.7,
     use_reranker: bool = True,
 ) -> List[Dict]:
-    """Perform hybrid retrieval combining vector similarity and BM25."""
+    """Perform memory-efficient hybrid retrieval."""
     if not embedding_model or not collection:
         return []
     
     try:
+        # Calculate maximum candidates based on available memory
+        available_memory = get_available_memory_mb()
+        max_candidates = min(top_n * 3, max(20, int(available_memory / 10)))
+        
         # 1. Get vector results
         query_embedding = embedding_model.encode([query])[0].tolist()
         
         vector_results = collection.query(
             query_embeddings=[query_embedding],
-            n_results=min(top_n * 2, 100)
+            n_results=max_candidates
         )
         
-        # Extract vector results
+        # Extract vector results efficiently
         vector_items = []
         if vector_results and vector_results.get("ids") and vector_results["ids"][0]:
             for i, item_id in enumerate(vector_results["ids"][0]):
@@ -217,37 +257,48 @@ def hybrid_retrieval(
                             "score": vector_results["distances"][0][i] if "distances" in vector_results else 1.0
                         })
         
-        # 2. Get BM25 results
+        # 2. Get BM25 results with memory efficiency
         global _bm25_index
         bm25_items = []
         
         if _bm25_index is None:
-            _initialize_bm25_index(collection)
+            _initialize_bm25_index_progressive(collection)
         
         if _bm25_index is not None:
             try:
                 tokenized_query = query.split()
                 bm25_scores = _bm25_index.get_scores(tokenized_query)
-                top_indices = np.argsort(bm25_scores)[::-1][:top_n * 2]
+                top_indices = np.argsort(bm25_scores)[::-1][:max_candidates]
                 
-                all_docs = collection.get(include=["metadatas", "ids"])
-                
-                for idx in top_indices:
-                    if idx < len(all_docs["metadatas"]):
-                        metadata = all_docs["metadatas"][idx]
-                        if metadata and "text" in metadata:
-                            bm25_items.append({
-                                "id": all_docs["ids"][idx],
-                                "text": metadata["text"],
-                                "metadata": metadata,
-                                "score": float(bm25_scores[idx])
-                            })
+                # Get documents in batches to save memory
+                batch_size = 100
+                for batch_start in range(0, len(top_indices), batch_size):
+                    batch_indices = top_indices[batch_start:batch_start+batch_size]
+                    batch_docs = collection.get(
+                        include=["metadatas", "ids"],
+                        limit=len(batch_indices),
+                        offset=batch_indices[0] if len(batch_indices) > 0 else 0
+                    )
+                    
+                    for i, idx in enumerate(batch_indices):
+                        if i < len(batch_docs["metadatas"]):
+                            metadata = batch_docs["metadatas"][i]
+                            if metadata and "text" in metadata:
+                                bm25_items.append({
+                                    "id": batch_docs["ids"][i],
+                                    "text": metadata["text"],
+                                    "metadata": metadata,
+                                    "score": float(bm25_scores[idx])
+                                })
+                    
+                    # Check memory
+                    memory_monitor.check()
+                    
             except Exception as bm25_err:
                 log_error(f"Error in BM25 retrieval: {str(bm25_err)}")
         
-        # 3. Combine results
+        # 3. Combine results with memory-efficient normalization
         if vector_items:
-            # Normalize vector scores
             max_vector_score = max(item["score"] for item in vector_items)
             min_vector_score = min(item["score"] for item in vector_items)
             score_range = max_vector_score - min_vector_score
@@ -259,7 +310,6 @@ def hybrid_retrieval(
                     item["normalized_score"] = 1.0
         
         if bm25_items:
-            # Normalize BM25 scores
             max_bm25_score = max(item["score"] for item in bm25_items)
             min_bm25_score = min(item["score"] for item in bm25_items)
             score_range = max_bm25_score - min_bm25_score
@@ -297,9 +347,12 @@ def hybrid_retrieval(
         results.sort(key=lambda x: x["score"], reverse=True)
         results = results[:top_n]
         
-        # 4. Apply reranking if enabled
+        # 4. Apply reranking if enabled with memory check
         if use_reranker and results:
             try:
+                # Check memory before reranking
+                memory_monitor.check()
+                
                 reranker = get_reranker()
                 if reranker:
                     corpus = [r["text"] for r in results]

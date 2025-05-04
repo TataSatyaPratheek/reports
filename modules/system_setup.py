@@ -45,8 +45,9 @@ def ensure_dependencies() -> list:
         "rank-bm25": "0.2.2",
         "FlagEmbedding": "1.2.10",
         "pandas": "2.1.0",
-        "altair": "5.1.0"
-    }
+        "altair": "5.1.0",
+        "matplotlib": "3.7.2"  # Added for pandas styling
+     }
     
     mismatched_packages = []
     

@@ -1,5 +1,7 @@
-# Simplified nlp_models.py without NLTK dependencies
-
+# modules/nlp_models.py
+"""
+Optimized NLP Models module with enhanced model selection and memory management.
+"""
 import streamlit as st
 import os
 import spacy
@@ -12,13 +14,20 @@ import torch
 import gc
 import re
 from typing import Optional, Dict, List, Union, Tuple, Any
-from modules.utils import log_error, PerformanceMonitor
+from modules.utils import log_error
+from modules.memory_utils import (
+    get_available_memory_mb, 
+    get_available_gpu_memory_mb,
+    memory_monitor,
+    get_gpu_memory_info,
+    optimize_tensor_precision
+)
 
 # Define model names as constants
 SPACY_MODEL_NAME = "en_core_web_sm"
 TRAVEL_ENTITIES = ["DESTINATION", "ACCOMMODATION", "TRANSPORTATION", "ACTIVITY", "ATTRACTION"]
 
-# Embedding models hierarchy with memory requirements
+# Enhanced embedding models hierarchy with memory requirements
 EMBEDDING_MODELS = [
     {
         "name": "all-MiniLM-L6-v2",
@@ -26,6 +35,7 @@ EMBEDDING_MODELS = [
         "memory_mb": 80,
         "loader": "SentenceTransformer",
         "performance": "58.9 MTEB",
+        "speed_score": 95,
         "description": "Extremely lightweight, good for basic tasks"
     },
     {
@@ -34,6 +44,7 @@ EMBEDDING_MODELS = [
         "memory_mb": 120,
         "loader": "SentenceTransformer",
         "performance": "59.8 MTEB",
+        "speed_score": 90,
         "description": "Slightly better than L6, still very light"
     },
     {
@@ -42,6 +53,7 @@ EMBEDDING_MODELS = [
         "memory_mb": 90,
         "loader": "SentenceTransformer",
         "performance": "60.2 MTEB",
+        "speed_score": 92,
         "description": "Optimized for semantic similarity"
     },
     {
@@ -50,15 +62,8 @@ EMBEDDING_MODELS = [
         "memory_mb": 420,
         "loader": "SentenceTransformer",
         "performance": "63.3 MTEB",
+        "speed_score": 75,
         "description": "Good balance of performance and size"
-    },
-    {
-        "name": "sentence-transformers/all-distilroberta-v1",
-        "dimensions": 768,
-        "memory_mb": 350,
-        "loader": "SentenceTransformer",
-        "performance": "61.0 MTEB",
-        "description": "DistilRoBERTa-based, efficient"
     },
     {
         "name": "BAAI/bge-small-en-v1.5",
@@ -66,6 +71,7 @@ EMBEDDING_MODELS = [
         "memory_mb": 130,
         "loader": "SentenceTransformer",
         "performance": "62.2 MTEB",
+        "speed_score": 88,
         "description": "Small BGE model, good performance"
     },
     {
@@ -74,6 +80,7 @@ EMBEDDING_MODELS = [
         "memory_mb": 450,
         "loader": "SentenceTransformer",
         "performance": "64.2 MTEB",
+        "speed_score": 70,
         "description": "Base BGE model, better performance"
     },
     {
@@ -82,6 +89,7 @@ EMBEDDING_MODELS = [
         "memory_mb": 800,
         "loader": "SentenceTransformer",
         "performance": "65.1 MTEB",
+        "speed_score": 60,
         "description": "High performance Stella model"
     },
     {
@@ -90,6 +98,7 @@ EMBEDDING_MODELS = [
         "memory_mb": 1200,
         "loader": "BGEM3FlagModel",
         "performance": "66.0 MTEB",
+        "speed_score": 50,
         "description": "Most powerful, multi-lingual BGE"
     }
 ]
@@ -110,80 +119,17 @@ def clear_memory():
         torch.cuda.ipc_collect()
     gc.collect()
 
-def get_gpu_memory_info() -> Dict[str, float]:
-    """Get GPU memory information if available."""
-    if not torch.cuda.is_available():
-        return {"available": False, "total_mb": 0, "free_mb": 0, "used_mb": 0}
+def select_best_embedding_model(gpu_info: Dict[str, float], preferred_model: Optional[str] = None, performance_target: str = "balanced") -> Dict[str, Any]:
+    """Enhanced model selection with performance profiling."""
+    # Performance weights for different optimization targets
+    performance_weights = {
+        "low_latency": {"speed": 0.7, "memory": 0.2, "accuracy": 0.1},
+        "high_accuracy": {"speed": 0.1, "memory": 0.2, "accuracy": 0.7},
+        "balanced": {"speed": 0.3, "memory": 0.3, "accuracy": 0.4}
+    }
     
-    try:
-        device = torch.cuda.current_device()
-        gpu_properties = torch.cuda.get_device_properties(device)
-        total_memory = gpu_properties.total_memory / (1024 * 1024)  # Convert to MB
-        allocated_memory = torch.cuda.memory_allocated(device) / (1024 * 1024)
-        reserved_memory = torch.cuda.memory_reserved(device) / (1024 * 1024)
-        free_memory = total_memory - reserved_memory
-        
-        return {
-            "available": True,
-            "device_name": gpu_properties.name,
-            "total_mb": total_memory,
-            "free_mb": free_memory,
-            "used_mb": allocated_memory,
-            "reserved_mb": reserved_memory
-        }
-    except Exception as e:
-        log_error(f"Error getting GPU memory info: {str(e)}")
-        return {"available": False, "total_mb": 0, "free_mb": 0, "used_mb": 0}
-
-def get_embedding_dimensions(embedding_model) -> int:
-    """Get the dimensions of the embedding model dynamically."""
-    try:
-        # Check if this is a known model with predefined dimensions
-        model_name = getattr(embedding_model, 'model_name', None)
-        if model_name:
-            for model_info in EMBEDDING_MODELS:
-                if model_info["name"] == model_name:
-                    return model_info["dimensions"]
-        
-        # Fallback to dynamic detection
-        test_text = "test sentence for dimension check"
-        
-        # Handle different model types
-        if hasattr(embedding_model, 'encode'):
-            output = embedding_model.encode([test_text])
-            
-            # Handle different output formats
-            if isinstance(output, dict):
-                # BGE-M3 style output
-                if 'dense_vecs' in output:
-                    return len(output['dense_vecs'][0])
-                elif 'embeddings' in output:
-                    return len(output['embeddings'][0])
-                elif 'sentence_embedding' in output:
-                    return len(output['sentence_embedding'][0])
-                else:
-                    # Try to find any tensor-like value in the dict
-                    for key, value in output.items():
-                        if hasattr(value, 'shape') and len(value.shape) >= 2:
-                            return value.shape[1]
-                    raise ValueError(f"Unknown embedding dictionary format: {output.keys()}")
-            else:
-                # Standard numpy array or tensor output
-                if hasattr(output, 'shape'):
-                    return output.shape[1] if len(output.shape) > 1 else len(output[0])
-                else:
-                    return len(output[0])
-        
-        # If we can't determine dimensions, return default
-        log_error(f"Could not determine embedding dimensions for model type: {type(embedding_model)}")
-        return 384  # Default to common dimension
-        
-    except Exception as e:
-        log_error(f"Error getting embedding dimensions: {str(e)}")
-        return 384  # Default to common dimension
-
-def select_best_embedding_model(gpu_info: Dict[str, float], preferred_model: Optional[str] = None) -> Dict[str, Any]:
-    """Select the best embedding model based on available resources."""
+    weights = performance_weights.get(performance_target, performance_weights["balanced"])
+    
     # If user specified a model, try to use it if possible
     if preferred_model:
         for model in EMBEDDING_MODELS:
@@ -194,33 +140,44 @@ def select_best_embedding_model(gpu_info: Dict[str, float], preferred_model: Opt
                     log_error(f"Preferred model {preferred_model} requires {model['memory_mb']}MB but only {gpu_info['free_mb']}MB available")
                     break
     
-    # If no GPU or in CPU mode, use the lightest model
-    if not gpu_info["available"]:
-        return EMBEDDING_MODELS[0]  # all-MiniLM-L6-v2
-    
-    # Select the best model that fits in available memory (with 20% buffer)
-    selected_model = EMBEDDING_MODELS[0]  # Default to lightest
-    
+    # Score and select models based on target
+    scored_models = []
     for model in EMBEDDING_MODELS:
-        required_memory = model["memory_mb"] * 1.2  # Add 20% buffer
-        if gpu_info["free_mb"] >= required_memory:
-            selected_model = model
-        else:
-            break  # Models are ordered by size, so stop if one doesn't fit
+        # Skip models that don't fit in memory
+        if gpu_info["available"] and model["memory_mb"] * 1.2 > gpu_info["free_mb"]:
+            continue
+        
+        # Extract accuracy score
+        accuracy_score = float(model["performance"].split()[0])
+        
+        # Calculate composite score
+        score = (
+            model["speed_score"] / 100.0 * weights["speed"] +
+            (1 - model["memory_mb"] / 1500.0) * weights["memory"] +  # Normalize by max expected memory
+            accuracy_score / 70.0 * weights["accuracy"]  # Normalize by max expected accuracy
+        )
+        
+        scored_models.append((model, score))
     
-    return selected_model
-
-# Remove this function as we don't need NLTK resources anymore
-# @st.cache_resource(show_spinner="Loading NLTK resources...")
-# def load_nltk_resources():
+    # Return best model or fallback to lightest
+    if scored_models:
+        return max(scored_models, key=lambda x: x[1])[0]
+    
+    return EMBEDDING_MODELS[0]  # Fallback to lightest model
 
 @st.cache_resource(show_spinner=f"Loading SpaCy model ({SPACY_MODEL_NAME})...")
-def load_spacy_model():
-    """Load spaCy model with memory-efficient settings."""
+def load_spacy_model(components: List[str] = None):
+    """Load only required SpaCy components for memory efficiency."""
+    if components is None:
+        components = ["ner"]  # Default to NER only
+    
     try:
-        # Load with memory optimizations
-        nlp = spacy.load(SPACY_MODEL_NAME, 
-                        exclude=["tok2vec", "tagger", "parser", "attribute_ruler", "lemmatizer"])
+        # Determine which components to exclude
+        all_components = ["tok2vec", "tagger", "parser", "attribute_ruler", "lemmatizer", "ner"]
+        exclude = [comp for comp in all_components if comp not in components]
+        
+        # Load with specific components only
+        nlp = spacy.load(SPACY_MODEL_NAME, exclude=exclude)
         
         # Add custom components if needed
         if "ner" in nlp.pipe_names:
@@ -239,22 +196,16 @@ def load_spacy_model():
             result = subprocess.run([sys.executable, "-m", "spacy", "download", SPACY_MODEL_NAME],
                                  check=True, capture_output=True, text=True, timeout=300)
             st.success(f"Successfully downloaded '{SPACY_MODEL_NAME}'.")
-            return spacy.load(SPACY_MODEL_NAME)
+            return spacy.load(SPACY_MODEL_NAME, exclude=exclude)
         except Exception as e:
             err_msg = f"Failed to download SpaCy model: {str(e)}"
             st.error(err_msg)
             log_error(err_msg)
             return None
 
-@st.cache_resource(show_spinner="Selecting best embedding model...")
-def get_model_selection_info():
-    """Get information about available models and system resources."""
-    gpu_info = get_gpu_memory_info()
-    return gpu_info, EMBEDDING_MODELS
-
 @st.cache_resource(show_spinner="Loading embedding model...")
-def load_embedding_model(preferred_model: Optional[str] = None):
-    """Load embedding model with intelligent selection based on available resources."""
+def load_embedding_model(preferred_model: Optional[str] = None, performance_target: str = "balanced"):
+    """Load embedding model with enhanced intelligent selection based on available resources."""
     func_name = "load_embedding_model"
     
     try:
@@ -264,8 +215,8 @@ def load_embedding_model(preferred_model: Optional[str] = None):
         # Get GPU information
         gpu_info = get_gpu_memory_info()
         
-        # Select the best model for available resources
-        selected_model = select_best_embedding_model(gpu_info, preferred_model)
+        # Select the best model for available resources and target
+        selected_model = select_best_embedding_model(gpu_info, preferred_model, performance_target)
         model_name = selected_model["name"]
         loader_type = selected_model["loader"]
         
@@ -283,20 +234,24 @@ def load_embedding_model(preferred_model: Optional[str] = None):
         st.info(f"   • Description: {selected_model['description']}")
         st.info(f"   • Memory requirement: {selected_model['memory_mb']}MB")
         
+        # Determine device and precision
+        device = 'cuda' if gpu_info["available"] and gpu_info["free_mb"] > selected_model["memory_mb"] * 1.5 else 'cpu'
+        use_fp16 = device == 'cuda' and gpu_info["free_mb"] > selected_model["memory_mb"] * 2
+        
         # Load the model based on loader type
         if loader_type == "BGEM3FlagModel":
-            # Use BGE-M3 specific loader
-            device = 'cuda' if gpu_info["available"] and gpu_info["free_mb"] > selected_model["memory_mb"] * 1.5 else 'cpu'
-            use_fp16 = device == 'cuda'
-            
             model = BGEM3FlagModel(model_name, 
                                  device=device, 
                                  use_fp16=use_fp16,
                                  normalize_embeddings=True)
         else:
-            # Use SentenceTransformer loader
-            device = 'cuda' if gpu_info["available"] and gpu_info["free_mb"] > selected_model["memory_mb"] * 1.5 else 'cpu'
             model = SentenceTransformer(model_name, device=device)
+            
+            # Apply precision optimization
+            if use_fp16:
+                autocast_ctx, model = optimize_tensor_precision(model, "fp16")
+            else:
+                autocast_ctx, model = optimize_tensor_precision(model, "fp32")
         
         # Store model name in the model object
         model.model_name = model_name
@@ -322,35 +277,41 @@ def load_embedding_model(preferred_model: Optional[str] = None):
         if 'tried_fallback' not in st.session_state:
             st.session_state.tried_fallback = True
             st.warning("Attempting to load fallback model (all-MiniLM-L6-v2)...")
-            return load_embedding_model("all-MiniLM-L6-v2")
+            return load_embedding_model("all-MiniLM-L6-v2", "low_latency")
         
         return None
 
-def extract_tourism_entities(text: str, nlp=None) -> Dict[str, List[str]]:
-    """Extract tourism-related entities from text with memory efficiency."""
+def extract_tourism_entities_streaming(text: str, nlp=None, chunk_size: int = 5000, overlap: int = 100) -> Dict[str, List[str]]:
+    """Extract entities using a streaming approach for memory efficiency."""
     if not nlp:
-        nlp = load_spacy_model()
+        nlp = load_spacy_model(components=["ner"])
         if not nlp:
             return {entity_type: [] for entity_type in TRAVEL_ENTITIES}
     
-    # Process in smaller chunks for memory efficiency
-    MAX_TEXT_LENGTH = 100000  # Limit text length
-    if len(text) > MAX_TEXT_LENGTH:
-        text = text[:MAX_TEXT_LENGTH]
-    
-    doc = nlp(text)
     results = {entity_type: [] for entity_type in TRAVEL_ENTITIES}
     
-    # Extract entities from spaCy NER
-    for ent in doc.ents:
-        if ent.label_ == "GPE" or ent.label_ == "LOC":
-            results["DESTINATION"].append(ent.text)
-        elif ent.label_ == "FAC" or ent.label_ == "ORG":
-            entity_text = ent.text.lower()
-            for category, keywords in TOURISM_KEYWORDS.items():
-                if any(keyword in entity_text for keyword in keywords):
-                    results[category].append(ent.text)
-                    break
+    # Process text in overlapping chunks
+    for i in range(0, len(text), chunk_size - overlap):
+        chunk = text[i:min(i + chunk_size, len(text))]
+        doc = nlp(chunk)
+        
+        # Extract entities from this chunk
+        for ent in doc.ents:
+            if ent.label_ == "GPE" or ent.label_ == "LOC":
+                results["DESTINATION"].append(ent.text)
+            elif ent.label_ == "FAC" or ent.label_ == "ORG":
+                entity_text = ent.text.lower()
+                for category, keywords in TOURISM_KEYWORDS.items():
+                    if any(keyword in entity_text for keyword in keywords):
+                        results[category].append(ent.text)
+                        break
+        
+        # Clear spaCy document from memory
+        del doc
+        
+        # Check memory periodically
+        if i % (chunk_size * 5) == 0:
+            memory_monitor.check()
     
     # Remove duplicates and sort
     for category in results:
@@ -358,8 +319,49 @@ def extract_tourism_entities(text: str, nlp=None) -> Dict[str, List[str]]:
     
     return results
 
+def get_embedding_dimensions(embedding_model) -> int:
+    """Get the dimensions of the embedding model dynamically with memory efficiency."""
+    try:
+        # Check if this is a known model with predefined dimensions
+        model_name = getattr(embedding_model, 'model_name', None)
+        if model_name:
+            for model_info in EMBEDDING_MODELS:
+                if model_info["name"] == model_name:
+                    return model_info["dimensions"]
+        
+        # Fallback to dynamic detection with minimal text
+        test_text = "test"
+        
+        if hasattr(embedding_model, 'encode'):
+            output = embedding_model.encode([test_text], batch_size=1, show_progress_bar=False)
+            
+            if isinstance(output, dict):
+                if 'dense_vecs' in output:
+                    return len(output['dense_vecs'][0])
+                elif 'embeddings' in output:
+                    return len(output['embeddings'][0])
+                elif 'sentence_embedding' in output:
+                    return len(output['sentence_embedding'][0])
+                else:
+                    for key, value in output.items():
+                        if hasattr(value, 'shape') and len(value.shape) >= 2:
+                            return value.shape[1]
+                    raise ValueError(f"Unknown embedding dictionary format: {output.keys()}")
+            else:
+                if hasattr(output, 'shape'):
+                    return output.shape[1] if len(output.shape) > 1 else len(output[0])
+                else:
+                    return len(output[0])
+        
+        # Default fallback
+        return 384
+        
+    except Exception as e:
+        log_error(f"Error getting embedding dimensions: {str(e)}")
+        return 384  # Default to common dimension
+
 def calculate_text_complexity(text: str) -> Dict[str, float]:
-    """Calculate text complexity metrics with simplified sentence/word parsing."""
+    """Calculate text complexity metrics with memory efficiency."""
     if not text:
         return {
             "avg_word_length": 0,
@@ -368,6 +370,11 @@ def calculate_text_complexity(text: str) -> Dict[str, float]:
         }
     
     try:
+        # Process in chunks for very large texts
+        max_chars = 10000
+        if len(text) > max_chars:
+            text = text[:max_chars]
+        
         # Simple sentence splitting by common punctuation
         sentences = re.split(r'[.!?]+\s*', text)
         sentences = [s.strip() for s in sentences if s.strip()]
@@ -404,7 +411,13 @@ def calculate_text_complexity(text: str) -> Dict[str, float]:
             "readability_score": 0
         }
 
-async def async_load_embedding_model(preferred_model: Optional[str] = None):
+@st.cache_resource(show_spinner="Selecting best embedding model...")
+def get_model_selection_info():
+    """Get information about available models and system resources."""
+    gpu_info = get_gpu_memory_info()
+    return gpu_info, EMBEDDING_MODELS
+
+async def async_load_embedding_model(preferred_model: Optional[str] = None, performance_target: str = "balanced"):
     """Async wrapper for loading embedding model."""
     loop = asyncio.get_event_loop()
-    return await loop.run_in_executor(None, load_embedding_model, preferred_model)
+    return await loop.run_in_executor(None, load_embedding_model, preferred_model, performance_target)

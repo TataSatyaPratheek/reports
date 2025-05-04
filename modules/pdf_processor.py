@@ -1,10 +1,12 @@
+# modules/pdf_processor.py
 """
-Optimized PDF Processor Module - Handles PDF parsing with OpenParse and image extraction.
+Optimized PDF Processor Module with memory-efficient processing.
 """
 import tempfile
 import time
 import os
 import re
+import gc
 from typing import List, Dict, Any, Optional
 
 import streamlit as st
@@ -13,9 +15,19 @@ import fitz  # PyMuPDF for image extraction
 from streamlit.delta_generator import DeltaGenerator
 
 from modules.utils import log_error, create_directory_if_not_exists
+from modules.memory_utils import memory_monitor, get_available_memory_mb
 
-def chunk_text(text: str, chunk_size: int = 512, overlap: int = 64) -> List[str]:
-    """Simple text chunking by character count with overlap."""
+@st.cache_resource
+def get_openparse_parser():
+    """Get a cached OpenParse parser instance."""
+    try:
+        return openparse.DocumentParser()
+    except Exception as e:
+        log_error(f"Failed to initialize DocumentParser: {str(e)}")
+        return None
+
+def chunk_text_stream(text: str, chunk_size: int = 512, overlap: int = 64, callback=None) -> List[str]:
+    """Stream-based text chunking with memory efficiency."""
     if not text or not text.strip():
         return []
     
@@ -26,6 +38,15 @@ def chunk_text(text: str, chunk_size: int = 512, overlap: int = 64) -> List[str]
         chunk = text[i:i + chunk_size]
         if chunk:
             chunks.append(chunk)
+            
+            # Callback for progress updates
+            if callback and len(chunks) % 10 == 0:
+                callback(len(chunks))
+            
+            # Memory management for very large documents
+            if len(chunks) % 100 == 0:
+                memory_monitor.check()
+                gc.collect()
     
     return chunks
 
@@ -37,10 +58,9 @@ def process_uploaded_pdf(
     extract_images: bool = True,
     image_output_dir: str = "extracted_images"
 ) -> List[Dict[str, Any]]:
-    """Process PDF with OpenParse and optional image extraction."""
+    """Process PDF with memory-efficient parsing and optional image extraction."""
     chunks = []
     tmp_file_path = None
-    parser = None
     
     def _update_status(label: str):
         """Helper to update status if provided."""
@@ -54,12 +74,11 @@ def process_uploaded_pdf(
             tmp_file.write(uploaded_file.read())
             tmp_file_path = tmp_file.name
         
-        # Initialize OpenParse parser
+        # Get parser from pool
         _update_status("Initializing document parser...")
-        try:
-            parser = openparse.DocumentParser()
-        except Exception as parser_init_e:
-            log_error(f"Failed to initialize DocumentParser: {str(parser_init_e)}")
+        parser = get_openparse_parser()
+        
+        if not parser:
             # Fallback to PyMuPDF if OpenParse fails
             _update_status("Using fallback PDF parser...")
             return fallback_pdf_processing(tmp_file_path, uploaded_file.name, chunk_size, overlap, extract_images, image_output_dir)
@@ -71,7 +90,7 @@ def process_uploaded_pdf(
         # Handle image extraction if requested
         if extract_images:
             _update_status("Extracting images from PDF...")
-            image_paths = extract_images_from_pdf(tmp_file_path, image_output_dir, uploaded_file.name)
+            image_paths = extract_images_paginated(tmp_file_path, image_output_dir, uploaded_file.name)
             if image_paths:
                 _update_status(f"Extracted {len(image_paths)} images.")
         
@@ -81,14 +100,16 @@ def process_uploaded_pdf(
         
         if not text_data:
             _update_status("No text content found, trying fallback method...")
-            # Fallback to PyMuPDF for text extraction
             return fallback_pdf_processing(tmp_file_path, uploaded_file.name, chunk_size, overlap, extract_images, image_output_dir)
         
-        # Chunk the extracted text
+        # Stream-based chunking
         _update_status(f"Chunking text ({len(text_data)} sections)...")
         
         for idx, text_section in enumerate(text_data):
-            section_chunks = chunk_text(text_section, chunk_size, overlap)
+            def chunk_callback(count):
+                _update_status(f"Section {idx+1}/{len(text_data)}: {count} chunks")
+            
+            section_chunks = chunk_text_stream(text_section, chunk_size, overlap, chunk_callback)
             
             for chunk_idx, chunk in enumerate(section_chunks):
                 chunks.append({
@@ -100,6 +121,9 @@ def process_uploaded_pdf(
                         "source": "openparse"
                     }
                 })
+            
+            # Memory management between sections
+            memory_monitor.check()
         
         _update_status(f"Generated {len(chunks)} chunks.")
         return chunks
@@ -123,30 +147,42 @@ def fallback_pdf_processing(
     extract_images: bool = True,
     image_output_dir: str = "extracted_images"
 ) -> List[Dict[str, Any]]:
-    """Fallback PDF processing using PyMuPDF when OpenParse fails."""
+    """Fallback PDF processing using PyMuPDF with memory optimization."""
     chunks = []
     
     try:
         # Open PDF with PyMuPDF
         doc = fitz.open(pdf_path)
+        
+        # Process in pages to avoid memory overload
+        pages_per_batch = 10
         full_text = ""
         
-        # Extract text from all pages
-        for page_num in range(len(doc)):
-            page = doc[page_num]
-            text = page.get_text()
-            if text:
-                full_text += text + "\n"
+        for page_batch_start in range(0, len(doc), pages_per_batch):
+            batch_text = ""
+            batch_end = min(page_batch_start + pages_per_batch, len(doc))
+            
+            # Extract text from batch of pages
+            for page_num in range(page_batch_start, batch_end):
+                page = doc[page_num]
+                text = page.get_text()
+                if text:
+                    batch_text += text + "\n"
+            
+            full_text += batch_text
+            
+            # Memory management between batches
+            memory_monitor.check()
         
         # Extract images if requested
         if extract_images:
-            extract_images_from_pdf(pdf_path, image_output_dir, filename)
+            extract_images_paginated(pdf_path, image_output_dir, filename)
         
         doc.close()
         
         # Chunk the text
         if full_text.strip():
-            text_chunks = chunk_text(full_text, chunk_size, overlap)
+            text_chunks = chunk_text_stream(full_text, chunk_size, overlap)
             
             for i, chunk in enumerate(text_chunks):
                 chunks.append({
@@ -164,12 +200,13 @@ def fallback_pdf_processing(
         log_error(f"Fallback PDF processing failed: {str(e)}")
         return []
 
-def extract_images_from_pdf(
+def extract_images_paginated(
     pdf_path: str, 
     output_dir: str, 
-    base_filename: str
+    base_filename: str,
+    max_pages_per_batch: int = 5
 ) -> List[str]:
-    """Extract images from PDF for tourism content analysis."""
+    """Extract images from PDF with memory-efficient pagination."""
     image_paths = []
     
     try:
@@ -183,36 +220,45 @@ def extract_images_from_pdf(
         
         # Open the PDF
         doc = fitz.open(pdf_path)
+        total_pages = len(doc)
         image_count = 0
         
-        # Iterate through pages
-        for page_num, page in enumerate(doc):
-            # Get images from page
-            image_list = page.get_images(full=True)
+        # Process in batches
+        for batch_start in range(0, total_pages, max_pages_per_batch):
+            batch_end = min(batch_start + max_pages_per_batch, total_pages)
             
-            for img_index, img_info in enumerate(image_list):
-                xref = img_info[0]
+            # Extract images from batch
+            for page_num in range(batch_start, batch_end):
+                page = doc[page_num]
+                image_list = page.get_images(full=True)
                 
-                try:
-                    # Extract image
-                    base_image = doc.extract_image(xref)
-                    image_data = base_image["image"]
-                    image_ext = base_image["ext"]
+                for img_index, img_info in enumerate(image_list):
+                    xref = img_info[0]
                     
-                    # Only process if the image is large enough (avoid small icons)
-                    if len(image_data) > 10000:  # Skip tiny images
-                        image_count += 1
-                        image_name = f"{clean_name}_page{page_num+1}_img{image_count}.{image_ext}"
-                        image_path = os.path.join(output_dir, image_name)
+                    try:
+                        # Extract image
+                        base_image = doc.extract_image(xref)
+                        image_data = base_image["image"]
+                        image_ext = base_image["ext"]
                         
-                        # Save image
-                        with open(image_path, "wb") as f:
-                            f.write(image_data)
-                        
-                        image_paths.append(image_path)
-                except Exception as img_err:
-                    log_error(f"Error extracting image {img_index} from page {page_num+1}: {str(img_err)}")
-                    continue
+                        # Only process if the image is large enough (avoid small icons)
+                        if len(image_data) > 10000:  # Skip tiny images
+                            image_count += 1
+                            image_name = f"{clean_name}_page{page_num+1}_img{image_count}.{image_ext}"
+                            image_path = os.path.join(output_dir, image_name)
+                            
+                            # Save image
+                            with open(image_path, "wb") as f:
+                                f.write(image_data)
+                            
+                            image_paths.append(image_path)
+                    except Exception as img_err:
+                        log_error(f"Error extracting image {img_index} from page {page_num+1}: {str(img_err)}")
+                        continue
+            
+            # Memory management between batches
+            memory_monitor.check()
+            gc.collect()
         
         doc.close()
         return image_paths
