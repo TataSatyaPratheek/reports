@@ -189,6 +189,8 @@ def apply_tourism_theme():
     </style>
     """, unsafe_allow_html=True)
 
+# Updated display_chat function in ui_components.py
+
 def display_chat(messages: List[Dict[str, str]], current_role: str = "Tourism Assistant"):
     """
     Render chat messages with improved styling and tourism-specific features.
@@ -201,27 +203,27 @@ def display_chat(messages: List[Dict[str, str]], current_role: str = "Tourism As
         st.info("No messages yet. Ask a question about travel trends, payment methods, market segments, or specific tourism topics.")
         
         # Show sample questions when chat is empty
-        with st.expander("Sample Questions", expanded=True):
-            st.markdown("### Try asking about:")
-            sample_questions = [
-                "What are the main trends in travel for 2025?",
-                "How do payment methods differ between luxury and budget travelers?",
-                "What are the key market segments in tourism?",
-                "Tell me about sustainability trends in tourism.",
-                "How are Gen Z travelers different from other generations?",
-                "What are the unique characteristics of luxury travel?",
-                "What payment methods are popular for international travel?",
-                "How can tourism businesses better target different segments?"
-            ]
-            
-            cols = st.columns(2)
-            for i, question in enumerate(sample_questions):
-                with cols[i % 2]:
-                    if st.button(question, key=f"sample_q_{i}", use_container_width=True):
-                        # Add selected question to session state for parent to handle
-                        if "selected_sample_question" not in st.session_state:
-                            st.session_state.selected_sample_question = question
-                            # Will be handled by parent component on next rerun
+        st.markdown("### Sample Questions")
+        sample_questions = [
+            "What are the main trends in travel for 2025?",
+            "How do payment methods differ between luxury and budget travelers?",
+            "What are the key market segments in tourism?",
+            "Tell me about sustainability trends in tourism.",
+            "How are Gen Z travelers different from other generations?",
+            "What are the unique characteristics of luxury travel?",
+            "What payment methods are popular for international travel?",
+            "How can tourism businesses better target different segments?"
+        ]
+        
+        # Use columns instead of expander to avoid nesting issues
+        for i, question in enumerate(sample_questions):
+            if st.button(question, key=f"sample_q_{i}", use_container_width=True):
+                # Store the selected question in session state
+                st.session_state.selected_sample_question = question
+                # Force a rerun to process the question
+                st.rerun()
+        
+        st.markdown("---")
         return
     
     # Display messages

@@ -333,6 +333,66 @@ def render_tourism_sidebar():
                     key="conversation_memory_count"
                 )
             
+            # --- Embedding Model Selection ---
+            with st.expander("🧠 Embedding Model", expanded=False):
+                st.markdown("### Select Embedding Model")
+                
+                # Get available models and GPU info
+                from modules.nlp_models import get_model_selection_info
+                gpu_info, available_models = get_model_selection_info()
+                
+                # Display GPU info
+                if gpu_info["available"]:
+                    st.info(f"🖥️ GPU: {gpu_info['device_name']}")
+                    st.info(f"💾 Memory: {gpu_info['free_mb']:.0f}MB free / {gpu_info['total_mb']:.0f}MB total")
+                else:
+                    st.info("🖥️ Running in CPU mode")
+                
+                # Model selection
+                model_names = [model["name"] for model in available_models]
+                model_descriptions = [f"{model['name']} - {model['description']} ({model['memory_mb']}MB)" for model in available_models]
+                
+                # Get current model from session state or use default
+                current_model = st.session_state.get("selected_embedding_model", "all-MiniLM-L6-v2")
+                
+                try:
+                    current_index = model_names.index(current_model)
+                except ValueError:
+                    current_index = 0
+                
+                selected_model_index = st.selectbox(
+                    "Choose Embedding Model",
+                    range(len(model_names)),
+                    index=current_index,
+                    format_func=lambda i: model_descriptions[i],
+                    help="Select the embedding model based on your hardware capabilities"
+                )
+                
+                selected_model = available_models[selected_model_index]
+                
+                # Display model details
+                st.markdown(f"**Performance:** {selected_model['performance']}")
+                st.markdown(f"**Dimensions:** {selected_model['dimensions']}")
+                st.markdown(f"**Memory Required:** {selected_model['memory_mb']}MB")
+                
+                # Check if the selected model can run on available hardware
+                if gpu_info["available"]:
+                    required_memory = selected_model["memory_mb"] * 1.2  # 20% buffer
+                    if gpu_info["free_mb"] < required_memory:
+                        st.warning(f"⚠️ Selected model requires {required_memory:.0f}MB but only {gpu_info['free_mb']:.0f}MB is available. May run on CPU instead.")
+                
+                # Apply button to actually change the model
+                if st.button("Apply Model Selection", type="primary", use_container_width=True):
+                    st.session_state.selected_embedding_model = selected_model["name"]
+                    
+                    # Clear the cached embedding model to force reload
+                    st.cache_resource.clear()
+                    
+                    st.success(f"Selected embedding model: {selected_model['name']}")
+                    st.info("Reinitialize the system to load the new model.")
+                    time.sleep(1)
+                    st.rerun()
+            
             # --- Advanced Retrieval Features ---
             with st.expander("🧠 Advanced Features", expanded=False):
                 st.toggle(
@@ -605,6 +665,8 @@ def display_tourism_insights():
         st.info("Process tourism documents to generate insights. The dashboard will show visualizations of market segments, payment methods, and travel trends extracted from your documents.")
 
 # --- Tourism chat interface ---
+# Updated render_tourism_chat_interface function in app.py
+
 def render_tourism_chat_interface(params):
     """Render the tourism-focused chat interface with enhanced features."""
     st.markdown("---")
@@ -708,21 +770,27 @@ def render_tourism_chat_interface(params):
              st.session_state.messages.append({"role": "assistant", "content": answer})
              st.rerun()
         else:
-            # Use enhanced tourism-focused LLM query
-            with st.status("Analyzing tourism data...", expanded=False) as status:
-                answer = query_llm(
-                    user_query=last_user_query,
-                    top_n=params["top_n"],
-                    local_llm_model=params["local_llm_model"],
-                    embedding_model=embedding_model,
-                    collection=collection,
-                    conversation_memory=conversation_memory,
-                    system_prompt=params["system_prompt"],
-                    use_hybrid_retrieval=params["use_hybrid_retrieval"],
-                    use_query_reformulation=params["use_query_reformulation"],
-                    hybrid_alpha=params["hybrid_alpha"],
-                    use_reranker=params["use_reranker"]
-                )
+            # Use enhanced tourism-focused LLM query with proper status context
+            try:
+                status_container = st.empty()
+                with status_container.container():
+                    with st.status("Analyzing tourism data...", expanded=False) as status:
+                        answer = query_llm(
+                            user_query=last_user_query,
+                            top_n=params["top_n"],
+                            local_llm_model=params["local_llm_model"],
+                            embedding_model=embedding_model,
+                            collection=collection,
+                            conversation_memory=conversation_memory,
+                            system_prompt=params["system_prompt"],
+                            use_hybrid_retrieval=params["use_hybrid_retrieval"],
+                            use_query_reformulation=params["use_query_reformulation"],
+                            hybrid_alpha=params["hybrid_alpha"],
+                            use_reranker=params["use_reranker"]
+                        )
+            except Exception as e:
+                answer = f"Error processing query: {str(e)}"
+                logger.error(answer)
             
             st.session_state.messages.append({"role": "assistant", "content": answer})
             # Add to sliding window memory
@@ -780,7 +848,7 @@ def initialize_system():
     # --- Load NLP Resources ---
     logger.info("Loading tourism analysis models...")
 
-    # Ensure NLTK data path is set correctly (incorporating manual fix)
+    # Ensure NLTK data path is set correctly
     import nltk
     import os
     NLTK_DATA_PATH = os.path.expanduser('~/nltk_data')
@@ -791,13 +859,19 @@ def initialize_system():
     if not nltk_ready:
         overall_success = False
         error_messages.append("Failed to download/verify NLTK resources (e.g., 'punkt'). Chunking may fail.")
-        # Continue for now, but log the error
 
     nlp_model = load_spacy_model()
-    embedding_model = load_embedding_model()
+    
+    # --- Load Embedding Model with Smart Selection ---
+    preferred_model = st.session_state.get("selected_embedding_model", None)
+    embedding_model = load_embedding_model(preferred_model)
+    
     if not nlp_model or not embedding_model:
         overall_success = False
-        error_messages.append("Tourism NLP model initialization failed.")
+        if not nlp_model:
+            error_messages.append("Tourism NLP (SpaCy) model initialization failed.")
+        if not embedding_model:
+            error_messages.append("Embedding model initialization failed. Try selecting a lighter model.")
     if not overall_success:
         logger.error("Tourism NLP model load failed.")
         return False, "\n".join(error_messages)

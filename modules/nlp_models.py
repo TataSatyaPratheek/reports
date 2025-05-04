@@ -1,33 +1,106 @@
-"""
-Enhanced NLP Models Module - Handles loading and managing NLP models.
-Optimized for tourism and travel document analysis.
-"""
+# Adaptive nlp_models.py with intelligent model selection
+
 import streamlit as st
-
 import os
-NLTK_DATA_PATH = os.path.expanduser('~/nltk_data')
-os.environ['NLTK_DATA'] = NLTK_DATA_PATH
 import nltk
-nltk.data.path = [NLTK_DATA_PATH]  # Override all other paths
-
 import spacy
-from FlagEmbedding import BGEM3FlagModel # Changed import
+from sentence_transformers import SentenceTransformer
+from FlagEmbedding import BGEM3FlagModel
 import subprocess
 import sys
 import asyncio
-from nltk.tokenize import sent_tokenize, word_tokenize # Import specific functions
-import torch # Import torch for CUDA operations
-from typing import Optional, Dict, List, Union, Tuple, Any # Added Any
+from nltk.tokenize import sent_tokenize, word_tokenize
+import torch
+import gc
+from typing import Optional, Dict, List, Union, Tuple, Any
 from modules.utils import log_error, PerformanceMonitor
+
+# Set NLTK data path
+NLTK_DATA_PATH = os.path.expanduser('~/nltk_data')
+os.environ['NLTK_DATA'] = NLTK_DATA_PATH
+nltk.data.path = [NLTK_DATA_PATH]
 
 # Define model names as constants
 SPACY_MODEL_NAME = "en_core_web_sm"
-# Using a more powerful embedding model for better travel domain understanding
-EMBEDDING_MODEL_NAME = "dunzhang/stella_en_400M_v5"  # Stella 400M for superior embeddings and retrieval
-EMBEDDING_MODEL_NAME = "BAAI/bge-m3" # Changed to BGE-M3
 TRAVEL_ENTITIES = ["DESTINATION", "ACCOMMODATION", "TRANSPORTATION", "ACTIVITY", "ATTRACTION"]
 
-# Define tourism-related keywords for entity recognition enhancements
+# Embedding models hierarchy with memory requirements
+EMBEDDING_MODELS = [
+    {
+        "name": "all-MiniLM-L6-v2",
+        "dimensions": 384,
+        "memory_mb": 80,
+        "loader": "SentenceTransformer",
+        "performance": "58.9 MTEB",
+        "description": "Extremely lightweight, good for basic tasks"
+    },
+    {
+        "name": "all-MiniLM-L12-v2",
+        "dimensions": 384,
+        "memory_mb": 120,
+        "loader": "SentenceTransformer",
+        "performance": "59.8 MTEB",
+        "description": "Slightly better than L6, still very light"
+    },
+    {
+        "name": "paraphrase-MiniLM-L6-v2",
+        "dimensions": 384,
+        "memory_mb": 90,
+        "loader": "SentenceTransformer",
+        "performance": "60.2 MTEB",
+        "description": "Optimized for semantic similarity"
+    },
+    {
+        "name": "all-mpnet-base-v2",
+        "dimensions": 768,
+        "memory_mb": 420,
+        "loader": "SentenceTransformer",
+        "performance": "63.3 MTEB",
+        "description": "Good balance of performance and size"
+    },
+    {
+        "name": "sentence-transformers/all-distilroberta-v1",
+        "dimensions": 768,
+        "memory_mb": 350,
+        "loader": "SentenceTransformer",
+        "performance": "61.0 MTEB",
+        "description": "DistilRoBERTa-based, efficient"
+    },
+    {
+        "name": "BAAI/bge-small-en-v1.5",
+        "dimensions": 384,
+        "memory_mb": 130,
+        "loader": "SentenceTransformer",
+        "performance": "62.2 MTEB",
+        "description": "Small BGE model, good performance"
+    },
+    {
+        "name": "BAAI/bge-base-en-v1.5",
+        "dimensions": 768,
+        "memory_mb": 450,
+        "loader": "SentenceTransformer",
+        "performance": "64.2 MTEB",
+        "description": "Base BGE model, better performance"
+    },
+    {
+        "name": "dunzhang/stella_en_400M_v5",
+        "dimensions": 1024,
+        "memory_mb": 800,
+        "loader": "SentenceTransformer",
+        "performance": "65.1 MTEB",
+        "description": "High performance Stella model"
+    },
+    {
+        "name": "BAAI/bge-m3",
+        "dimensions": 1024,
+        "memory_mb": 1200,
+        "loader": "BGEM3FlagModel",
+        "performance": "66.0 MTEB",
+        "description": "Most powerful, multi-lingual BGE"
+    }
+]
+
+# Tourism keywords dictionary
 TOURISM_KEYWORDS = {
     "DESTINATION": ["country", "city", "island", "resort", "destination", "region", "town", "village"],
     "ACCOMMODATION": ["hotel", "hostel", "airbnb", "resort", "villa", "apartment", "camping", "glamping", "lodge"],
@@ -36,17 +109,69 @@ TOURISM_KEYWORDS = {
     "ATTRACTION": ["museum", "monument", "landmark", "beach", "mountain", "national park", "temple", "castle", "cathedral"]
 }
 
+def clear_memory():
+    """Helper function to clear GPU memory and run garbage collection."""
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+        torch.cuda.ipc_collect()
+    gc.collect()
+
+def get_gpu_memory_info() -> Dict[str, float]:
+    """Get GPU memory information if available."""
+    if not torch.cuda.is_available():
+        return {"available": False, "total_mb": 0, "free_mb": 0, "used_mb": 0}
+    
+    try:
+        device = torch.cuda.current_device()
+        gpu_properties = torch.cuda.get_device_properties(device)
+        total_memory = gpu_properties.total_memory / (1024 * 1024)  # Convert to MB
+        allocated_memory = torch.cuda.memory_allocated(device) / (1024 * 1024)
+        reserved_memory = torch.cuda.memory_reserved(device) / (1024 * 1024)
+        free_memory = total_memory - reserved_memory
+        
+        return {
+            "available": True,
+            "device_name": gpu_properties.name,
+            "total_mb": total_memory,
+            "free_mb": free_memory,
+            "used_mb": allocated_memory,
+            "reserved_mb": reserved_memory
+        }
+    except Exception as e:
+        log_error(f"Error getting GPU memory info: {str(e)}")
+        return {"available": False, "total_mb": 0, "free_mb": 0, "used_mb": 0}
+
+def select_best_embedding_model(gpu_info: Dict[str, float], preferred_model: Optional[str] = None) -> Dict[str, Any]:
+    """Select the best embedding model based on available resources."""
+    # If user specified a model, try to use it if possible
+    if preferred_model:
+        for model in EMBEDDING_MODELS:
+            if model["name"] == preferred_model:
+                if not gpu_info["available"] or gpu_info["free_mb"] >= model["memory_mb"] * 1.2:  # 20% buffer
+                    return model
+                else:
+                    log_error(f"Preferred model {preferred_model} requires {model['memory_mb']}MB but only {gpu_info['free_mb']}MB available")
+                    break
+    
+    # If no GPU or in CPU mode, use the lightest model
+    if not gpu_info["available"]:
+        return EMBEDDING_MODELS[0]  # all-MiniLM-L6-v2
+    
+    # Select the best model that fits in available memory (with 20% buffer)
+    selected_model = EMBEDDING_MODELS[0]  # Default to lightest
+    
+    for model in EMBEDDING_MODELS:
+        required_memory = model["memory_mb"] * 1.2  # Add 20% buffer
+        if gpu_info["free_mb"] >= required_memory:
+            selected_model = model
+        else:
+            break  # Models are ordered by size, so stop if one doesn't fit
+    
+    return selected_model
+
 @st.cache_resource(show_spinner="Loading NLTK resources...")
 def load_nltk_resources():
-    """Load required NLTK resources (punkt, wordnet, stopwords) with proper verification."""
-    # Ensure NLTK data path is set (redundant with top-level but safe)
-    nltk.data.path = [os.environ['NLTK_DATA']]
-    if NLTK_DATA_PATH not in nltk.data.path:
-        # If somehow it wasn't set by the top-level code, set it now.
-        nltk.data.path = [NLTK_DATA_PATH]
-        log_error(f"Re-set {NLTK_DATA_PATH} in nltk.data.path within load_nltk_resources")
-        log_error(f"{NLTK_DATA_PATH} already in nltk.data.path")
-
+    """Load required NLTK resources with proper verification."""
     resources = [
         ('tokenizers/punkt', 'punkt'),
         ('corpora/stopwords', 'stopwords'),
@@ -55,73 +180,44 @@ def load_nltk_resources():
 
     for path, name in resources:
         try:
-            # First check if already present
             nltk.data.find(path)
             log_error(f"NLTK resource '{name}' found at {path}")
-            continue
         except LookupError:
             log_error(f"Resource '{name}' not found. Attempting download...")
-
-        # Try downloading twice
-        for attempt in range(1, 3):
-            try:
-                log_error(f"Download attempt {attempt}/2 for {name}")
-                # Ensure the download directory exists
-                os.makedirs(NLTK_DATA_PATH, exist_ok=True)
-                nltk.download(name, download_dir=NLTK_DATA_PATH, quiet=False) # Added quiet=False for visibility
-
-                # Verify after download
+            for attempt in range(1, 3):
                 try:
+                    os.makedirs(NLTK_DATA_PATH, exist_ok=True)
+                    nltk.download(name, download_dir=NLTK_DATA_PATH, quiet=False)
+                    
+                    # Verify after download
                     nltk.data.find(path)
                     log_error(f"Successfully verified {name} after download")
-                    break # Exit inner loop on success
-                except LookupError:
-                    log_error(f"Verification failed for {name} immediately after download attempt {attempt}.")
+                    break
+                except Exception as e:
+                    log_error(f"Download attempt {attempt} failed for {name}: {str(e)}")
                     if attempt == 2:
-                        log_error(f"Critical: {name} verification failed after 2 download attempts")
-                        st.error(f"Failed to download and verify NLTK resource '{name}'. Chunking/analysis may fail.")
+                        st.error(f"Failed to download NLTK resource '{name}'")
                         return False
-                    # Continue to next attempt if not the last one
-
-            except Exception as download_error:
-                log_error(f"Download failed for {name} (attempt {attempt}): {str(download_error)}")
-                if attempt == 2:
-                    st.error(f"Failed to download NLTK resource '{name}' after 2 attempts: {str(download_error)}")
-                    return False
-                # Wait a bit before retrying? (Optional)
-                # time.sleep(1)
-
-    # Final verification pass after attempting downloads for all resources
-    for path, name in resources:
-        try:
-            nltk.data.find(path)
-        except LookupError:
-            log_error(f"Final verification failed for {name}. It should have been downloaded.")
-            st.error(f"NLTK resource '{name}' is missing after download attempts. Please check network and permissions for {NLTK_DATA_PATH}.")
-            return False
-
     return True
 
 @st.cache_resource(show_spinner=f"Loading SpaCy model ({SPACY_MODEL_NAME})...")
 def load_spacy_model():
-    """Load spaCy model with error handling and download attempt."""
+    """Load spaCy model with memory-efficient settings."""
     try:
-        # Load the model
-        nlp = spacy.load(SPACY_MODEL_NAME)
-
-        # Add tourism-specific entity types
+        # Load with memory optimizations
+        nlp = spacy.load(SPACY_MODEL_NAME, 
+                        exclude=["tok2vec", "tagger", "parser", "attribute_ruler", "lemmatizer"])
+        
+        # Add custom components if needed
         if "ner" in nlp.pipe_names:
-            # Only modify if model has NER component
             try:
                 for entity_type in TRAVEL_ENTITIES:
-                    if entity_type not in nlp.pipe("").ents:
-                        nlp.get_pipe("ner").add_label(entity_type)
-                st.success(f"Enhanced NER with tourism-specific entity types.")
+                    nlp.get_pipe("ner").add_label(entity_type)
             except Exception as ner_err:
-                log_error(f"Note: Could not enhance NER component: {str(ner_err)}")
-                # Not critical, so continue with base model
+                log_error(f"Could not enhance NER component: {str(ner_err)}")
         
         return nlp
+    
     except OSError:
         st.warning(f"SpaCy model '{SPACY_MODEL_NAME}' not found locally.")
         st.info(f"Attempting to download '{SPACY_MODEL_NAME}'...")
@@ -130,125 +226,114 @@ def load_spacy_model():
                                  check=True, capture_output=True, text=True, timeout=300)
             st.success(f"Successfully downloaded '{SPACY_MODEL_NAME}'.")
             return spacy.load(SPACY_MODEL_NAME)
-        except subprocess.CalledProcessError as e:
-            err_msg = f"Failed to download SpaCy model '{SPACY_MODEL_NAME}'. Error: {e.stderr}"
+        except Exception as e:
+            err_msg = f"Failed to download SpaCy model: {str(e)}"
             st.error(err_msg)
             log_error(err_msg)
             return None
-        except Exception as e_inner:
-            err_msg = f"Failed during SpaCy model download/load: {str(e_inner)}"
-            st.error(err_msg)
-            log_error(err_msg)
-            return None
-    except Exception as e_outer:
-        err_msg = f"Unexpected error loading SpaCy model '{SPACY_MODEL_NAME}': {str(e_outer)}"
-        st.error(err_msg)
-        log_error(err_msg)
-        return None
 
-@st.cache_resource(show_spinner=f"Loading embedding model ({EMBEDDING_MODEL_NAME})...")
-def load_embedding_model():
-    """Load sentence transformer model with error handling."""
+@st.cache_resource(show_spinner="Selecting best embedding model...")
+def get_model_selection_info():
+    """Get information about available models and system resources."""
+    gpu_info = get_gpu_memory_info()
+    return gpu_info, EMBEDDING_MODELS
+
+@st.cache_resource(show_spinner="Loading embedding model...")
+def load_embedding_model(preferred_model: Optional[str] = None):
+    """Load embedding model with intelligent selection based on available resources."""
     func_name = "load_embedding_model"
+    
     try:
-        # --- Immediate Fix 2: Clear CUDA cache before loading ---
-        if torch.cuda.is_available():
-            log_error(f"{func_name}: Clearing CUDA cache...")
-            torch.cuda.empty_cache()
-            log_error(f"{func_name}: CUDA cache cleared.")
-
-        log_error(f"{func_name}: Loading SentenceTransformer '{EMBEDDING_MODEL_NAME}'...")
-        # Load the model, specifying device if CUDA is available
-        device: str = 'cuda' if torch.cuda.is_available() else 'cpu'
-        use_fp16: bool = (device == 'cuda') # Use FP16 only if on GPU
-        model: Any = BGEM3FlagModel(EMBEDDING_MODEL_NAME, device=device, use_fp16=use_fp16) # Changed loader
-        log_error(f"{func_name}: Loaded {EMBEDDING_MODEL_NAME} on {device} with use_fp16={use_fp16}")
-        st.success(f"Embedding model '{EMBEDDING_MODEL_NAME}' loaded.")
-
-        # --- Critical Check: Print memory summary ---
-        if device == 'cuda':
-            log_error(f"{func_name}: CUDA Memory Summary after loading:")
-            log_error(torch.cuda.memory_summary())
-
+        # Clear memory before loading
+        clear_memory()
+        
+        # Get GPU information
+        gpu_info = get_gpu_memory_info()
+        
+        # Select the best model for available resources
+        selected_model = select_best_embedding_model(gpu_info, preferred_model)
+        model_name = selected_model["name"]
+        loader_type = selected_model["loader"]
+        
+        log_error(f"{func_name}: GPU Info - Available: {gpu_info['available']}, Free: {gpu_info['free_mb']}MB")
+        log_error(f"{func_name}: Selected model: {model_name} (requires {selected_model['memory_mb']}MB)")
+        
+        # Show selection info to user
+        if gpu_info["available"]:
+            st.info(f"🔍 GPU detected: {gpu_info['device_name']} with {gpu_info['free_mb']:.0f}MB free memory")
+        else:
+            st.info("🔍 No GPU detected, using CPU mode")
+        
+        st.info(f"📊 Selected embedding model: **{model_name}**")
+        st.info(f"   • Performance: {selected_model['performance']}")
+        st.info(f"   • Description: {selected_model['description']}")
+        st.info(f"   • Memory requirement: {selected_model['memory_mb']}MB")
+        
+        # Load the model based on loader type
+        if loader_type == "BGEM3FlagModel":
+            # Use BGE-M3 specific loader
+            device = 'cuda' if gpu_info["available"] and gpu_info["free_mb"] > selected_model["memory_mb"] * 1.5 else 'cpu'
+            use_fp16 = device == 'cuda'
+            
+            model = BGEM3FlagModel(model_name, 
+                                 device=device, 
+                                 use_fp16=use_fp16,
+                                 normalize_embeddings=True)
+        else:
+            # Use SentenceTransformer loader
+            device = 'cuda' if gpu_info["available"] and gpu_info["free_mb"] > selected_model["memory_mb"] * 1.5 else 'cpu'
+            model = SentenceTransformer(model_name, device=device)
+        
+        log_error(f"{func_name}: Successfully loaded {model_name} on {device}")
+        st.success(f"✅ Embedding model '{model_name}' loaded successfully on {device}")
+        
+        # Store the model info in session state
+        if 'selected_embedding_model' not in st.session_state:
+            st.session_state.selected_embedding_model = model_name
+        
+        # Clear memory after loading
+        clear_memory()
+        
         return model
-    except ImportError:
-        err_msg = "Sentence Transformers library not installed. Cannot load embedding model."
-        st.error(err_msg)
-        log_error(err_msg)
-        return None
-    except OSError as e:
-         err_msg = f"OS error loading embedding model '{EMBEDDING_MODEL_NAME}': {str(e)}. Check network connection and cache permissions."
-         st.error(err_msg)
-         log_error(err_msg)
-         return None
+    
     except Exception as e:
-        err_msg = f"Failed to load embedding model '{EMBEDDING_MODEL_NAME}': {str(e)}"
+        err_msg = f"Failed to load embedding model: {str(e)}"
         st.error(err_msg)
         log_error(err_msg)
+        
+        # Try fallback to lightest model
+        if 'tried_fallback' not in st.session_state:
+            st.session_state.tried_fallback = True
+            st.warning("Attempting to load fallback model (all-MiniLM-L6-v2)...")
+            return load_embedding_model("all-MiniLM-L6-v2")
+        
         return None
-
-async def async_load_embedding_model():
-    """Async wrapper for loading embedding model."""
-    # This is a simple wrapper for now but could be enhanced for true async loading
-    loop = asyncio.get_event_loop()
-    return await loop.run_in_executor(None, load_embedding_model)
 
 def extract_tourism_entities(text: str, nlp=None) -> Dict[str, List[str]]:
-    """
-    Extract tourism-related entities from text using spaCy and keyword matching.
-    
-    Args:
-        text: Input text to analyze
-        nlp: Optional SpaCy model (will load if not provided)
-        
-    Returns:
-        Dictionary of entities by category
-    """
+    """Extract tourism-related entities from text with memory efficiency."""
     if not nlp:
         nlp = load_spacy_model()
         if not nlp:
             return {entity_type: [] for entity_type in TRAVEL_ENTITIES}
     
-    # Process the text with spaCy
-    doc = nlp(text)
+    # Process in smaller chunks for memory efficiency
+    MAX_TEXT_LENGTH = 100000  # Limit text length
+    if len(text) > MAX_TEXT_LENGTH:
+        text = text[:MAX_TEXT_LENGTH]
     
-    # Initialize results dictionary
+    doc = nlp(text)
     results = {entity_type: [] for entity_type in TRAVEL_ENTITIES}
     
     # Extract entities from spaCy NER
     for ent in doc.ents:
-        # Map spaCy entities to our tourism categories
         if ent.label_ == "GPE" or ent.label_ == "LOC":
             results["DESTINATION"].append(ent.text)
         elif ent.label_ == "FAC" or ent.label_ == "ORG":
-            # Could be accommodation, attraction or transportation
-            # We'll use keyword matching to disambiguate
             entity_text = ent.text.lower()
-            if any(keyword in entity_text for keyword in TOURISM_KEYWORDS["ACCOMMODATION"]):
-                results["ACCOMMODATION"].append(ent.text)
-            elif any(keyword in entity_text for keyword in TOURISM_KEYWORDS["ATTRACTION"]):
-                results["ATTRACTION"].append(ent.text)
-            elif any(keyword in entity_text for keyword in TOURISM_KEYWORDS["TRANSPORTATION"]):
-                results["TRANSPORTATION"].append(ent.text)
-    
-    # Additional keyword-based extraction
-    for category, keywords in TOURISM_KEYWORDS.items():
-        for keyword in keywords:
-            if keyword in text.lower():
-                # Find the full term containing the keyword
-                # This is a simple approach - could be enhanced with more sophisticated extraction
-                start = text.lower().find(keyword)
-                if start >= 0:
-                    # Get surrounding words for context
-                    context_start = max(0, start - 20)
-                    context_end = min(len(text), start + len(keyword) + 20)
-                    context = text[context_start:context_end]
-                    
-                    # Extract the term using NLP (could be improved)
-                    term = keyword
-                    for token in nlp(context):
-                        if keyword in token.text.lower() and token.text not in results[category]:
-                            results[category].append(token.text)
+            for category, keywords in TOURISM_KEYWORDS.items():
+                if any(keyword in entity_text for keyword in keywords):
+                    results[category].append(ent.text)
+                    break
     
     # Remove duplicates and sort
     for category in results:
@@ -257,15 +342,7 @@ def extract_tourism_entities(text: str, nlp=None) -> Dict[str, List[str]]:
     return results
 
 def calculate_text_complexity(text: str) -> Dict[str, float]:
-    """
-    Calculate text complexity metrics useful for tourism content.
-    
-    Args:
-        text: Input text to analyze
-        
-    Returns:
-        Dictionary of complexity metrics
-    """
+    """Calculate text complexity metrics with error handling."""
     if not text:
         return {
             "avg_word_length": 0,
@@ -273,23 +350,11 @@ def calculate_text_complexity(text: str) -> Dict[str, float]:
             "readability_score": 0
         }
     
-    try: # Start of the main try block
-        try: # Inner try for NLTK check/download
-            sent_tokenize("Test sentence.") # Force punkt check
-        except LookupError:
-            log_error("NLTK 'punkt' not found during complexity calc, attempting download...")
-            nltk.download('punkt', download_dir=os.environ['NLTK_DATA'])
-            nltk.data.path = [os.environ['NLTK_DATA']] # Re-set path
-            log_error("NLTK 'punkt' downloaded, proceeding with complexity calc.")
-
-        # Now use tokenizers after the check
-        try:
-            sentences = sent_tokenize(text)
-            words = word_tokenize(text)
-        except LookupError as nltk_err:
-            log_error(f"NLTK resource missing during complexity calculation: {nltk_err}. Returning default complexity.")
-            return {"avg_word_length": 0, "avg_sentence_length": 0, "readability_score": 0}
-
+    try:
+        # Tokenize text
+        sentences = sent_tokenize(text)
+        words = word_tokenize(text)
+        
         # Filter out punctuation
         words = [word for word in words if word.isalpha()]
         
@@ -304,20 +369,24 @@ def calculate_text_complexity(text: str) -> Dict[str, float]:
         avg_word_length = sum(len(word) for word in words) / len(words)
         avg_sentence_length = len(words) / len(sentences)
         
-        # Simple readability score (approximation of Flesch Reading Ease)
-        # Higher score = easier to read
+        # Simple readability score
         readability_score = 206.835 - (1.015 * avg_sentence_length) - (84.6 * avg_word_length / 5)
-        readability_score = max(0, min(100, readability_score))  # Clamp between 0-100
+        readability_score = max(0, min(100, readability_score))
         
         return {
             "avg_word_length": round(avg_word_length, 2),
             "avg_sentence_length": round(avg_sentence_length, 2),
             "readability_score": round(readability_score, 2)
         }
-    except Exception as e: # This except block is now correctly indented within the main try block
+    except Exception as e:
         log_error(f"Error calculating text complexity: {str(e)}")
         return {
             "avg_word_length": 0,
             "avg_sentence_length": 0,
             "readability_score": 0
         }
+
+async def async_load_embedding_model(preferred_model: Optional[str] = None):
+    """Async wrapper for loading embedding model."""
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, load_embedding_model, preferred_model)

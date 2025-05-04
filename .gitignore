@@ -10,3 +10,5 @@ extracted_images/
 .files/
 .pdm-build
 .chainlit
+Travel_Data/
+Travel_Data.zip
