@@ -1,325 +1,43 @@
 """
-Enhanced PDF Processor Module - Handles PDF parsing and text chunking.
-Optimized for tourism and travel document analysis.
+Optimized PDF Processor Module - Handles PDF parsing with OpenParse and image extraction.
 """
-import os
-NLTK_DATA_PATH = os.path.expanduser('~/nltk_data')
-os.environ['NLTK_DATA'] = NLTK_DATA_PATH
-import nltk
-nltk.data.path = [NLTK_DATA_PATH]  # Override all other paths
-
 import tempfile
 import time
+import os
 import re
-import json
-from typing import List, Dict, Any, Optional, Tuple, Union
+from typing import List, Dict, Any, Optional
 
-from nltk.tokenize import sent_tokenize # Import specific function
 import streamlit as st
-import nltk
 import openparse
+import fitz  # PyMuPDF for image extraction
 from streamlit.delta_generator import DeltaGenerator
-import fitz  # PyMuPDF for enhanced PDF handling
 
 from modules.utils import log_error, create_directory_if_not_exists
-from modules.nlp_models import extract_tourism_entities, calculate_text_complexity
 
-# Tourism-specific section identifiers to help with intelligent chunking
-TOURISM_SECTION_MARKERS = [
-    r"destination(?:s)?",
-    r"accommodation(?:s)?",
-    r"transport(?:ation)?",
-    r"activities",
-    r"attraction(?:s)?",
-    r"sight(?:-)?seeing",
-    r"tour(?:s)?",
-    r"travel(?:ing)?",
-    r"flight(?:s)?",
-    r"hotel(?:s)?",
-    r"resort(?:s)?",
-    r"restaurant(?:s)?",
-    r"cuisine",
-    r"food and drink",
-    r"shopping",
-    r"budget",
-    r"cost(?:s)?",
-    r"price(?:s)?",
-    r"seasonal",
-    r"weather",
-    r"climate",
-    r"culture",
-    r"local customs",
-    r"travel tips",
-    r"itinerary",
-    r"day trip(?:s)?",
-    r"excursion(?:s)?",
-    r"package(?:s)?",
-    r"booking",
-    r"reservation(?:s)?",
-    r"travel insurance",
-    r"health and safety",
-    r"travel advisory",
-    r"visa(?:s)?",
-    r"passport(?:s)?",
-    r"currency",
-    r"exchange rate(?:s)?",
-    r"language(?:s)?",
-    r"phrase(?:s)?",
-    r"communication",
-    r"internet",
-    r"wifi",
-    r"transportation",
-    r"getting around",
-    r"map(?:s)?",
-    r"direction(?:s)?",
-    r"sustainability",
-    r"eco(?:-)?friendly",
-    r"green travel",
-    r"responsible tourism",
-    r"luxury travel",
-    r"budget travel",
-    r"family travel",
-    r"solo travel",
-    r"group travel",
-    r"adventure travel",
-    r"cruise(?:s)?",
-    r"all(?:-)?inclusive",
-    r"review(?:s)?",
-    r"rating(?:s)?",
-    r"recommendation(?:s)?",
-    r"travel guide(?:s)?",
-]
-
-# Compile regex patterns for performance
-TOURISM_SECTION_PATTERNS = [re.compile(fr"(?i)(?:^|\s|\n)({marker})(?::|\s)", re.IGNORECASE) for marker in TOURISM_SECTION_MARKERS]
-
-def is_tourism_section_start(text: str) -> bool:
-    """
-    Check if text starts with a tourism-related section marker.
-    
-    Args:
-        text: Text to check for section markers
-        
-    Returns:
-        True if text appears to start a tourism section
-    """
-    text_lower = text.lower()
-    return any(pattern.search(text_lower) for pattern in TOURISM_SECTION_PATTERNS)
-
-def smart_chunking(
-    text: str, 
-    chunk_size: int = 250, 
-    overlap: int = 50,
-    respect_sections: bool = True,
-    min_chunk_size: int = 50
-) -> List[Dict[str, Any]]:
-    """
-    Enhanced text chunking optimized for tourism documents.
-    Splits text into chunks with metadata about tourism entities.
-    
-    Args:
-        text: Text to split into chunks
-        chunk_size: Target size of chunks in words
-        overlap: Number of words to overlap between chunks
-        respect_sections: Whether to avoid breaking across detected tourism sections
-        min_chunk_size: Minimum chunk size to keep (smaller chunks are merged)
-        
-    Returns:
-        List of dictionaries with text chunks and metadata
-    """
+def chunk_text(text: str, chunk_size: int = 512, overlap: int = 64) -> List[str]:
+    """Simple text chunking by character count with overlap."""
     if not text or not text.strip():
         return []
     
-    try:
-        # Tokenize into sentences
-        # Add punkt check before using sent_tokenize
-        try:
-            sent_tokenize("Test sentence.") # Force punkt check
-        except LookupError:
-            # If lookup fails here, it's likely a path/permission issue,
-            # as load_nltk_resources should have handled the download.
-            err_msg = f"NLTK 'punkt' lookup failed unexpectedly during chunking. Check NLTK_DATA path ({NLTK_DATA_PATH}) and permissions. Initialization should have downloaded it."
-            st.error(err_msg); log_error(err_msg); return [{"text": text, "metadata": {}}]
-        except Exception as nltk_e:
-            # Handle other potential NLTK errors during the check
-            # This might happen if download fails or path is wrong despite setting
-            err_msg = f"NLTK sentence tokenization error: {str(nltk_e)}"
-            st.warning(err_msg)
-            log_error(err_msg)
-            return [{"text": text, "metadata": {}}]
-
-        # Process chunks with section awareness
-        chunks = []
-        current_chunk_sentences = []
-        current_word_count = 0
-        current_section = "general"
-
-        # Now use sent_tokenize after the check/download
-        sentences = sent_tokenize(text)
-        
-        for i, sentence in enumerate(sentences):
-            words = sentence.split()
-            sentence_word_count = len(words)
-            
-            # Check if this sentence starts a new tourism section
-            if respect_sections and is_tourism_section_start(sentence):
-                # If we have accumulated sentences, save the current chunk before starting new section
-                if current_chunk_sentences:
-                    chunk_text = " ".join(current_chunk_sentences)
-                    chunks.append({
-                        "text": chunk_text,
-                        "metadata": {
-                            "section": current_section,
-                            "word_count": current_word_count,
-                            "sentence_count": len(current_chunk_sentences),
-                            "complexity": calculate_text_complexity(chunk_text)
-                        }
-                    })
-                    # No overlap when section changes
-                    current_chunk_sentences = [sentence]
-                    current_word_count = sentence_word_count
-                    # Update current section
-                    for pattern in TOURISM_SECTION_PATTERNS:
-                        match = pattern.search(sentence.lower())
-                        if match:
-                            current_section = match.group(1)
-                            break
-                    continue
-            
-            # Handle normal chunking logic
-            if current_word_count + sentence_word_count > chunk_size and current_chunk_sentences:
-                chunk_text = " ".join(current_chunk_sentences)
-                chunks.append({
-                    "text": chunk_text,
-                    "metadata": {
-                        "section": current_section,
-                        "word_count": current_word_count,
-                        "sentence_count": len(current_chunk_sentences),
-                        "complexity": calculate_text_complexity(chunk_text)
-                    }
-                })
-                # Keep overlap sentences for the next chunk
-                overlap_sentence_count = min(overlap, len(current_chunk_sentences))
-                current_chunk_sentences = current_chunk_sentences[-overlap_sentence_count:]
-                current_word_count = sum(len(s.split()) for s in current_chunk_sentences)
-            
-            # Special case for very long single sentences
-            elif not current_chunk_sentences and sentence_word_count > chunk_size:
-                chunks.append({
-                    "text": sentence,
-                    "metadata": {
-                        "section": current_section,
-                        "word_count": sentence_word_count,
-                        "sentence_count": 1,
-                        "complexity": calculate_text_complexity(sentence)
-                    }
-                })
-                current_chunk_sentences = []
-                current_word_count = 0
-                continue
-            
-            # Add the current sentence to our chunk
-            current_chunk_sentences.append(sentence)
-            current_word_count += sentence_word_count
-        
-        # Add any remaining sentences as a final chunk
-        if current_chunk_sentences:
-            chunk_text = " ".join(current_chunk_sentences)
-            chunks.append({
-                "text": chunk_text,
-                "metadata": {
-                    "section": current_section,
-                    "word_count": current_word_count,
-                    "sentence_count": len(current_chunk_sentences),
-                    "complexity": calculate_text_complexity(chunk_text)
-                }
-            })
-        
-        # Post-processing: merge small chunks
-        if min_chunk_size > 0:
-            merged_chunks = []
-            temp_chunk = None
-            
-            for chunk in chunks:
-                if temp_chunk is None:
-                    temp_chunk = chunk
-                elif chunk["metadata"]["word_count"] < min_chunk_size or temp_chunk["metadata"]["word_count"] < min_chunk_size:
-                    # Merge with previous chunk
-                    combined_text = temp_chunk["text"] + " " + chunk["text"]
-                    temp_chunk = {
-                        "text": combined_text,
-                        "metadata": {
-                            "section": temp_chunk["metadata"]["section"],
-                            "word_count": temp_chunk["metadata"]["word_count"] + chunk["metadata"]["word_count"],
-                            "sentence_count": temp_chunk["metadata"]["sentence_count"] + chunk["metadata"]["sentence_count"],
-                            "complexity": calculate_text_complexity(combined_text)
-                        }
-                    }
-                else:
-                    merged_chunks.append(temp_chunk)
-                    temp_chunk = chunk
-            
-            # Add the last temp chunk if it exists
-            if temp_chunk:
-                merged_chunks.append(temp_chunk)
-            
-            chunks = merged_chunks
-        
-        # Extract tourism entities for each chunk
-        for chunk in chunks:
-            tourism_entities = extract_tourism_entities(chunk["text"])
-            chunk["metadata"]["tourism_entities"] = tourism_entities
-            
-            # Add payment method detection if present
-            payment_keywords = ["payment", "pay", "credit card", "debit card", "cash", "transaction", 
-                              "wallet", "banking", "money", "currency", "exchange", "fee", "transfer"]
-            
-            chunk["metadata"]["has_payment_info"] = any(keyword in chunk["text"].lower() for keyword in payment_keywords)
-            
-            # Add segment detection
-            segment_keywords = {
-                "demographic": ["age", "gender", "family", "children", "senior", "young", "generation", "gen z", "millennial", "boomer"],
-                "luxury": ["luxury", "premium", "exclusive", "high-end", "upscale", "elite", "vip", "deluxe", "5-star", "first class"],
-                "budget": ["budget", "affordable", "cheap", "economic", "low-cost", "value", "bargain", "discount", "deal", "saving"],
-                "sustainability": ["sustainable", "eco", "green", "environment", "carbon", "footprint", "responsible", "ethical", "conservation"]
-            }
-            
-            segment_matches = {}
-            for segment, keywords in segment_keywords.items():
-                segment_matches[segment] = any(keyword in chunk["text"].lower() for keyword in keywords)
-            
-            chunk["metadata"]["segment_matches"] = segment_matches
-        
-        return chunks
-        
-    except Exception as e:
-        err_msg = f"Unexpected error during text chunking: {str(e)}"
-        st.error(err_msg)
-        log_error(err_msg)
-        return [{"text": text, "metadata": {}}] if text else []
+    text = text.strip()
+    chunks = []
+    
+    for i in range(0, len(text), chunk_size - overlap):
+        chunk = text[i:i + chunk_size]
+        if chunk:
+            chunks.append(chunk)
+    
+    return chunks
 
 def process_uploaded_pdf(
     uploaded_file,
     chunk_size: int,
     overlap: int,
     status: Optional[DeltaGenerator] = None,
-    extract_images: bool = False,
+    extract_images: bool = True,
     image_output_dir: str = "extracted_images"
 ) -> List[Dict[str, Any]]:
-    """
-    Enhanced PDF processing with tourism-focused chunking and optional image extraction.
-    
-    Args:
-        uploaded_file: Streamlit uploaded file
-        chunk_size: Target size of chunks in words
-        overlap: Number of words to overlap between chunks
-        status: Optional Streamlit status object for progress updates
-        extract_images: Whether to extract images from PDF
-        image_output_dir: Directory to save extracted images
-        
-    Returns:
-        List of dictionaries with text chunks and metadata
-    """
+    """Process PDF with OpenParse and optional image extraction."""
     chunks = []
     tmp_file_path = None
     parser = None
@@ -336,18 +54,17 @@ def process_uploaded_pdf(
             tmp_file.write(uploaded_file.read())
             tmp_file_path = tmp_file.name
         
-        # Initialize parser
+        # Initialize OpenParse parser
         _update_status("Initializing document parser...")
         try:
-             parser = openparse.DocumentParser()
+            parser = openparse.DocumentParser()
         except Exception as parser_init_e:
-             err_msg = f"Failed to initialize DocumentParser: {str(parser_init_e)}"
-             st.error(err_msg)
-             log_error(err_msg)
-             if status: status.update(label=err_msg, state="error")
-             return []
+            log_error(f"Failed to initialize DocumentParser: {str(parser_init_e)}")
+            # Fallback to PyMuPDF if OpenParse fails
+            _update_status("Using fallback PDF parser...")
+            return fallback_pdf_processing(tmp_file_path, uploaded_file.name, chunk_size, overlap, extract_images, image_output_dir)
         
-        # Parse the document
+        # Parse the document with OpenParse
         _update_status(f"Parsing {uploaded_file.name}...")
         parsed_doc = parser.parse(tmp_file_path)
         
@@ -357,103 +74,102 @@ def process_uploaded_pdf(
             image_paths = extract_images_from_pdf(tmp_file_path, image_output_dir, uploaded_file.name)
             if image_paths:
                 _update_status(f"Extracted {len(image_paths)} images.")
-            else:
-                _update_status("No images extracted.")
         
-        # Clean up temporary file immediately after parsing
-        if tmp_file_path and os.path.exists(tmp_file_path):
-            try:
-                os.remove(tmp_file_path)
-                tmp_file_path = None
-            except OSError as rm_err:
-                 log_error(f"Warning: Could not remove temporary file {tmp_file_path}: {str(rm_err)}")
-        
-        # Extract text nodes
+        # Extract text nodes from OpenParse
         _update_status("Extracting text content...")
         text_data = [node.text for node in parsed_doc.nodes if node.text and node.text.strip()]
         
         if not text_data:
-            warn_msg = f"No text content extracted from {uploaded_file.name}."
-            st.warning(warn_msg)
-            log_error(warn_msg)
-            _update_status(warn_msg)
-            return []
+            _update_status("No text content found, trying fallback method...")
+            # Fallback to PyMuPDF for text extraction
+            return fallback_pdf_processing(tmp_file_path, uploaded_file.name, chunk_size, overlap, extract_images, image_output_dir)
         
         # Chunk the extracted text
         _update_status(f"Chunking text ({len(text_data)} sections)...")
-        total_sections = len(text_data)
         
         for idx, text_section in enumerate(text_data):
-            # Update status periodically for large documents
-            if idx % 20 == 0 and total_sections > 20:
-                 _update_status(f"Chunking text (section {idx+1}/{total_sections})...")
+            section_chunks = chunk_text(text_section, chunk_size, overlap)
             
-            # Use tourism-optimized chunking
-            section_chunks = smart_chunking(
-                text_section, 
-                chunk_size=chunk_size, 
-                overlap=overlap, 
-                respect_sections=True
-            )
-            
-            # Add file metadata to each chunk
-            for chunk in section_chunks:
-                chunk["metadata"]["filename"] = uploaded_file.name
-                chunk["metadata"]["section_index"] = idx
-                chunks.extend([chunk])
+            for chunk_idx, chunk in enumerate(section_chunks):
+                chunks.append({
+                    "text": chunk,
+                    "metadata": {
+                        "filename": uploaded_file.name,
+                        "section_index": idx,
+                        "chunk_index": chunk_idx,
+                        "source": "openparse"
+                    }
+                })
         
-        _update_status(f"Generated {len(chunks)} chunks with tourism metadata.")
+        _update_status(f"Generated {len(chunks)} chunks.")
         return chunks
         
-    except ImportError as e:
-         err_msg = f"Import error during PDF processing: {str(e)}"
-         st.error(err_msg)
-         log_error(err_msg)
-         if status: status.update(label=err_msg, state="error")
-         return []
-    except FileNotFoundError as e:
-         err_msg = f"File not found during PDF processing: {str(e)}"
-         st.error(err_msg)
-         log_error(err_msg)
-         if status: status.update(label=err_msg, state="error")
-         return []
-    except openparse.errors.ParsingError as parse_err:
-         err_msg = f"Failed to parse PDF {uploaded_file.name}: {str(parse_err)}"
-         st.error(err_msg)
-         log_error(err_msg)
-         if status: status.update(label=err_msg, state="error")
-         return []
     except Exception as e:
-        err_msg = f"Unexpected error processing PDF {uploaded_file.name}: {str(e)}"
-        st.error(err_msg)
-        log_error(err_msg)
-        if status: status.update(label=err_msg, state="error")
+        log_error(f"Error processing PDF {uploaded_file.name}: {str(e)}")
         return []
     finally:
-        # Ensure temporary file is cleaned up
+        # Clean up temporary file
         if tmp_file_path and os.path.exists(tmp_file_path):
             try:
                 os.remove(tmp_file_path)
-            except OSError as final_rm_err:
-                log_error(f"Error removing temporary file in finally block: {str(final_rm_err)}")
+            except Exception as e:
+                log_error(f"Error removing temporary file: {str(e)}")
+
+def fallback_pdf_processing(
+    pdf_path: str,
+    filename: str,
+    chunk_size: int,
+    overlap: int,
+    extract_images: bool = True,
+    image_output_dir: str = "extracted_images"
+) -> List[Dict[str, Any]]:
+    """Fallback PDF processing using PyMuPDF when OpenParse fails."""
+    chunks = []
+    
+    try:
+        # Open PDF with PyMuPDF
+        doc = fitz.open(pdf_path)
+        full_text = ""
+        
+        # Extract text from all pages
+        for page_num in range(len(doc)):
+            page = doc[page_num]
+            text = page.get_text()
+            if text:
+                full_text += text + "\n"
+        
+        # Extract images if requested
+        if extract_images:
+            extract_images_from_pdf(pdf_path, image_output_dir, filename)
+        
+        doc.close()
+        
+        # Chunk the text
+        if full_text.strip():
+            text_chunks = chunk_text(full_text, chunk_size, overlap)
+            
+            for i, chunk in enumerate(text_chunks):
+                chunks.append({
+                    "text": chunk,
+                    "metadata": {
+                        "filename": filename,
+                        "chunk_index": i,
+                        "source": "pymupdf"
+                    }
+                })
+        
+        return chunks
+        
+    except Exception as e:
+        log_error(f"Fallback PDF processing failed: {str(e)}")
+        return []
 
 def extract_images_from_pdf(
     pdf_path: str, 
     output_dir: str, 
     base_filename: str
 ) -> List[str]:
-    """
-    Extract images from PDF for additional processing.
-    Useful for tourism brochures with maps, attractions, etc.
-    
-    Args:
-        pdf_path: Path to PDF file
-        output_dir: Directory to save extracted images
-        base_filename: Base name for extracted images
-        
-    Returns:
-        List of paths to extracted images
-    """
+    """Extract images from PDF for tourism content analysis."""
     image_paths = []
     
     try:
@@ -484,7 +200,7 @@ def extract_images_from_pdf(
                     image_ext = base_image["ext"]
                     
                     # Only process if the image is large enough (avoid small icons)
-                    if len(image_data) > 10000:  # Skip tiny images (adjust threshold as needed)
+                    if len(image_data) > 10000:  # Skip tiny images
                         image_count += 1
                         image_name = f"{clean_name}_page{page_num+1}_img{image_count}.{image_ext}"
                         image_path = os.path.join(output_dir, image_name)
@@ -498,11 +214,9 @@ def extract_images_from_pdf(
                     log_error(f"Error extracting image {img_index} from page {page_num+1}: {str(img_err)}")
                     continue
         
+        doc.close()
         return image_paths
         
-    except ImportError as e:
-        log_error(f"PyMuPDF (fitz) import error for image extraction: {str(e)}")
-        return []
     except Exception as e:
         log_error(f"Error extracting images from PDF: {str(e)}")
         return []

@@ -1,24 +1,18 @@
-# Adaptive nlp_models.py with intelligent model selection
+# Simplified nlp_models.py without NLTK dependencies
 
 import streamlit as st
 import os
-import nltk
 import spacy
 from sentence_transformers import SentenceTransformer
 from FlagEmbedding import BGEM3FlagModel
 import subprocess
 import sys
 import asyncio
-from nltk.tokenize import sent_tokenize, word_tokenize
 import torch
 import gc
+import re
 from typing import Optional, Dict, List, Union, Tuple, Any
 from modules.utils import log_error, PerformanceMonitor
-
-# Set NLTK data path
-NLTK_DATA_PATH = os.path.expanduser('~/nltk_data')
-os.environ['NLTK_DATA'] = NLTK_DATA_PATH
-nltk.data.path = [NLTK_DATA_PATH]
 
 # Define model names as constants
 SPACY_MODEL_NAME = "en_core_web_sm"
@@ -216,36 +210,9 @@ def select_best_embedding_model(gpu_info: Dict[str, float], preferred_model: Opt
     
     return selected_model
 
-@st.cache_resource(show_spinner="Loading NLTK resources...")
-def load_nltk_resources():
-    """Load required NLTK resources with proper verification."""
-    resources = [
-        ('tokenizers/punkt', 'punkt'),
-        ('corpora/stopwords', 'stopwords'),
-        ('corpora/wordnet', 'wordnet')
-    ]
-
-    for path, name in resources:
-        try:
-            nltk.data.find(path)
-            log_error(f"NLTK resource '{name}' found at {path}")
-        except LookupError:
-            log_error(f"Resource '{name}' not found. Attempting download...")
-            for attempt in range(1, 3):
-                try:
-                    os.makedirs(NLTK_DATA_PATH, exist_ok=True)
-                    nltk.download(name, download_dir=NLTK_DATA_PATH, quiet=False)
-                    
-                    # Verify after download
-                    nltk.data.find(path)
-                    log_error(f"Successfully verified {name} after download")
-                    break
-                except Exception as e:
-                    log_error(f"Download attempt {attempt} failed for {name}: {str(e)}")
-                    if attempt == 2:
-                        st.error(f"Failed to download NLTK resource '{name}'")
-                        return False
-    return True
+# Remove this function as we don't need NLTK resources anymore
+# @st.cache_resource(show_spinner="Loading NLTK resources...")
+# def load_nltk_resources():
 
 @st.cache_resource(show_spinner=f"Loading SpaCy model ({SPACY_MODEL_NAME})...")
 def load_spacy_model():
@@ -392,7 +359,7 @@ def extract_tourism_entities(text: str, nlp=None) -> Dict[str, List[str]]:
     return results
 
 def calculate_text_complexity(text: str) -> Dict[str, float]:
-    """Calculate text complexity metrics with error handling."""
+    """Calculate text complexity metrics with simplified sentence/word parsing."""
     if not text:
         return {
             "avg_word_length": 0,
@@ -401,11 +368,12 @@ def calculate_text_complexity(text: str) -> Dict[str, float]:
         }
     
     try:
-        # Tokenize text
-        sentences = sent_tokenize(text)
-        words = word_tokenize(text)
+        # Simple sentence splitting by common punctuation
+        sentences = re.split(r'[.!?]+\s*', text)
+        sentences = [s.strip() for s in sentences if s.strip()]
         
-        # Filter out punctuation
+        # Simple word tokenization
+        words = re.findall(r'\b\w+\b', text)
         words = [word for word in words if word.isalpha()]
         
         if not words or not sentences:
