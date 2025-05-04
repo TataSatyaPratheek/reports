@@ -381,17 +381,49 @@ def render_tourism_sidebar():
                     if gpu_info["free_mb"] < required_memory:
                         st.warning(f"⚠️ Selected model requires {required_memory:.0f}MB but only {gpu_info['free_mb']:.0f}MB is available. May run on CPU instead.")
                 
+                # Warning about changing embedding models
+                st.warning("⚠️ **Important**: Changing the embedding model will require resetting the vector database. All processed documents will need to be re-processed with the new model.")
+                
                 # Apply button to actually change the model
                 if st.button("Apply Model Selection", type="primary", use_container_width=True):
-                    st.session_state.selected_embedding_model = selected_model["name"]
+                    new_model_name = selected_model["name"]
                     
-                    # Clear the cached embedding model to force reload
-                    st.cache_resource.clear()
-                    
-                    st.success(f"Selected embedding model: {selected_model['name']}")
-                    st.info("Reinitialize the system to load the new model.")
-                    time.sleep(1)
-                    st.rerun()
+                    # Check if this is actually a different model
+                    if new_model_name != current_model:
+                        st.warning("The vector database will be reset. You'll need to re-process your documents.")
+                        
+                        # Reset the vector database
+                        from modules.vector_store import reset_vector_db
+                        reset_success, reset_message = reset_vector_db()
+                        
+                        if reset_success:
+                            # Update the selected model
+                            st.session_state.selected_embedding_model = new_model_name
+                            
+                            # Clear processed files
+                            st.session_state.processed_files.clear()
+                            st.session_state.messages = []
+                            st.session_state.extracted_tourism_entities = {}
+                            st.session_state.tourism_metrics = {}
+                            
+                            # Clear caches
+                            st.cache_resource.clear()
+                            
+                            st.success(f"Selected embedding model: {new_model_name}")
+                            st.info("Please re-initialize the system to load the new model.")
+                            
+                            # Force reinitialization
+                            st.session_state.system_initialized = False
+                            st.session_state.initialization_complete = False
+                            st.session_state.initialization_status = "Pending"
+                            
+                            time.sleep(1)
+                            st.rerun()
+                        else:
+                            st.error(f"Failed to reset the vector database: {reset_message}")
+                    else:
+                        st.info("Model selection unchanged.")
+                        st.rerun()
             
             # --- Advanced Retrieval Features ---
             with st.expander("🧠 Advanced Features", expanded=False):

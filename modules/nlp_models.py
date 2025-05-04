@@ -141,6 +141,53 @@ def get_gpu_memory_info() -> Dict[str, float]:
         log_error(f"Error getting GPU memory info: {str(e)}")
         return {"available": False, "total_mb": 0, "free_mb": 0, "used_mb": 0}
 
+def get_embedding_dimensions(embedding_model) -> int:
+    """Get the dimensions of the embedding model dynamically."""
+    try:
+        # Check if this is a known model with predefined dimensions
+        model_name = getattr(embedding_model, 'model_name', None)
+        if model_name:
+            for model_info in EMBEDDING_MODELS:
+                if model_info["name"] == model_name:
+                    return model_info["dimensions"]
+        
+        # Fallback to dynamic detection
+        test_text = "test sentence for dimension check"
+        
+        # Handle different model types
+        if hasattr(embedding_model, 'encode'):
+            output = embedding_model.encode([test_text])
+            
+            # Handle different output formats
+            if isinstance(output, dict):
+                # BGE-M3 style output
+                if 'dense_vecs' in output:
+                    return len(output['dense_vecs'][0])
+                elif 'embeddings' in output:
+                    return len(output['embeddings'][0])
+                elif 'sentence_embedding' in output:
+                    return len(output['sentence_embedding'][0])
+                else:
+                    # Try to find any tensor-like value in the dict
+                    for key, value in output.items():
+                        if hasattr(value, 'shape') and len(value.shape) >= 2:
+                            return value.shape[1]
+                    raise ValueError(f"Unknown embedding dictionary format: {output.keys()}")
+            else:
+                # Standard numpy array or tensor output
+                if hasattr(output, 'shape'):
+                    return output.shape[1] if len(output.shape) > 1 else len(output[0])
+                else:
+                    return len(output[0])
+        
+        # If we can't determine dimensions, return default
+        log_error(f"Could not determine embedding dimensions for model type: {type(embedding_model)}")
+        return 384  # Default to common dimension
+        
+    except Exception as e:
+        log_error(f"Error getting embedding dimensions: {str(e)}")
+        return 384  # Default to common dimension
+
 def select_best_embedding_model(gpu_info: Dict[str, float], preferred_model: Optional[str] = None) -> Dict[str, Any]:
     """Select the best embedding model based on available resources."""
     # If user specified a model, try to use it if possible
@@ -283,6 +330,9 @@ def load_embedding_model(preferred_model: Optional[str] = None):
             # Use SentenceTransformer loader
             device = 'cuda' if gpu_info["available"] and gpu_info["free_mb"] > selected_model["memory_mb"] * 1.5 else 'cpu'
             model = SentenceTransformer(model_name, device=device)
+        
+        # Store model name in the model object
+        model.model_name = model_name
         
         log_error(f"{func_name}: Successfully loaded {model_name} on {device}")
         st.success(f"✅ Embedding model '{model_name}' loaded successfully on {device}")

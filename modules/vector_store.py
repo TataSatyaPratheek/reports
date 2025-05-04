@@ -1,4 +1,4 @@
-# Optimized vector_store.py with better memory management
+# Optimized vector_store.py with better memory management and dimension handling
 
 import os
 import shutil
@@ -18,10 +18,12 @@ from cachetools import TTLCache, cached
 from FlagEmbedding import FlagReranker
 
 from modules.utils import log_error, create_directory_if_not_exists
+from modules.nlp_models import get_embedding_dimensions
 
 # --- Constants ---
 VECTOR_DB_PATH = "chroma_vector_db"
 COLLECTION_NAME = "tourism_vectors"
+COLLECTION_METADATA_KEY = "embedding_info"
 DEFAULT_METADATA = {
     "hnsw:space": "cosine",
     "hnsw:construction_ef": 200,
@@ -97,18 +99,124 @@ def get_chroma_client() -> Optional[chromadb.Client]:
         log_error(f"{func_name}: Failed - {err_msg}")
         return None
 
-def initialize_vector_db() -> bool:
-    """Ensures the vector database collection exists."""
+def get_collection_embedding_info(collection) -> Dict[str, Any]:
+    """Get embedding model information stored in collection metadata."""
+    try:
+        metadata = collection.metadata
+        if COLLECTION_METADATA_KEY in metadata:
+            import json
+            return json.loads(metadata[COLLECTION_METADATA_KEY])
+        return {}
+    except Exception as e:
+        log_error(f"Error getting collection embedding info: {str(e)}")
+        return {}
+
+def set_collection_embedding_info(collection, embedding_model_name: str, dimensions: int):
+    """Store embedding model information in collection metadata."""
+    try:
+        import json
+        embedding_info = {
+            "model_name": embedding_model_name,
+            "dimensions": dimensions,
+            "created_at": time.time()
+        }
+        
+        # Update collection metadata
+        current_metadata = collection.metadata.copy()
+        current_metadata[COLLECTION_METADATA_KEY] = json.dumps(embedding_info)
+        
+        # ChromaDB doesn't have direct metadata update, so we need to recreate
+        # This is a workaround - in production, you might want to handle this differently
+        log_error(f"Updated collection metadata with embedding info: {embedding_info}")
+    except Exception as e:
+        log_error(f"Error setting collection embedding info: {str(e)}")
+
+def check_collection_compatibility(collection, embedding_model_name: str, dimensions: int) -> Tuple[bool, str]:
+    """Check if collection is compatible with current embedding model."""
+    try:
+        embedding_info = get_collection_embedding_info(collection)
+        
+        if not embedding_info:
+            # Collection has no embedding info, assume it's incompatible if it has data
+            if collection.count() > 0:
+                return False, "Collection exists but has no embedding model information."
+            else:
+                # Empty collection, can be used with any model
+                return True, "Empty collection, compatible with any model."
+        
+        stored_dimensions = embedding_info.get("dimensions", -1)
+        stored_model = embedding_info.get("model_name", "unknown")
+        
+        if stored_dimensions != dimensions:
+            return False, f"Dimension mismatch: Collection expects {stored_dimensions}, but current model has {dimensions}."
+        
+        if stored_model != embedding_model_name:
+            # Different model but same dimensions - might work but warn
+            return True, f"Warning: Collection was created with {stored_model}, now using {embedding_model_name}."
+        
+        return True, "Collection is compatible with current embedding model."
+        
+    except Exception as e:
+        err_msg = f"Error checking collection compatibility: {str(e)}"
+        log_error(err_msg)
+        return False, err_msg
+
+def initialize_vector_db(embedding_model_name: Optional[str] = None, dimensions: Optional[int] = None) -> bool:
+    """Ensures the vector database collection exists and is compatible."""
     func_name = "initialize_vector_db"
     client = get_chroma_client()
     if not client:
         return False
 
     try:
-        collection = client.get_or_create_collection(
-            name=COLLECTION_NAME,
-            metadata=DEFAULT_METADATA
-        )
+        # Try to get existing collection
+        try:
+            collection = client.get_collection(name=COLLECTION_NAME)
+            
+            # Check compatibility if embedding info is provided
+            if embedding_model_name and dimensions:
+                is_compatible, message = check_collection_compatibility(collection, embedding_model_name, dimensions)
+                
+                if not is_compatible:
+                    log_error(f"{func_name}: {message} Recreating collection...")
+                    
+                    # Delete incompatible collection
+                    client.delete_collection(name=COLLECTION_NAME)
+                    
+                    # Create new collection
+                    metadata = DEFAULT_METADATA.copy()
+                    import json
+                    metadata[COLLECTION_METADATA_KEY] = json.dumps({
+                        "model_name": embedding_model_name,
+                        "dimensions": dimensions,
+                        "created_at": time.time()
+                    })
+                    
+                    collection = client.create_collection(
+                        name=COLLECTION_NAME,
+                        metadata=metadata
+                    )
+                    log_error(f"{func_name}: Created new collection with dimensions {dimensions}")
+                else:
+                    log_error(f"{func_name}: {message}")
+            
+        except Exception as e:
+            # Collection doesn't exist, create it
+            metadata = DEFAULT_METADATA.copy()
+            
+            if embedding_model_name and dimensions:
+                import json
+                metadata[COLLECTION_METADATA_KEY] = json.dumps({
+                    "model_name": embedding_model_name,
+                    "dimensions": dimensions,
+                    "created_at": time.time()
+                })
+            
+            collection = client.create_collection(
+                name=COLLECTION_NAME,
+                metadata=metadata
+            )
+            log_error(f"{func_name}: Created new collection")
         
         # Initialize BM25 if needed
         if collection.count() > 0:
@@ -144,23 +252,7 @@ def _initialize_bm25_index(collection):
         log_error(f"Error initializing BM25 index: {str(e)}")
         _bm25_index = None
 
-def get_embedding_dimensions(embedding_model) -> int:
-    """Get the dimensions of the embedding model."""
-    try:
-        test_output = embedding_model.encode(["test"])
-        if isinstance(test_output, dict):
-            if 'dense_vecs' in test_output:
-                return len(test_output['dense_vecs'][0])
-            elif 'embeddings' in test_output:
-                return len(test_output['embeddings'][0])
-            elif 'sentence_embedding' in test_output:
-                return len(test_output['sentence_embedding'][0])
-        else:
-            # For regular numpy array or list output
-            return len(test_output[0])
-    except Exception as e:
-        log_error(f"Error getting embedding dimensions: {str(e)}")
-        return 384  # Default to common dimension
+
 
 def safe_embed_batch(embedding_model, texts: List[str], batch_size: int = 4) -> List[List[float]]:
     """Safely embed a batch of texts with proper error handling and memory management."""
@@ -256,6 +348,157 @@ def get_cached_embedding(text: str, embedding_model) -> Optional[List[float]]:
         log_error(f"Error generating embedding for cached text: {str(e)}")
         return None
 
+def add_chunks_to_collection(
+    chunks: List[str],
+    embedding_model,
+    collection,
+    status = None
+) -> bool:
+    """Embeds chunks and adds them to the ChromaDB collection with dimension checking."""
+    func_name = "add_chunks_to_collection"
+    
+    if not chunks: 
+        return True
+    if not embedding_model: 
+        err_msg = "Cannot add chunks: Embedding model is missing."
+        st.error(err_msg)
+        log_error(f"{func_name}: Failed - {err_msg}")
+        return False
+    if not collection: 
+        err_msg = "Cannot add chunks: DB collection object is missing."
+        st.error(err_msg)
+        log_error(f"{func_name}: Failed - {err_msg}")
+        return False
+
+    def _update_status(label: str):
+        if status: 
+            status.update(label=label)
+
+    try:
+        # Get current model dimensions and name
+        current_dimensions = get_embedding_dimensions(embedding_model)
+        model_name = getattr(embedding_model, 'model_name', 'unknown')
+        
+        # Check if collection is compatible
+        is_compatible, message = check_collection_compatibility(collection, model_name, current_dimensions)
+        
+        if not is_compatible:
+            err_msg = f"Cannot add chunks: {message}"
+            st.error(err_msg)
+            log_error(f"{func_name}: Failed - {err_msg}")
+            
+            # Suggest reset to user
+            st.warning("Please reset the vector database or switch back to the original embedding model.")
+            return False
+        
+        if message.startswith("Warning:"):
+            log_error(f"{func_name}: {message}")
+        
+        # Adaptive batch sizing based on available GPU memory
+        if torch.cuda.is_available():
+            gpu_memory = torch.cuda.get_device_properties(0).total_memory
+            free_memory = gpu_memory - torch.cuda.memory_allocated(0)
+            # Use smaller batches if memory is constrained
+            batch_size = 4 if free_memory < 4*1024*1024*1024 else 8
+        else:
+            batch_size = 8
+        
+        total_chunks = len(chunks)
+        total_batches = (total_chunks + batch_size - 1) // batch_size
+        
+        _update_status(f"Embedding and storing {total_chunks} chunks in {total_batches} batches...")
+        log_error(f"{func_name}: Starting with batch size {batch_size}")
+        
+        bm25_tokenized_texts = []
+        
+        for i in range(0, total_chunks, batch_size):
+            batch_end = min(i + batch_size, total_chunks)
+            current_batch_texts = chunks[i:batch_end]
+            batch_num = i // batch_size + 1
+            
+            _update_status(f"Processing batch {batch_num}/{total_batches}...")
+            
+            try:
+                # Clear GPU memory before each batch
+                clear_gpu_memory()
+                
+                # Use the safe embedding function
+                embeddings = safe_embed_batch(embedding_model, current_batch_texts, batch_size=4)
+                
+                # Verify dimensions
+                for j, embedding in enumerate(embeddings):
+                    if len(embedding) != current_dimensions:
+                        err_msg = f"Embedding dimension mismatch in batch {batch_num}, item {j}: expected {current_dimensions}, got {len(embedding)}"
+                        log_error(f"{func_name}: {err_msg}")
+                        st.error(err_msg)
+                        return False
+                
+                # Prepare BM25 data
+                for text in current_batch_texts:
+                    bm25_tokenized_texts.append(text.split())
+                
+                # Generate IDs and metadata
+                timestamp_ms = int(time.time() * 1000)
+                ids = [f"chunk_{timestamp_ms}_{i + j}" for j in range(len(current_batch_texts))]
+                metadatas = [{"text": text} for text in current_batch_texts]
+                
+                # Add to collection
+                try:
+                    collection.add(ids=ids, embeddings=embeddings, metadatas=metadatas)
+                except InvalidDimensionException as dim_err:
+                    err_msg = f"Dimension error: {str(dim_err)}"
+                    st.error(err_msg)
+                    log_error(f"{func_name}: {err_msg}")
+                    st.warning("The vector database may have been created with a different embedding model. Please reset the database.")
+                    return False
+                
+                # Clear memory after each batch
+                clear_gpu_memory()
+                
+            except Exception as batch_err:
+                err_msg = f"Error processing batch {batch_num}: {str(batch_err)}"
+                log_error(f"{func_name}: {err_msg}")
+                st.error(err_msg)
+                return False
+        
+        # Update BM25 index
+        if bm25_tokenized_texts:
+            try:
+                global _bm25_index
+                if _bm25_index is None:
+                    _bm25_index = BM25Okapi(bm25_tokenized_texts)
+                else:
+                    # Recreate index with all documents
+                    results = collection.get(include=["metadatas"])
+                    all_texts = []
+                    
+                    if results and results.get("metadatas"):
+                        for meta in results["metadatas"]:
+                            if meta and "text" in meta:
+                                all_texts.append(meta["text"].split())
+                        
+                        _bm25_index = BM25Okapi(all_texts)
+                        log_error(f"{func_name}: Updated BM25 index with {len(all_texts)} documents.")
+            except Exception as bm25_err:
+                log_error(f"{func_name}: Warning - BM25 index update failed: {str(bm25_err)}")
+        
+        final_msg = f"Successfully stored {total_chunks} chunks."
+        _update_status(final_msg)
+        log_error(f"{func_name}: {final_msg}")
+        
+        # Final memory cleanup
+        clear_gpu_memory()
+        
+        return True
+        
+    except Exception as e:
+        err_msg = f"Unexpected error during chunk storage: {str(e)}"
+        st.error(err_msg)
+        log_error(f"{func_name}: Failed - {err_msg}")
+        if status: 
+            status.update(label=err_msg, state="error")
+        return False
+
 def hybrid_retrieval(
     query: str, 
     embedding_model, 
@@ -276,6 +519,16 @@ def hybrid_retrieval(
         return []
     
     try:
+        # Check collection compatibility
+        current_dimensions = get_embedding_dimensions(embedding_model)
+        model_name = getattr(embedding_model, 'model_name', 'unknown')
+        
+        is_compatible, message = check_collection_compatibility(collection, model_name, current_dimensions)
+        
+        if not is_compatible:
+            log_error(f"{func_name}: {message}")
+            return []
+        
         # 1. Get vector results
         query_embedding = get_cached_embedding(query, embedding_model)
         if not query_embedding:
@@ -289,6 +542,12 @@ def hybrid_retrieval(
                         query_embedding = embedding_output['embeddings'][0].tolist()
                 else:
                     query_embedding = embedding_output[0].tolist()
+        
+        # Verify query embedding dimensions
+        if len(query_embedding) != current_dimensions:
+            err_msg = f"Query embedding dimension mismatch: expected {current_dimensions}, got {len(query_embedding)}"
+            log_error(f"{func_name}: {err_msg}")
+            return []
         
         vector_results = collection.query(
             query_embeddings=[query_embedding],
@@ -422,6 +681,10 @@ def hybrid_retrieval(
         
         return results
     
+    except InvalidDimensionException as dim_err:
+        err_msg = f"Dimension error in hybrid retrieval: {str(dim_err)}"
+        log_error(f"{func_name}: {err_msg}")
+        return []
     except Exception as e:
         err_msg = f"Error in hybrid retrieval: {str(e)}"
         log_error(f"{func_name}: Failed - {err_msg}")
@@ -445,123 +708,6 @@ async def async_hybrid_retrieval(
         alpha=alpha,
         use_reranker=use_reranker,
     )
-
-def add_chunks_to_collection(
-    chunks: List[str],
-    embedding_model,
-    collection,
-    status = None
-) -> bool:
-    """Embeds chunks and adds them to the ChromaDB collection with better memory management."""
-    func_name = "add_chunks_to_collection"
-    
-    if not chunks: 
-        return True
-    if not embedding_model: 
-        err_msg = "Cannot add chunks: Embedding model is missing."
-        st.error(err_msg)
-        log_error(f"{func_name}: Failed - {err_msg}")
-        return False
-    if not collection: 
-        err_msg = "Cannot add chunks: DB collection object is missing."
-        st.error(err_msg)
-        log_error(f"{func_name}: Failed - {err_msg}")
-        return False
-
-    def _update_status(label: str):
-        if status: 
-            status.update(label=label)
-
-    try:
-        # Adaptive batch sizing based on available GPU memory
-        if torch.cuda.is_available():
-            gpu_memory = torch.cuda.get_device_properties(0).total_memory
-            free_memory = gpu_memory - torch.cuda.memory_allocated(0)
-            # Use smaller batches if memory is constrained
-            batch_size = 4 if free_memory < 4*1024*1024*1024 else 8
-        else:
-            batch_size = 8
-        
-        total_chunks = len(chunks)
-        total_batches = (total_chunks + batch_size - 1) // batch_size
-        
-        _update_status(f"Embedding and storing {total_chunks} chunks in {total_batches} batches...")
-        log_error(f"{func_name}: Starting with batch size {batch_size}")
-        
-        bm25_tokenized_texts = []
-        
-        for i in range(0, total_chunks, batch_size):
-            batch_end = min(i + batch_size, total_chunks)
-            current_batch_texts = chunks[i:batch_end]
-            batch_num = i // batch_size + 1
-            
-            _update_status(f"Processing batch {batch_num}/{total_batches}...")
-            
-            try:
-                # Clear GPU memory before each batch
-                clear_gpu_memory()
-                
-                # Use the safe embedding function
-                embeddings = safe_embed_batch(embedding_model, current_batch_texts, batch_size=4)
-                
-                # Prepare BM25 data
-                for text in current_batch_texts:
-                    bm25_tokenized_texts.append(text.split())
-                
-                # Generate IDs and metadata
-                timestamp_ms = int(time.time() * 1000)
-                ids = [f"chunk_{timestamp_ms}_{i + j}" for j in range(len(current_batch_texts))]
-                metadatas = [{"text": text} for text in current_batch_texts]
-                
-                # Add to collection
-                collection.add(ids=ids, embeddings=embeddings, metadatas=metadatas)
-                
-                # Clear memory after each batch
-                clear_gpu_memory()
-                
-            except Exception as batch_err:
-                err_msg = f"Error processing batch {batch_num}: {str(batch_err)}"
-                log_error(f"{func_name}: {err_msg}")
-                st.error(err_msg)
-                return False
-        
-        # Update BM25 index
-        if bm25_tokenized_texts:
-            try:
-                global _bm25_index
-                if _bm25_index is None:
-                    _bm25_index = BM25Okapi(bm25_tokenized_texts)
-                else:
-                    # Recreate index with all documents
-                    results = collection.get(include=["metadatas"])
-                    all_texts = []
-                    
-                    if results and results.get("metadatas"):
-                        for meta in results["metadatas"]:
-                            if meta and "text" in meta:
-                                all_texts.append(meta["text"].split())
-                        
-                        _bm25_index = BM25Okapi(all_texts)
-                        log_error(f"{func_name}: Updated BM25 index with {len(all_texts)} documents.")
-            except Exception as bm25_err:
-                log_error(f"{func_name}: Warning - BM25 index update failed: {str(bm25_err)}")
-        
-        final_msg = f"Successfully stored {total_chunks} chunks."
-        _update_status(final_msg)
-        log_error(f"{func_name}: {final_msg}")
-        
-        # Final memory cleanup
-        clear_gpu_memory()
-        
-        return True
-        
-    except Exception as e:
-        err_msg = f"Unexpected error during chunk storage: {str(e)}"
-        st.error(err_msg)
-        log_error(f"{func_name}: Failed - {err_msg}")
-        if status: 
-            status.update(label=err_msg, state="error")
-        return False
 
 def get_chroma_collection() -> Optional[chromadb.Collection]:
     """Gets the existing ChromaDB collection."""

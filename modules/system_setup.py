@@ -20,6 +20,7 @@ import re  # Import the regex module
 from typing import Dict, List, Tuple, Any, Optional
 from modules.nlp_models import load_nltk_resources, load_spacy_model, load_embedding_model
 from modules.vector_store import initialize_vector_db
+from modules.nlp_models import get_embedding_dimensions
 
 # Use the logger from utils
 from modules.utils import log_error, create_directory_if_not_exists
@@ -563,7 +564,7 @@ def get_system_info() -> Dict[str, Any]:
 from modules.utils import tourism_logger as logger
 
 def initialize_system():
-    """Initialize system components for tourism analysis with better error handling."""
+    """Initialize system components for tourism analysis with better error handling and dimension support."""
     func_name = "initialize_system"
     logger.info(f"Starting tourism system initialization...")
     st.session_state.system_initialized = False
@@ -666,7 +667,22 @@ def initialize_system():
 
     # --- Vector DB Initialization (Critical) ---
     logger.info("Initializing tourism knowledge base...")
-    db_success = initialize_vector_db()
+    
+    # Get embedding model info for vector DB initialization
+    embedding_model_name = None
+    embedding_dimensions = None
+    
+    if embedding_model:
+        embedding_model_name = getattr(embedding_model, 'model_name', st.session_state.get("selected_embedding_model", "unknown"))
+        embedding_dimensions = get_embedding_dimensions(embedding_model)
+        logger.info(f"Embedding model: {embedding_model_name}, dimensions: {embedding_dimensions}")
+    
+    # Initialize vector DB with dimension information
+    db_success = initialize_vector_db(
+        embedding_model_name=embedding_model_name,
+        dimensions=embedding_dimensions
+    )
+    
     initialization_results["vector_db"] = db_success
     if not db_success:
         overall_success = False
