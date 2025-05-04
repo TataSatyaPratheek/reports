@@ -3,6 +3,12 @@ Enhanced System setup module - Handles dependency checking and system initializa
 Optimized for tourism RAG chatbot application.
 """
 import subprocess
+import os
+NLTK_DATA_PATH = os.path.expanduser('~/nltk_data')
+os.environ['NLTK_DATA'] = NLTK_DATA_PATH
+import nltk
+nltk.data.path = [NLTK_DATA_PATH]  # Override all other paths
+
 import sys
 import streamlit as st
 import pkg_resources

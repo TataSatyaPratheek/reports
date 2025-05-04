@@ -1,6 +1,11 @@
+import os
+NLTK_DATA_PATH = os.path.expanduser('~/nltk_data')
+os.environ['NLTK_DATA'] = NLTK_DATA_PATH
+import nltk
+nltk.data.path = [NLTK_DATA_PATH]  # Override all other path
+
 import streamlit as st
 import time
-import os
 import sys
 from typing import Tuple, Dict, Any, List, Optional
 
@@ -774,6 +779,14 @@ def initialize_system():
 
     # --- Load NLP Resources ---
     logger.info("Loading tourism analysis models...")
+
+    # Ensure NLTK data path is set correctly (incorporating manual fix)
+    import nltk
+    import os
+    NLTK_DATA_PATH = os.path.expanduser('~/nltk_data')
+    nltk.data.path.insert(0, NLTK_DATA_PATH)
+    os.environ['NLTK_DATA'] = NLTK_DATA_PATH
+
     nltk_ready = load_nltk_resources()
     if not nltk_ready:
         overall_success = False

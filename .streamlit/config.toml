@@ -1,0 +1,7 @@
+[logger]
+level = "warning"
+messageFormat = "%(asctime)s %(message)s"
+[runner]
+fastReruns = false
+[server]
+fileWatcherType = "none"

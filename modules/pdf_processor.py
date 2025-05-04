@@ -3,12 +3,18 @@ Enhanced PDF Processor Module - Handles PDF parsing and text chunking.
 Optimized for tourism and travel document analysis.
 """
 import os
+NLTK_DATA_PATH = os.path.expanduser('~/nltk_data')
+os.environ['NLTK_DATA'] = NLTK_DATA_PATH
+import nltk
+nltk.data.path = [NLTK_DATA_PATH]  # Override all other paths
+
 import tempfile
 import time
 import re
 import json
 from typing import List, Dict, Any, Optional, Tuple, Union
 
+from nltk.tokenize import sent_tokenize # Import specific function
 import streamlit as st
 import nltk
 import openparse
@@ -126,14 +132,17 @@ def smart_chunking(
     
     try:
         # Tokenize into sentences
+        # Add punkt check before using sent_tokenize
         try:
-            sentences = nltk.sent_tokenize(text)
+            sent_tokenize("Test sentence.") # Force punkt check
         except LookupError:
-            # This specific error was already handled, but keep the check robust
-            err_msg = "NLTK 'punkt' tokenizer missing during chunking. Check initialization."
-            st.error(err_msg)
-            log_error(err_msg)
+            # If lookup fails here, it's likely a path/permission issue,
+            # as load_nltk_resources should have handled the download.
+            err_msg = f"NLTK 'punkt' lookup failed unexpectedly during chunking. Check NLTK_DATA path ({NLTK_DATA_PATH}) and permissions. Initialization should have downloaded it."
+            st.error(err_msg); log_error(err_msg); return [{"text": text, "metadata": {}}]
         except Exception as nltk_e:
+            # Handle other potential NLTK errors during the check
+            # This might happen if download fails or path is wrong despite setting
             err_msg = f"NLTK sentence tokenization error: {str(nltk_e)}"
             st.warning(err_msg)
             log_error(err_msg)
@@ -144,6 +153,9 @@ def smart_chunking(
         current_chunk_sentences = []
         current_word_count = 0
         current_section = "general"
+
+        # Now use sent_tokenize after the check/download
+        sentences = sent_tokenize(text)
         
         for i, sentence in enumerate(sentences):
             words = sentence.split()

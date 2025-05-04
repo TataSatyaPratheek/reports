@@ -16,6 +16,13 @@ from typing import List, Dict, Any, Optional, Tuple, Union, Awaitable
 from modules.utils import log_error
 from modules.vector_store import hybrid_retrieval, async_hybrid_retrieval
 
+import os
+NLTK_DATA_PATH = os.path.expanduser('~/nltk_data')
+os.environ['NLTK_DATA'] = NLTK_DATA_PATH
+import nltk
+nltk.data.path = [NLTK_DATA_PATH]  # Override all other paths
+
+
 # Try to import flash_attn for optimization
 try:
     try:
@@ -216,9 +223,14 @@ async def async_query_llm(
                 # Note: use_hybrid_retrieval check is outside, this assumes hybrid is used
                 use_reranker=use_reranker
             ) if use_hybrid_retrieval else asyncio.to_thread(
-                lambda: collection.query(
-                    query_embeddings=embedding_model.encode([user_query]).tolist(),
-                    n_results=top_n
+                lambda: collection.query( # Standard query fallback
+                    query_embeddings=(
+                        output['embeddings'].tolist()
+                        if isinstance((output := embedding_model.encode([user_query])), dict)
+                        else output.tolist()
+                    ),
+                    n_results=top_n,
+                    include=["metadatas", "distances"] # Ensure metadatas are included
                 )
             )
         )
@@ -245,8 +257,13 @@ async def async_query_llm(
                         use_reranker=use_reranker
                     ) if use_hybrid_retrieval else asyncio.to_thread(
                         lambda: collection.query(
-                            query_embeddings=embedding_model.encode([effective_query]).tolist(),
-                            n_results=top_n
+                            query_embeddings=(
+                                output['embeddings'].tolist()
+                                if isinstance((output := embedding_model.encode([effective_query])), dict)
+                                else output.tolist()
+                            ),
+                            n_results=top_n,
+                            include=["metadatas", "distances"] # Ensure metadatas are included
                         )
                     )
                 )
@@ -397,7 +414,12 @@ def query_llm(
                     if use_flash_attn:
                         query_vector = embedding_model.forward_with_flash_attn(effective_query).tolist()
                     else:
-                        query_vector = embedding_model.encode([effective_query]).tolist()
+                        # Apply embedding output fix
+                        embedding_output = embedding_model.encode([effective_query])
+                        if isinstance(embedding_output, dict):
+                            query_vector = embedding_output['embeddings'].tolist()
+                        else:
+                            query_vector = embedding_output.tolist()
                         
                     db_results = collection.query(query_embeddings=query_vector, n_results=top_n)
                     

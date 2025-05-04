@@ -7,6 +7,12 @@ Enhanced Vector Store Module - Handles ChromaDB initialization and operations wi
 - Flash Attention optimization
 """
 import os
+NLTK_DATA_PATH = os.path.expanduser('~/nltk_data')
+os.environ['NLTK_DATA'] = NLTK_DATA_PATH
+import nltk
+nltk.data.path = [NLTK_DATA_PATH]  # Override all other paths
+
+import os
 import shutil
 import time
 from typing import List, Dict, Any, Optional, Tuple, Union, Awaitable
@@ -276,9 +282,15 @@ def get_cached_embedding(text: str, embedding_model) -> Optional[List[float]]:
         # Use accelerated attention if available
         if has_flash_attn and hasattr(embedding_model, 'forward_with_flash_attn'):
             # Note: Flash attention integration might not directly support prompt_name.
-            return embedding_model.forward_with_flash_attn(text).tolist()
+                embedding_output = embedding_model.forward_with_flash_attn(text)
         else:
-            return embedding_model.encode(text).tolist()
+                embedding_output = embedding_model.encode(text)
+
+        if isinstance(embedding_output, dict):
+            return embedding_output.get('embeddings', []) # Return empty list if key missing
+        else:
+            return embedding_output.tolist()
+        
     except Exception as e:
         log_error(f"Error generating embedding for cached text: {str(e)}")
         return None
@@ -323,7 +335,12 @@ def hybrid_retrieval(
         query_embedding = get_cached_embedding(query, embedding_model)
         if not query_embedding:
             log_error(f"{func_name}: Warning - Failed to generate cached embedding, using direct encode.")
-            query_embedding = embedding_model.encode(query).tolist()
+            # Apply embedding output fix
+            embedding_output = embedding_model.encode(query)
+            if isinstance(embedding_output, dict):
+                query_embedding = embedding_output['embeddings'].tolist()
+            else:
+                query_embedding = embedding_output.tolist()
         
         vector_results = collection.query(
             query_embeddings=query_embedding,
@@ -543,7 +560,7 @@ def add_chunks_to_collection(
 
     try:
         # Reduced batch size significantly to prevent CUDA OOM with large models like bge-m3
-        batch_size = 16 # Try 16 first, reduce further to 8 or 4 if OOM persists
+        batch_size = 8 # Try 16 first, reduce further to 8 or 4 if OOM persists
         total_chunks = len(chunks)
         total_batches = (total_chunks + batch_size - 1) // batch_size
         _update_status(f"Embedding and storing {total_chunks} chunks...")
@@ -576,10 +593,15 @@ def add_chunks_to_collection(
                         embeddings.append(cached_embedding)
                     else:
                         # If not cached, fall back to direct embedding (this will also cache it)
+                        # Apply embedding output fix
                         if has_flash_attn and hasattr(embedding_model, 'forward_with_flash_attn'):
-                            embeddings.append(embedding_model.forward_with_flash_attn(text).tolist())
+                            embedding_output = embedding_model.forward_with_flash_attn(text)
                         else:
-                            embeddings.append(embedding_model.encode(text).tolist())
+                            embedding_output = embedding_model.encode(text)
+                        if isinstance(embedding_output, dict):
+                            embeddings.append(embedding_output['embeddings'].tolist())
+                        else:
+                            embeddings.append(embedding_output.tolist())
                         
                 # Also prepare data for BM25 index
                 for text in current_batch_texts:

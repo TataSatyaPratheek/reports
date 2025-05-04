@@ -3,13 +3,19 @@ Enhanced NLP Models Module - Handles loading and managing NLP models.
 Optimized for tourism and travel document analysis.
 """
 import streamlit as st
+
+import os
+NLTK_DATA_PATH = os.path.expanduser('~/nltk_data')
+os.environ['NLTK_DATA'] = NLTK_DATA_PATH
 import nltk
+nltk.data.path = [NLTK_DATA_PATH]  # Override all other paths
+
 import spacy
 from FlagEmbedding import BGEM3FlagModel # Changed import
 import subprocess
 import sys
-import os
 import asyncio
+from nltk.tokenize import sent_tokenize, word_tokenize # Import specific functions
 import torch # Import torch for CUDA operations
 from typing import Optional, Dict, List, Union, Tuple, Any # Added Any
 from modules.utils import log_error, PerformanceMonitor
@@ -33,53 +39,66 @@ TOURISM_KEYWORDS = {
 @st.cache_resource(show_spinner="Loading NLTK resources...")
 def load_nltk_resources():
     """Load required NLTK resources (punkt, wordnet, stopwords) with proper verification."""
-    required_resources = {
-        'punkt': 'tokenizers/punkt',
-        'wordnet': 'corpora/wordnet',
-        'stopwords': 'corpora/stopwords'
-    }
+    # Ensure NLTK data path is set (redundant with top-level but safe)
+    nltk.data.path = [os.environ['NLTK_DATA']]
+    if NLTK_DATA_PATH not in nltk.data.path:
+        # If somehow it wasn't set by the top-level code, set it now.
+        nltk.data.path = [NLTK_DATA_PATH]
+        log_error(f"Re-set {NLTK_DATA_PATH} in nltk.data.path within load_nltk_resources")
+        log_error(f"{NLTK_DATA_PATH} already in nltk.data.path")
 
-    missing_resources = []
-    for resource_name, resource_path in required_resources.items():
+    resources = [
+        ('tokenizers/punkt', 'punkt'),
+        ('corpora/stopwords', 'stopwords'),
+        ('corpora/wordnet', 'wordnet')
+    ]
+
+    for path, name in resources:
         try:
-            nltk.data.find(resource_path)
-            log_error(f"NLTK resource '{resource_name}' is already downloaded.")
+            # First check if already present
+            nltk.data.find(path)
+            log_error(f"NLTK resource '{name}' found at {path}")
+            continue
         except LookupError:
-            missing_resources.append((resource_name, resource_path))
+            log_error(f"Resource '{name}' not found. Attempting download...")
 
-    if not missing_resources:
-        return True
-
-    # Download missing resources
-    download_success = True
-    for resource_name, _ in missing_resources:
-        for attempt in range(1, 3):  # Try twice
+        # Try downloading twice
+        for attempt in range(1, 3):
             try:
-                log_error(f"Attempting download for NLTK resource '{resource_name}' (Attempt {attempt}/2)...")
-                nltk.download(resource_name, quiet=False)
-                log_error(f"Successfully downloaded '{resource_name}'.")
-                break
-            except Exception as e:
-                log_error(f"Failed to download NLTK resource '{resource_name}' (Attempt {attempt}/2): {str(e)}")
-                if attempt == 2:  # Last attempt failed
-                    download_success = False
+                log_error(f"Download attempt {attempt}/2 for {name}")
+                # Ensure the download directory exists
+                os.makedirs(NLTK_DATA_PATH, exist_ok=True)
+                nltk.download(name, download_dir=NLTK_DATA_PATH, quiet=False) # Added quiet=False for visibility
 
-    # Verify all resources after download attempts
-    verification_success = True
-    for resource_name, resource_path in required_resources.items():
+                # Verify after download
+                try:
+                    nltk.data.find(path)
+                    log_error(f"Successfully verified {name} after download")
+                    break # Exit inner loop on success
+                except LookupError:
+                    log_error(f"Verification failed for {name} immediately after download attempt {attempt}.")
+                    if attempt == 2:
+                        log_error(f"Critical: {name} verification failed after 2 download attempts")
+                        st.error(f"Failed to download and verify NLTK resource '{name}'. Chunking/analysis may fail.")
+                        return False
+                    # Continue to next attempt if not the last one
+
+            except Exception as download_error:
+                log_error(f"Download failed for {name} (attempt {attempt}): {str(download_error)}")
+                if attempt == 2:
+                    st.error(f"Failed to download NLTK resource '{name}' after 2 attempts: {str(download_error)}")
+                    return False
+                # Wait a bit before retrying? (Optional)
+                # time.sleep(1)
+
+    # Final verification pass after attempting downloads for all resources
+    for path, name in resources:
         try:
-            nltk.data.find(resource_path)
+            nltk.data.find(path)
         except LookupError:
-            verification_success = False
-            error_msg = f"NLTK resource '{resource_name}' could not be verified after download attempts."
-            st.error(error_msg)
-            log_error(error_msg)
-
-    if not verification_success:
-        error_msg = "Failed to download/verify NLTK resources. Chunking may fail."
-        st.error(error_msg)
-        log_error(error_msg)
-        return False
+            log_error(f"Final verification failed for {name}. It should have been downloaded.")
+            st.error(f"NLTK resource '{name}' is missing after download attempts. Please check network and permissions for {NLTK_DATA_PATH}.")
+            return False
 
     return True
 
@@ -254,11 +273,19 @@ def calculate_text_complexity(text: str) -> Dict[str, float]:
             "readability_score": 0
         }
     
-    try:
-        # Tokenize text
+    try: # Start of the main try block
+        try: # Inner try for NLTK check/download
+            sent_tokenize("Test sentence.") # Force punkt check
+        except LookupError:
+            log_error("NLTK 'punkt' not found during complexity calc, attempting download...")
+            nltk.download('punkt', download_dir=os.environ['NLTK_DATA'])
+            nltk.data.path = [os.environ['NLTK_DATA']] # Re-set path
+            log_error("NLTK 'punkt' downloaded, proceeding with complexity calc.")
+
+        # Now use tokenizers after the check
         try:
-            sentences = nltk.sent_tokenize(text)
-            words = nltk.word_tokenize(text)
+            sentences = sent_tokenize(text)
+            words = word_tokenize(text)
         except LookupError as nltk_err:
             log_error(f"NLTK resource missing during complexity calculation: {nltk_err}. Returning default complexity.")
             return {"avg_word_length": 0, "avg_sentence_length": 0, "readability_score": 0}
@@ -287,7 +314,7 @@ def calculate_text_complexity(text: str) -> Dict[str, float]:
             "avg_sentence_length": round(avg_sentence_length, 2),
             "readability_score": round(readability_score, 2)
         }
-    except Exception as e:
+    except Exception as e: # This except block is now correctly indented within the main try block
         log_error(f"Error calculating text complexity: {str(e)}")
         return {
             "avg_word_length": 0,

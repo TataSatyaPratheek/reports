@@ -3,6 +3,12 @@ Enhanced Utilities Module - Helper functions and classes for tourism RAG chatbot
 """
 import time
 import streamlit as st
+import os
+NLTK_DATA_PATH = os.path.expanduser('~/nltk_data')
+os.environ['NLTK_DATA'] = NLTK_DATA_PATH
+import nltk
+nltk.data.path = [NLTK_DATA_PATH]  # Override all other paths
+
 import psutil
 import os
 import re
@@ -10,6 +16,7 @@ import json
 import datetime
 import asyncio
 from typing import Dict, List, Tuple, Any, Optional, Union, Set, Callable
+from nltk.tokenize import sent_tokenize, word_tokenize # Import specific functions
 
 class PerformanceMonitor:
     """
