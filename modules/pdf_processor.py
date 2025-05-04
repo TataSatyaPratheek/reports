@@ -129,10 +129,10 @@ def smart_chunking(
         try:
             sentences = nltk.sent_tokenize(text)
         except LookupError:
-            err_msg = "NLTK 'punkt' tokenizer not found. Please ensure it's downloaded during initialization."
+            # This specific error was already handled, but keep the check robust
+            err_msg = "NLTK 'punkt' tokenizer missing during chunking. Check initialization."
             st.error(err_msg)
             log_error(err_msg)
-            return [{"text": text, "metadata": {}}]
         except Exception as nltk_e:
             err_msg = f"NLTK sentence tokenization error: {str(nltk_e)}"
             st.warning(err_msg)

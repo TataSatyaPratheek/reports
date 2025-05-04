@@ -18,8 +18,9 @@ from chromadb.config import Settings
 from chromadb.errors import InvalidDimensionException
 import numpy as np
 from rank_bm25 import BM25Okapi
+import torch # Added for CUDA cache management
 from cachetools import TTLCache, cached
-from jina_reranker_client import RerankerClient  # Updated to jina-reranker-client package
+from FlagEmbedding import FlagReranker  # BGE reranker for superior performance
 
 from modules.utils import log_error, create_directory_if_not_exists
 
@@ -50,15 +51,22 @@ _bm25_index = None
 _reranker = None
 
 def get_reranker():
-    """Get or initialize the Jina Reranker client."""
+    """Get or initialize the BGE Reranker."""
     global _reranker
     if _reranker is None:
         try:
-            # Initialize the Jina Reranker client
-            _reranker = RerankerClient()  # Using simplified client initialization
-            log_error("Jina Reranker client initialized successfully.")
+            # Clear CUDA cache before loading a potentially large model
+            if torch.cuda.is_available():
+                log_error("Clearing CUDA cache before loading reranker...")
+                torch.cuda.empty_cache()
+                log_error("CUDA cache cleared.")
+
+            # Initialize the BGE Reranker
+            # Using fp16 for faster inference if GPU is available
+            _reranker = FlagReranker('BAAI/bge-reranker-large', use_fp16=True)
+            log_error("BGE Reranker initialized successfully.")
         except Exception as e:
-            log_error(f"Failed to initialize Jina Reranker client: {str(e)}")
+            log_error(f"Failed to initialize BGE Reranker: {str(e)}")
             # Return None to indicate failure
             return None
     return _reranker
@@ -189,6 +197,13 @@ def reset_vector_db() -> tuple:
     _reranker_cache.clear()
     _bm25_index = None
     _reranker = None
+
+    # Explicitly clear CUDA cache during reset
+    if torch.cuda.is_available():
+        log_error(f"{func_name}: Clearing CUDA cache...")
+        torch.cuda.empty_cache()
+        log_error(f"{func_name}: CUDA cache cleared.")
+
     
     try:
         if os.path.exists(VECTOR_DB_PATH):
@@ -249,6 +264,7 @@ def get_cached_embedding(text: str, embedding_model) -> Optional[List[float]]:
     """
     Generates and caches embeddings for text to avoid repeated encoding.
     """
+    
     try:
         # Check if flash-attn is available and use it for faster embedding
         try:
@@ -259,6 +275,7 @@ def get_cached_embedding(text: str, embedding_model) -> Optional[List[float]]:
             
         # Use accelerated attention if available
         if has_flash_attn and hasattr(embedding_model, 'forward_with_flash_attn'):
+            # Note: Flash attention integration might not directly support prompt_name.
             return embedding_model.forward_with_flash_attn(text).tolist()
         else:
             return embedding_model.encode(text).tolist()
@@ -273,7 +290,7 @@ def hybrid_retrieval(
     collection, 
     top_n: int = 10, 
     alpha: float = 0.5,  # Weight between vector and BM25 (1.0 = all vector, 0.0 = all BM25)
-    use_reranker: bool = True
+    use_reranker: bool = True,
 ) -> List[Dict]:
     """
     Perform hybrid retrieval combining vector similarity and BM25 keyword retrieval.
@@ -284,7 +301,7 @@ def hybrid_retrieval(
         collection: ChromaDB collection
         top_n: Number of results to return
         alpha: Weighting between vector and BM25 retrieval (1.0 = all vector, 0.0 = all BM25)
-        use_reranker: Whether to use Jina reranker on results
+        use_reranker: Whether to use BGE reranker on results
         
     Returns:
         List of dictionaries with text and metadata
@@ -446,16 +463,18 @@ def hybrid_retrieval(
                         results = _reranker_cache[cache_key]
                     else:
                         # Perform reranking with updated Jina reranker client
+                        # Perform reranking with BGE reranker
                         corpus = [r["text"] for r in results]
-                        reranked = reranker.rerank(query=query, documents=corpus)
+                        pairs = [[query, doc] for doc in corpus]
+                        scores = reranker.compute_score(pairs)
                         
                         # Create new results list with reranked order
                         reranked_results = []
-                        for rank_item in reranked:
-                            idx = rank_item["index"]
+                        ranked_indices = sorted(range(len(scores)), key=lambda i: scores[i], reverse=True)
+                        for idx in ranked_indices:
                             if idx < len(results):
                                 # Update score with reranker score
-                                results[idx]["score"] = rank_item["score"]
+                                results[idx]["score"] = scores[idx]
                                 reranked_results.append(results[idx])
                         
                         # Cache the reranked results
@@ -479,7 +498,7 @@ async def async_hybrid_retrieval(
     collection, 
     top_n: int = 10, 
     alpha: float = 0.5,
-    use_reranker: bool = True
+    use_reranker: bool = True,
 ) -> List[Dict]:
     """
     Async version of hybrid retrieval with optimized performance.
@@ -492,7 +511,7 @@ async def async_hybrid_retrieval(
         collection=collection,
         top_n=top_n,
         alpha=alpha,
-        use_reranker=use_reranker
+        use_reranker=use_reranker,
     )
 
 # --- Data Addition (Enhanced with BM25 updates) ---
@@ -523,7 +542,8 @@ def add_chunks_to_collection(
         if status: status.update(label=label)
 
     try:
-        batch_size = 64
+        # Reduced batch size significantly to prevent CUDA OOM with large models like bge-m3
+        batch_size = 16 # Try 16 first, reduce further to 8 or 4 if OOM persists
         total_chunks = len(chunks)
         total_batches = (total_chunks + batch_size - 1) // batch_size
         _update_status(f"Embedding and storing {total_chunks} chunks...")
@@ -619,6 +639,13 @@ def add_chunks_to_collection(
         final_msg = f"Stored {total_chunks} chunks successfully."
         _update_status(final_msg)
         log_error(f"{func_name}: {final_msg}")
+
+        # Clear CUDA cache after potentially large embedding operation
+        if torch.cuda.is_available():
+            log_error(f"{func_name}: Clearing CUDA cache after embedding...")
+            torch.cuda.empty_cache()
+            log_error(f"{func_name}: CUDA cache cleared after embedding.")
+
         return True
     except Exception as e:
         err_msg = f"Unexpected error during chunk storage loop: {str(e)}"

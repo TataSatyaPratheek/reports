@@ -10,8 +10,12 @@ import os
 import platform
 import json
 import asyncio
+import re  # Import the regex module
 from typing import Dict, List, Tuple, Any, Optional
+from modules.nlp_models import load_nltk_resources, load_spacy_model, load_embedding_model
+from modules.vector_store import initialize_vector_db
 
+# Use the logger from utils
 from modules.utils import log_error, create_directory_if_not_exists
 
 # Define the path to the pyproject.toml file for dependency checking
@@ -61,12 +65,13 @@ def parse_pyproject_dependencies(filepath: str) -> dict:
     """
     requirements = {}
     try:
-        # Simple TOML parsing for dependencies section
+        # Use regex for more robust parsing of package names from pyproject.toml
+        package_pattern = re.compile(r'^\s*"([^"]+)"')  # Pattern to find package name in quotes at line start
         in_dependencies = False
         with open(filepath, 'r') as f:
             for line in f:
                 line = line.strip()
-                
+
                 # Check for dependencies section
                 if line == "dependencies = [":
                     in_dependencies = True
@@ -74,19 +79,13 @@ def parse_pyproject_dependencies(filepath: str) -> dict:
                 elif in_dependencies and line == "]":
                     in_dependencies = False
                     continue
-                
-                # Parse dependency lines
-                if in_dependencies and line and line.startswith('"') and "=" in line:
-                    # Clean up the line: remove quotes, commas, etc.
-                    line = line.strip('",')
-                    parts = line.split('=')
-                    if len(parts) >= 2:
-                        package = parts[0].strip().strip('"')
-                        version = parts[1].strip().strip('"')
-                        # Extract version constraint
-                        if ">=" in version:
-                            version = version.split(">=")[1]
-                        requirements[package] = version
+                elif in_dependencies and line:
+                    match = package_pattern.match(line)
+                    if match:
+                        package_name = match.group(1)
+                        # We primarily need the name for checking existence/version.
+                        # Storing a placeholder version or '*' is sufficient for this check function's purpose.
+                        requirements[package_name] = "*" # Store package name, version detail less critical here
     except FileNotFoundError:
         err_msg = f"Error: pyproject.toml not found at {filepath}"
         st.error(err_msg)
@@ -95,7 +94,7 @@ def parse_pyproject_dependencies(filepath: str) -> dict:
         err_msg = f"Error parsing pyproject.toml: {str(e)}"
         st.error(err_msg)
         log_error(err_msg)
-    
+
     return requirements
 
 def check_pdm_installed() -> bool:
@@ -130,7 +129,10 @@ def ensure_dependencies() -> list:
         try:
             installed_version = pkg_resources.get_distribution(package).version
             # Use parse_version for robust comparison
-            if pkg_resources.parse_version(installed_version) < pkg_resources.parse_version(required_version):
+            # Note: Simple comparison might fail if required_version is '*' or complex specifier.
+            # For this check, we mainly care if it's installed. Version mismatch warning is secondary.
+            # Let's simplify: just report if missing or error, skip complex version compare for now.
+            if required_version != "*" and pkg_resources.parse_version(installed_version) < pkg_resources.parse_version(required_version):
                 mismatched_packages.append((package, required_version, installed_version))
         except pkg_resources.DistributionNotFound:
             mismatched_packages.append((package, required_version, "Missing"))
@@ -258,16 +260,40 @@ def setup_ollama(install: bool = False) -> bool:
     """
     Check if Ollama is installed and install it if requested.
     
+    Verifies client and server versions match.
+    
     Args:
         install: Whether to install Ollama if not found
         
     Returns:
         True if Ollama is available, False otherwise
     """
+    func_name = "setup_ollama" # Added for logging consistency
     try:
         # Check if Ollama is already installed and runnable
         result = subprocess.run(['ollama', '--version'], capture_output=True, text=True, check=True, timeout=10)
-        st.info(f"Ollama found: {result.stdout.strip()}")
+        version_info = result.stdout.strip()
+        st.info(f"Ollama found: {version_info}")
+        
+        # Check for version mismatch warning
+        if "Warning: client version" in version_info:
+            warning_msg = "Ollama client/server version mismatch detected. This may cause issues."
+            st.warning(warning_msg)
+            log_error(f"{func_name}: {warning_msg}")
+            
+            # Extract versions for more specific guidance
+            server_match = re.search(r'ollama version is (\d+\.\d+\.\d+)', version_info)
+            client_match = re.search(r'client version is (\d+\.\d+\.\d+)', version_info)
+            
+            if server_match and client_match:
+                server_version = server_match.group(1)
+                client_version = client_match.group(1)
+                guidance = f"To fix this issue, consider upgrading Ollama (server is {server_version}, client expects {client_version}) or adjusting the 'ollama' Python package version (`pip install ollama=={server_version}`)."
+                st.info(guidance)
+            
+            # Return true but with warning - system can still function
+            return True
+        
         return True
     except FileNotFoundError:
          status_msg = "Ollama command not found."
@@ -281,7 +307,7 @@ def setup_ollama(install: bool = False) -> bool:
     except Exception as e:
          status_msg = f"Error checking for Ollama: {str(e)}"
          if not install: st.warning(status_msg)
-         log_error(status_msg)
+         log_error(f"{func_name}: {status_msg}") # Added func_name
 
     # If we reached here, Ollama is not ready. Proceed with install logic if allowed.
     if not install:
@@ -334,18 +360,18 @@ def setup_ollama(install: bool = False) -> bool:
         except (FileNotFoundError, subprocess.CalledProcessError, subprocess.TimeoutExpired) as post_install_err:
             err_msg = f"Ollama installation script ran, but verification failed: {post_install_err}"
             st.error(err_msg)
-            log_error(err_msg)
+            log_error(f"{func_name}: {err_msg}") # Added func_name
             return False
 
     except subprocess.CalledProcessError as e:
         err_msg = f"Failed to run Ollama install command: {install_command_str}. Error: {e.stderr}"
         st.error(err_msg)
-        log_error(err_msg)
+        log_error(f"{func_name}: {err_msg}") # Added func_name
         return False
     except subprocess.TimeoutExpired as e:
         err_msg = f"Timeout running Ollama install command: {install_command_str} after {e.timeout} seconds."
         st.error(err_msg)
-        log_error(err_msg)
+        log_error(f"{func_name}: {err_msg}") # Added func_name
         return False
     except Exception as e:
         err_msg = f"An unexpected error occurred during Ollama installation: {str(e)}"
@@ -353,10 +379,10 @@ def setup_ollama(install: bool = False) -> bool:
         log_error(err_msg)
         return False
 
-def refresh_available_models() -> list:
+def refresh_available_models() -> List[str]:
     """
     Check available Ollama models and return them with tourism model recommendations.
-    
+
     Returns:
         List of available model names
     """
@@ -390,15 +416,15 @@ def refresh_available_models() -> list:
         log_error(warn_msg)
         return [DEFAULT_MODEL_NAME]
 
-    # Add recommended tourism models to beginning
-    for model in list(TOURISM_RECOMMENDED_MODELS.keys()):
+    # Ensure recommended models are present, add if missing
+    final_models = list(models) # Create a mutable copy
+    for model in reversed(list(TOURISM_RECOMMENDED_MODELS.keys())): # Add recommended to the front if missing
         if model not in models:
-            # Add to beginning with note that it needs downloading
-            models.insert(0, model)
+            final_models.insert(0, model)
 
-    return models
+    return final_models
 
-async def async_refresh_available_models() -> list:
+async def async_refresh_available_models() -> List[str]:
     """Async version of refresh_available_models."""
     loop = asyncio.get_event_loop()
     return await loop.run_in_executor(None, refresh_available_models)
@@ -413,14 +439,15 @@ def download_model(model_name: str) -> tuple:
     Returns:
         (success: bool, message: str)
     """
+    func_name = "download_model" # For logging
     available_models = refresh_available_models()
     is_available = model_name in available_models and (
-        model_name != DEFAULT_MODEL_NAME or 
-        len(available_models) > 1 or 
+        model_name != DEFAULT_MODEL_NAME or
+        len(available_models) > 1 or
         "command not found" not in st.session_state.get("last_ollama_list_warning", "")
     )
 
-    if is_available:
+    if is_available and "needs downloading" not in model_name: # Check if it's just a placeholder
          return True, f"Model '{model_name}' is already available or listed."
 
     st.info(f"Attempting to download model '{model_name}'...")
@@ -429,7 +456,7 @@ def download_model(model_name: str) -> tuple:
     if model_name in TOURISM_RECOMMENDED_MODELS:
         info = TOURISM_RECOMMENDED_MODELS[model_name]
         st.info(f"📝 {info['description']}")
-        st.info(f"✅ Recommended for: {', '.join(info['recommend_for'])}")
+        st.info(f"✅ Recommended for: {', '.join(info.get('recommend_for', ['N/A']))}")
     
     try:
         with st.spinner(f"Downloading model '{model_name}'. This can take several minutes..."):
@@ -446,10 +473,10 @@ def download_model(model_name: str) -> tuple:
         if model_name in final_models:
             return True, f"Model '{model_name}' downloaded and verified successfully."
         else:
-             warn_msg = f"Model '{model_name}' download command finished, but couldn't verify in list immediately."
+             warn_msg = f"{func_name}: Model '{model_name}' download command finished, but couldn't verify in list immediately."
              st.warning(warn_msg)
              log_error(warn_msg)
-             return True, warn_msg
+             return True, warn_msg # Still return True, as download likely succeeded but list refresh might lag
 
     except FileNotFoundError:
          err_msg = "Ollama command not found. Cannot download model."
@@ -525,3 +552,141 @@ def get_system_info() -> Dict[str, Any]:
         info["recommended_models"] = ["llama3.2:latest", "mistral:latest"]
     
     return info
+
+# Use the global logger from utils
+from modules.utils import tourism_logger as logger
+
+def initialize_system():
+    """Initialize system components for tourism analysis with better error handling."""
+    func_name = "initialize_system"
+    logger.info(f"Starting tourism system initialization...")
+    st.session_state.system_initialized = False
+    st.session_state.initialization_status = "In Progress..."
+    overall_success = True
+    error_messages = []
+    initialization_results = {
+        "dependencies": False,
+        "ollama": False,
+        "nltk": False,
+        "nlp_model": False,
+        "embedding_model": False,
+        "vector_db": False
+    }
+
+    # Ensure permissions state exists
+    if "permissions" not in st.session_state:
+        st.session_state.permissions = {
+            "allow_package_install": False,
+            "allow_ollama_install": False,
+        }
+
+    # --- Dependency Check ---
+    logger.info("Checking tourism analysis dependencies...")
+    mismatched = ensure_dependencies()
+    dependencies_ok = True # Assume OK initially for this step
+    if mismatched:
+        allow_install = st.session_state.permissions.get("allow_package_install", False)
+        for pkg, req_v, installed_v in mismatched:
+            # Determine package spec for installation command
+            if pkg == "en_core_web_sm":
+                pkg_spec = "en_core_web_sm" # Special command handled by install_package
+            elif req_v != "*" and installed_v != "Missing":
+                 # If a specific version is required and we know the installed one (or it's missing)
+                 pkg_spec = f"{pkg}=={req_v}"
+            else:
+                 # If version is '*' or installed version is unknown/missing, just install the package name
+                 pkg_spec = pkg
+
+            if allow_install:
+                logger.info(f"Attempting install/download for missing/mismatched: {pkg_spec}")
+                success = install_package(pkg_spec)
+                if not success:
+                    dependencies_ok = False
+                    error_messages.append(f"Failed to install/download {pkg}.")
+            else:
+                dependencies_ok = False
+                error_messages.append(f"Missing/mismatched dependency: {pkg} (Required: {req_v}, Found: {installed_v}). Installation permission denied.")
+
+    initialization_results["dependencies"] = dependencies_ok
+    if not dependencies_ok:
+        overall_success = False
+        logger.error(f"Tourism dependency check failed. Errors: {' | '.join(error_messages)}")
+        # Continue to check other components if possible
+    else:
+        logger.info("Tourism dependencies OK.")
+
+    # --- Ollama Check ---
+    logger.info("Checking Ollama for tourism AI models...")
+    allow_ollama_install = st.session_state.permissions.get("allow_ollama_install", False)
+    ollama_ready = setup_ollama(install=allow_ollama_install)
+    initialization_results["ollama"] = ollama_ready
+    if not ollama_ready:
+        overall_success = False
+        error_messages.append("Tourism AI engine (Ollama) setup failed or not found. Check installation or grant permission.")
+        logger.error("Ollama setup failed.")
+        # Continue to check other components
+    else:
+        logger.info("Tourism AI engine OK.")
+
+    # --- Load NLP Resources ---
+    logger.info("Loading tourism analysis models...")
+    # NLTK (Treat as non-critical for overall success, but log failure)
+    nltk_success = load_nltk_resources()
+    initialization_results["nltk"] = nltk_success
+    if not nltk_success:
+        msg = "NLTK resources could not be loaded. Some text processing features might be limited."
+        error_messages.append(msg)
+        logger.warning(msg)
+        # Do not set overall_success to False for NLTK failure
+
+    # SpaCy (Critical)
+    nlp_model = load_spacy_model()
+    initialization_results["nlp_model"] = bool(nlp_model)
+    if not nlp_model:
+        overall_success = False
+        error_messages.append("Critical: Tourism NLP (SpaCy) model initialization failed.")
+        logger.error("Critical: SpaCy model failed to load.")
+
+    # Embedding Model (Critical)
+    embedding_model = load_embedding_model()
+    initialization_results["embedding_model"] = bool(embedding_model)
+    if not embedding_model:
+        overall_success = False
+        error_messages.append("Critical: Embedding model initialization failed.")
+        logger.error("Critical: Embedding model failed to load.")
+
+    if nlp_model and embedding_model:
+         logger.info("Core NLP/Embedding models OK.")
+
+    # --- Vector DB Initialization (Critical) ---
+    logger.info("Initializing tourism knowledge base...")
+    db_success = initialize_vector_db()
+    initialization_results["vector_db"] = db_success
+    if not db_success:
+        overall_success = False
+        error_messages.append("Critical: Tourism knowledge base (Vector DB) initialization failed.")
+        logger.error("Critical: Tourism knowledge base initialization failed.")
+    else:
+        logger.info("Tourism knowledge base OK.")
+
+    # --- Refresh Models (Run even if other steps failed, if Ollama is OK) ---
+    if ollama_ready:
+        logger.info("Checking available tourism AI models...")
+        st.session_state.available_models = refresh_available_models()
+        logger.info(f"Found {len(st.session_state.get('available_models', []))} tourism AI models.")
+
+    # --- Final Status ---
+    st.session_state.initialization_results = initialization_results # Store results regardless of success
+    if overall_success:
+        st.session_state.initialization_complete = True
+        st.session_state.system_initialized = True
+        st.session_state.initialization_status = "Completed Successfully"
+        logger.info("Tourism Explorer initialized successfully!")
+        return True, "Tourism Explorer initialized successfully!"
+    else:
+        st.session_state.initialization_complete = False # Explicitly set to false on failure
+        st.session_state.system_initialized = False
+        st.session_state.initialization_status = "Failed"
+        final_error_message = "Tourism Explorer initialization failed. Issues found:\n- " + "\n- ".join(error_messages)
+        logger.error(final_error_message)
+        return False, final_error_message

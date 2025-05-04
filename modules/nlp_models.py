@@ -5,19 +5,20 @@ Optimized for tourism and travel document analysis.
 import streamlit as st
 import nltk
 import spacy
-from sentence_transformers import SentenceTransformer, util
+from FlagEmbedding import BGEM3FlagModel # Changed import
 import subprocess
 import sys
 import os
 import asyncio
-from typing import Optional, Dict, List, Union, Tuple
+import torch # Import torch for CUDA operations
+from typing import Optional, Dict, List, Union, Tuple, Any # Added Any
 from modules.utils import log_error, PerformanceMonitor
 
 # Define model names as constants
 SPACY_MODEL_NAME = "en_core_web_sm"
 # Using a more powerful embedding model for better travel domain understanding
-EMBEDDING_MODEL_NAME = "all-MiniLM-L12-v2"  # Upgraded from L6 to L12 for better semantic understanding
-# Add travel-specific entities if needed
+EMBEDDING_MODEL_NAME = "dunzhang/stella_en_400M_v5"  # Stella 400M for superior embeddings and retrieval
+EMBEDDING_MODEL_NAME = "BAAI/bge-m3" # Changed to BGE-M3
 TRAVEL_ENTITIES = ["DESTINATION", "ACCOMMODATION", "TRANSPORTATION", "ACTIVITY", "ATTRACTION"]
 
 # Define tourism-related keywords for entity recognition enhancements
@@ -31,19 +32,55 @@ TOURISM_KEYWORDS = {
 
 @st.cache_resource(show_spinner="Loading NLTK resources...")
 def load_nltk_resources():
-    """Load required NLTK resources (punkt, wordnet)."""
-    try:
-        nltk.data.find('tokenizers/punkt')
-        nltk.data.find('corpora/wordnet')
-    except LookupError:
+    """Load required NLTK resources (punkt, wordnet, stopwords) with proper verification."""
+    required_resources = {
+        'punkt': 'tokenizers/punkt',
+        'wordnet': 'corpora/wordnet',
+        'stopwords': 'corpora/stopwords'
+    }
+
+    missing_resources = []
+    for resource_name, resource_path in required_resources.items():
         try:
-            nltk.download("punkt", quiet=True)
-            nltk.download("wordnet", quiet=True)  # Added for tourism term enrichment
-            nltk.download("stopwords", quiet=True)  # Added for better text processing
-        except Exception as e:
-            warn_msg = f"Failed to download NLTK resources: {str(e)}"
-            st.warning(warn_msg)
-            log_error(warn_msg)
+            nltk.data.find(resource_path)
+            log_error(f"NLTK resource '{resource_name}' is already downloaded.")
+        except LookupError:
+            missing_resources.append((resource_name, resource_path))
+
+    if not missing_resources:
+        return True
+
+    # Download missing resources
+    download_success = True
+    for resource_name, _ in missing_resources:
+        for attempt in range(1, 3):  # Try twice
+            try:
+                log_error(f"Attempting download for NLTK resource '{resource_name}' (Attempt {attempt}/2)...")
+                nltk.download(resource_name, quiet=False)
+                log_error(f"Successfully downloaded '{resource_name}'.")
+                break
+            except Exception as e:
+                log_error(f"Failed to download NLTK resource '{resource_name}' (Attempt {attempt}/2): {str(e)}")
+                if attempt == 2:  # Last attempt failed
+                    download_success = False
+
+    # Verify all resources after download attempts
+    verification_success = True
+    for resource_name, resource_path in required_resources.items():
+        try:
+            nltk.data.find(resource_path)
+        except LookupError:
+            verification_success = False
+            error_msg = f"NLTK resource '{resource_name}' could not be verified after download attempts."
+            st.error(error_msg)
+            log_error(error_msg)
+
+    if not verification_success:
+        error_msg = "Failed to download/verify NLTK resources. Chunking may fail."
+        st.error(error_msg)
+        log_error(error_msg)
+        return False
+
     return True
 
 @st.cache_resource(show_spinner=f"Loading SpaCy model ({SPACY_MODEL_NAME})...")
@@ -52,7 +89,7 @@ def load_spacy_model():
     try:
         # Load the model
         nlp = spacy.load(SPACY_MODEL_NAME)
-        
+
         # Add tourism-specific entity types
         if "ner" in nlp.pipe_names:
             # Only modify if model has NER component
@@ -93,9 +130,27 @@ def load_spacy_model():
 @st.cache_resource(show_spinner=f"Loading embedding model ({EMBEDDING_MODEL_NAME})...")
 def load_embedding_model():
     """Load sentence transformer model with error handling."""
+    func_name = "load_embedding_model"
     try:
-        model = SentenceTransformer(EMBEDDING_MODEL_NAME)
+        # --- Immediate Fix 2: Clear CUDA cache before loading ---
+        if torch.cuda.is_available():
+            log_error(f"{func_name}: Clearing CUDA cache...")
+            torch.cuda.empty_cache()
+            log_error(f"{func_name}: CUDA cache cleared.")
+
+        log_error(f"{func_name}: Loading SentenceTransformer '{EMBEDDING_MODEL_NAME}'...")
+        # Load the model, specifying device if CUDA is available
+        device: str = 'cuda' if torch.cuda.is_available() else 'cpu'
+        use_fp16: bool = (device == 'cuda') # Use FP16 only if on GPU
+        model: Any = BGEM3FlagModel(EMBEDDING_MODEL_NAME, device=device, use_fp16=use_fp16) # Changed loader
+        log_error(f"{func_name}: Loaded {EMBEDDING_MODEL_NAME} on {device} with use_fp16={use_fp16}")
         st.success(f"Embedding model '{EMBEDDING_MODEL_NAME}' loaded.")
+
+        # --- Critical Check: Print memory summary ---
+        if device == 'cuda':
+            log_error(f"{func_name}: CUDA Memory Summary after loading:")
+            log_error(torch.cuda.memory_summary())
+
         return model
     except ImportError:
         err_msg = "Sentence Transformers library not installed. Cannot load embedding model."
@@ -201,9 +256,13 @@ def calculate_text_complexity(text: str) -> Dict[str, float]:
     
     try:
         # Tokenize text
-        sentences = nltk.sent_tokenize(text)
-        words = nltk.word_tokenize(text)
-        
+        try:
+            sentences = nltk.sent_tokenize(text)
+            words = nltk.word_tokenize(text)
+        except LookupError as nltk_err:
+            log_error(f"NLTK resource missing during complexity calculation: {nltk_err}. Returning default complexity.")
+            return {"avg_word_length": 0, "avg_sentence_length": 0, "readability_score": 0}
+
         # Filter out punctuation
         words = [word for word in words if word.isalpha()]
         

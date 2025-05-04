@@ -6,7 +6,13 @@ import tempfile
 from typing import Dict, List, Any, Optional, Tuple, Union
 
 import chainlit as cl
-from chainlit.types import AskFileResponse
+# Update import for newer Chainlit versions - AskFileResponse was renamed
+try:
+    from chainlit.types import AskFileResponse  # For older versions
+except ImportError:
+    # For newer versions, we'll handle file objects directly
+    pass
+
 import numpy as np
 import chromadb
 
@@ -21,6 +27,26 @@ from modules.pdf_processor import process_uploaded_pdf
 from modules.vector_store import add_chunks_to_collection
 from modules.llm_interface import query_llm, SlidingWindowMemory
 from modules.utils import log_error, PerformanceMonitor, TourismLogger, extract_tourism_metrics_from_text
+
+# Check Chainlit version and set compatibility flags
+try:
+    cl_version = cl.__version__
+    log_error(f"Detected Chainlit version: {cl_version}")
+
+    # Parse version for compatibility checks
+    version_parts = cl_version.split('.')
+    MAJOR_VERSION = int(version_parts[0]) if version_parts else 0
+    MINOR_VERSION = int(version_parts[1]) if len(version_parts) > 1 else 0
+
+    # Set flags based on version
+    USE_NEW_FILE_API = MAJOR_VERSION >= 1
+    USE_ASYNC_ACTIONS = MAJOR_VERSION >= 1
+
+except (AttributeError, ValueError, IndexError):
+    # Default to assuming newer version if we can't detect
+    log_error("Could not determine Chainlit version, assuming newer API")
+    USE_NEW_FILE_API = True
+    USE_ASYNC_ACTIONS = True
 
 # Initialize logger
 logger = TourismLogger()
@@ -51,7 +77,7 @@ AGENT_ROLES = {
     "General Tourism Assistant": "You are a helpful tourism information assistant. Provide clear, accurate, and balanced information about travel topics based on the provided document context. Offer insights on destinations, travel planning, industry trends, and tourism services. Present information in an accessible manner suitable for both industry professionals and travelers. Focus on presenting factual information rather than personal opinions."
 }
 
-# --- Global state ---
+# --- Global state --- # This class definition remains the same as provided
 class AppState:
     def __init__(self):
         self.current_role = "Travel Trends Analyst"
@@ -81,10 +107,192 @@ class AppState:
 # Initialize app state
 app_state = AppState()
 
+# --- Rest of the code follows with appropriate adaptations ---
+# ... (The rest of your code like on_chat_start, etc.)
 # --- Setup and initialization ---
 @cl.on_chat_start
 async def on_chat_start():
     """Initialize the tourism RAG chatbot when a new chat starts."""
+    # Send a welcome message
+    await cl.Message(
+        content="""# 🌍 Welcome to Tourism Insights Explorer!
+
+Analyze your tourism documents to extract valuable insights about:
+- 📊 Travel market trends
+- 💳 Payment methods across segments
+- 👥 Customer segmentation strategies
+- 🌱 Sustainability initiatives
+
+**Upload your tourism PDF documents to get started!**
+        """,
+        metadata={"role": "system"}
+    ).send()
+
+    # Check and fix Chainlit config if needed
+    try:
+        config_dir = os.path.join(os.path.expanduser("~"), ".chainlit")
+        config_file = os.path.join(config_dir, "config.toml")
+
+        if os.path.exists(config_file):
+            # Check if config file is valid
+            try:
+                with open(config_file, 'r') as f:
+                    config_content = f.read()
+
+                # Simple validation - check if it contains expected sections
+                if "[project]" not in config_content or "[UI]" not in config_content:
+                    # Config file may be corrupt - backup and remove
+                    backup_file = f"{config_file}.bak"
+                    os.rename(config_file, backup_file)
+                    log_error(f"Detected potentially corrupt Chainlit config. Backed up to {backup_file}")
+
+                    await cl.Message(
+                        content="⚠️ Chainlit configuration has been reset due to potential corruption. Please refresh the page.",
+                        author="System"
+                    ).send()
+
+                    return
+            except Exception as e:
+                # Error reading config file - might be corrupt
+                log_error(f"Error reading Chainlit config file: {str(e)}")
+                try:
+                    # Try to backup and remove
+                    backup_file = f"{config_file}.error"
+                    os.rename(config_file, backup_file)
+                    log_error(f"Backed up problematic config to {backup_file}")
+
+                    await cl.Message(
+                        content="⚠️ Chainlit configuration has been reset due to errors. Please refresh the page.",
+                        author="System"
+                    ).send()
+
+                    return
+                except Exception as rename_err:
+                    log_error(f"Failed to backup/remove corrupt config: {str(rename_err)}")
+    except Exception as config_check_err:
+        log_error(f"Error checking Chainlit config: {str(config_check_err)}")
+
+    # Initialize tourism system components
+    if not app_state.initialization_complete:
+        with cl.Step("System Initialization", show_feedback=True) as step:
+            step.input = "Initializing Tourism Analysis System"
+
+            try:
+                # Initialize NLP resources
+                step.status = cl.StepStatus.RUNNING
+                await step.update()
+
+                # More robust NLTK resources loading
+                nltk_success = await asyncio.to_thread(load_nltk_resources)
+                if not nltk_success:
+                    step.output = "❌ Failed to initialize NLTK resources. Document processing may fail."
+                    step.status = cl.StepStatus.WARNING
+                    await step.update()
+
+                    # Send a warning message
+                    await cl.Message(
+                        content="⚠️ NLTK resources could not be loaded. Document processing may be limited.",
+                        author="System"
+                    ).send()
+
+                    # Don't return - attempt to initialize other components
+
+                # Load NLP and embedding models
+                app_state.nlp_model = await asyncio.to_thread(load_spacy_model)
+                app_state.embedding_model = await asyncio.to_thread(load_embedding_model)
+
+                # Check for critical model failures
+                if not app_state.nlp_model:
+                    step.output = "❌ Failed to load NLP model. Document processing will be limited."
+                    step.status = cl.StepStatus.WARNING
+                    await step.update()
+
+                    await cl.Message(
+                        content="⚠️ NLP model could not be loaded. Entity extraction will be limited.",
+                        author="System"
+                    ).send()
+
+                    # Continue with limited functionality
+
+                if not app_state.embedding_model:
+                    step.output = "❌ Failed to load embedding model. Search functionality will not work."
+                    step.status = cl.StepStatus.FAILED
+                    await step.update()
+
+                    await cl.Message(
+                        content="❌ Embedding model could not be loaded. Please refresh and try again.",
+                        author="System"
+                    ).send()
+
+                    # This is a critical failure - return early
+                    return
+
+                # Initialize vector database
+                db_success = await asyncio.to_thread(initialize_vector_db)
+                if not db_success:
+                    step.output = "❌ Failed to initialize vector database. Search will not work."
+                    step.status = cl.StepStatus.FAILED
+                    await step.update()
+
+                    await cl.Message(
+                        content="❌ Vector database initialization failed. Please refresh and try again.",
+                        author="System"
+                    ).send()
+
+                    # This is a critical failure - return early
+                    return
+
+                app_state.collection = await asyncio.to_thread(get_chroma_collection)
+
+                if not app_state.collection:
+                    step.output = "❌ Failed to get vector collection. Search will not work."
+                    step.status = cl.StepStatus.FAILED
+                    await step.update()
+
+                    await cl.Message(
+                        content="❌ Vector collection could not be accessed. Please refresh and try again.",
+                        author="System"
+                    ).send()
+
+                    # This is a critical failure - return early
+                    return
+
+                # If we made it here with all critical components, mark as complete
+                if app_state.embedding_model and app_state.collection:
+                    app_state.initialization_complete = True
+                    step.output = "✅ Tourism Analysis System initialized successfully!"
+                    step.status = cl.StepStatus.COMPLETED
+                else:
+                    step.output = "⚠️ Tourism Analysis System initialized with limitations."
+                    step.status = cl.StepStatus.WARNING
+            except Exception as e:
+                logger.error(f"Initialization error: {str(e)}")
+                step.output = f"❌ Error during initialization: {str(e)}"
+                step.status = cl.StepStatus.FAILED
+
+                await cl.Message(
+                    content=f"❌ System initialization failed: {str(e)}\n\nPlease refresh and try again.",
+                    author="System"
+                ).send()
+
+                return
+
+            await step.update()
+
+    # Add a message indicating readiness for file upload
+    await cl.Message(
+        content="System initialized. You can now upload your PDF documents for analysis.",
+        author="System"
+    ).send()
+
+    # Create action buttons for tourism expertise roles
+    # ... [rest of the function remains unchanged] ...
+
+
+@cl.on_chat_start
+async def on_chat_start_old(): # Renamed the old function temporarily
+    """Initialize the tourism RAG chatbot when a new chat starts."""
+    print("--- DEBUG: Entering on_chat_start ---")
     # Send a welcome message
     await cl.Message(
         content="""# 🌍 Welcome to Tourism Insights Explorer!
@@ -100,20 +308,25 @@ Analyze your tourism documents to extract valuable insights about:
         metadata={"role": "system"}
     ).send()
     
-    # Initialize tourism system components
+    # Initialize tourism system components (OLD VERSION - TO BE REMOVED)
     if not app_state.initialization_complete:
-        with cl.Step("System Initialization", show_feedback=True) as step:
+        print("--- DEBUG: Starting System Initialization block ---")
+        async with cl.Step(name="System Initialization", show_input=True) as step:
             step.input = "Initializing Tourism Analysis System"
+            print("--- DEBUG: System Initialization Step created ---")
             
             try:
                 # Initialize NLP resources
                 step.status = cl.StepStatus.RUNNING
                 await step.update()
                 
+                print("--- DEBUG: Calling load_nltk_resources() ---")
                 load_nltk_resources()
+                print("--- DEBUG: Calling load_spacy_model() ---")
                 app_state.nlp_model = load_spacy_model()
+                print("--- DEBUG: Calling load_embedding_model() ---")
                 app_state.embedding_model = load_embedding_model()
-                
+                print("--- DEBUG: Calling initialize_vector_db() ---")
                 # Initialize vector database
                 initialize_vector_db()
                 app_state.collection = get_chroma_collection()
@@ -122,15 +335,26 @@ Analyze your tourism documents to extract valuable insights about:
                     app_state.initialization_complete = True
                     step.output = "✅ Tourism Analysis System initialized successfully!"
                     step.status = cl.StepStatus.COMPLETED
+                    print("--- DEBUG: System Initialization successful ---")
                 else:
                     step.output = "❌ Failed to initialize Tourism Analysis System. Please check logs."
                     step.status = cl.StepStatus.FAILED
+                    print("--- DEBUG: System Initialization failed (component check) ---")
             except Exception as e:
                 logger.error(f"Initialization error: {str(e)}")
                 step.output = f"❌ Error during initialization: {str(e)}"
                 step.status = cl.StepStatus.FAILED
+                print(f"--- DEBUG: System Initialization failed with exception: {e} ---")
             
             await step.update()
+        print("--- DEBUG: Exiting System Initialization block ---")
+    
+    
+    # Wait for all file processing tasks to complete
+    if file_processing_tasks:
+        print(f"--- DEBUG: Waiting for {len(file_processing_tasks)} file processing tasks ---")
+        await asyncio.gather(*file_processing_tasks)
+        print("--- DEBUG: File processing tasks complete ---")
     
     # Create action buttons for tourism expertise roles
     actions = [
@@ -150,12 +374,7 @@ Analyze your tourism documents to extract valuable insights about:
         actions=actions,
         metadata={"role": "system"}
     ).send()
-    
-    # Set up file upload element
-    await cl.Message(
-        content="📤 Upload your tourism documents (PDFs) to begin analysis.",
-        author="Tourism Assistant"
-    ).send()
+    print("--- DEBUG: Sent role selection message ---")
     
     # Create settings element
     settings = cl.ChatSettings(
@@ -198,6 +417,8 @@ Analyze your tourism documents to extract valuable insights about:
         ]
     )
     await settings.send()
+    print("--- DEBUG: Exiting on_chat_start ---")
+
 
 @cl.on_settings_update
 async def on_settings_update(settings: Dict[str, Any]):
@@ -214,9 +435,18 @@ async def on_settings_update(settings: Dict[str, Any]):
         disable_feedback=True
     ).send()
 
-@cl.on_action
+# Register callback for each tourism expertise action
+@cl.action_callback("trends")
+@cl.action_callback("payment")
+@cl.action_callback("segments")
+@cl.action_callback("sustainability")
+@cl.action_callback("genz")
+@cl.action_callback("luxury")
+@cl.action_callback("analytics")
+@cl.action_callback("general")
 async def on_action(action: cl.Action):
     """Handle action button clicks for tourism expertise selection."""
+    print(f"--- DEBUG: Action callback triggered: {action.name} ({action.value}) ---")
     if action.value in AGENT_ROLES:
         app_state.current_role = action.value
         
@@ -231,10 +461,12 @@ async def on_action(action: cl.Action):
         elements.append(cl.Image(name="role", path="./assets/roles/" + action.value.lower().replace(" ", "_") + ".png"))
         elements.append(cl.Text(name="description", content=f"**Current Expertise:** {action.value}\n\n{AGENT_ROLES[action.value]}"))
         await cl.ChatSettings(elements).send()
+        print(f"--- DEBUG: Updated role to {action.value} ---")
 
 @cl.on_message
 async def on_message(message: cl.Message):
     """Process user messages and generate responses."""
+    print(f"--- DEBUG: Entering on_message for query: '{message.content[:50]}...' ---")
     if not app_state.initialization_complete:
         await cl.Message(
             content="⚠️ Tourism Analysis System is not fully initialized. Please refresh and try again.",
@@ -280,7 +512,8 @@ async def on_message(message: cl.Message):
         await token_stream.init()
         
         # Start a background task to process the query
-        with cl.Step(name="Searching Tourism Knowledge Base", show_feedback=True) as step:
+        async with cl.Step(name="Searching Tourism Knowledge Base", show_input=True) as step:
+            print(f"--- DEBUG: Starting hybrid retrieval for query: '{user_query}' ---")
             step.input = user_query
             
             results = await asyncio.to_thread(
@@ -292,6 +525,7 @@ async def on_message(message: cl.Message):
                 alpha=app_state.settings["hybrid_alpha"],
                 use_reranker=app_state.settings["use_reranker"]
             )
+            print(f"--- DEBUG: Hybrid retrieval returned {len(results)} results ---")
             
             # Create source documents for citation
             source_documents = []
@@ -326,7 +560,8 @@ async def on_message(message: cl.Message):
             await step.update()
         
         # Process query with LLM
-        with cl.Step(name="Generating Tourism Insights", show_feedback=True) as step:
+        async with cl.Step(name="Generating Tourism Insights", show_input=True) as step:
+            print(f"--- DEBUG: Starting LLM query for: '{user_query}' ---")
             step.input = user_query
             
             # Simulate token streaming for faster response
@@ -345,6 +580,7 @@ async def on_message(message: cl.Message):
                     hybrid_alpha=app_state.settings["hybrid_alpha"],
                     use_reranker=app_state.settings["use_reranker"]
                 )
+                print(f"--- DEBUG: LLM query returned answer (length: {len(answer)}) ---")
                 
                 # Stream tokens
                 tokens = answer.split()
@@ -365,6 +601,7 @@ async def on_message(message: cl.Message):
             
             # Stream tokens and wait for completion
             final_answer = await stream_tokens()
+            print("--- DEBUG: Token streaming complete ---")
             
             # End the token stream
             await token_stream.end()
@@ -373,455 +610,310 @@ async def on_message(message: cl.Message):
             await msg.update(source_documents=source_documents)
     
     except Exception as e:
-        logger.error(f"Error processing tourism query: {str(e)}")
+        error_message = f"Error processing tourism query: {str(e)}"
+        logger.error(error_message)
         await cl.Message(
-            content=f"❌ An error occurred while processing your tourism query: {str(e)}",
+            content=f"❌ An error occurred: {error_message}",
             author="System"
         ).send()
+        print(f"--- DEBUG: Error in on_message: {error_message} ---")
+        return
+    
+    print("--- DEBUG: Exiting on_message ---")
 
-@cl.on_file_upload
-async def on_file_upload(file: AskFileResponse):
+# For most recent Chainlit versions:
+@cl.on_chat_message_files
+async def on_chat_message_files(files: List[cl.File]): # Use cl.File for type hint if available
     """Process uploaded tourism document files."""
-    if file.type != "application/pdf":
+    if not files: # Check if the list is empty
+        return
+
+    # First check if system is initialized
+    if not app_state.initialization_complete:
         await cl.Message(
-            content="⚠️ Only PDF documents are supported for tourism analysis.",
+            content="❌ System is not fully initialized. Please wait for initialization to complete or refresh the page.",
             author="System"
         ).send()
         return
-    
-    try:
-        # Check if we have the required components
+
+    # Check if we have the required components
+    if not app_state.embedding_model or app_state.collection is None:
+        # Try to load them if not available (useful after refresh)
+        log_error("Missing components during file upload, attempting to reload...")
+        app_state.embedding_model = await asyncio.to_thread(load_embedding_model)
+        app_state.collection = await asyncio.to_thread(get_chroma_collection)
+
         if not app_state.embedding_model or app_state.collection is None:
-            app_state.embedding_model = load_embedding_model()
-            app_state.collection = get_chroma_collection()
-            
-            if not app_state.embedding_model or app_state.collection is None:
-                await cl.Message(
-                    content="⚠️ Tourism analysis system is not properly initialized. Please refresh and try again.",
-                    author="System"
-                ).send()
-                return
-        
-        # Create a temporary file
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
-            temp_file.write(file.content)
-            temp_file_path = temp_file.name
-        
-        # Create processing message
-        process_msg = cl.Message(content=f"🔍 Analyzing tourism document: {file.name}...", author="System")
-        await process_msg.send()
-        
-        # Process the document with advanced analysis
-        with cl.Step(f"Processing {file.name}", show_feedback=True) as step:
-            step.input = file.name
-            
-            try:
-                # Convert file to proper format for processing
-                uploaded_file = type('obj', (object,), {
-                    'name': file.name,
-                    'read': lambda: file.content
-                })
-                
-                # Process with tourism-focused extraction
-                chunks = await asyncio.to_thread(
-                    process_uploaded_pdf,
-                    uploaded_file=uploaded_file,
-                    chunk_size=app_state.settings["chunk_size"],
-                    overlap=app_state.settings["overlap"],
-                    extract_images=True
-                )
-                
-                if not chunks:
-                    step.output = f"No content could be extracted from {file.name}."
-                    step.status = cl.StepStatus.FAILED
-                    await step.update()
-                    
-                    await process_msg.update(content=f"⚠️ No content could be extracted from {file.name}. Please check if the PDF contains text content.")
-                    return
-                
-                # Process chunks and extract tourism entities
-                all_tourism_entities = {
-                    "DESTINATION": set(),
-                    "ACCOMMODATION": set(),
-                    "TRANSPORTATION": set(),
-                    "ACTIVITY": set(),
-                    "ATTRACTION": set()
-                }
-                
-                tourism_metrics = {
-                    "segments": {},
-                    "payment_methods": {},
-                    "sustainability": {},
-                    "trends": {}
-                }
-                
-                for chunk in chunks:
-                    # Extract entities
-                    if "tourism_entities" not in chunk.get("metadata", {}):
-                        entities = extract_tourism_entities(chunk["text"])
-                        chunk["metadata"]["tourism_entities"] = entities
-                    else:
-                        entities = chunk["metadata"]["tourism_entities"]
-                    
-                    # Aggregate entities
-                    for entity_type, items in entities.items():
-                        if entity_type in all_tourism_entities:
-                            all_tourism_entities[entity_type].update(items)
-                    
-                    # Process segment information
-                    if "segment_matches" in chunk["metadata"]:
-                        for segment, has_match in chunk["metadata"]["segment_matches"].items():
-                            if has_match:
-                                tourism_metrics["segments"][segment] = tourism_metrics["segments"].get(segment, 0) + 1
-                    
-                    # Process payment information
-                    if chunk["metadata"].get("has_payment_info", False):
-                        payment_keywords = ["credit card", "debit card", "cash", "digital wallet", 
-                                        "mobile payment", "cryptocurrency"]
-                        
-                        for payment in payment_keywords:
-                            if payment in chunk["text"].lower():
-                                tourism_metrics["payment_methods"][payment] = tourism_metrics["payment_methods"].get(payment, 0) + 1
-                
-                # Add to collection
-                add_success = await asyncio.to_thread(
-                    add_chunks_to_collection,
-                    chunks=[c["text"] for c in chunks],
-                    embedding_model=app_state.embedding_model,
-                    collection=app_state.collection
-                )
-                
-                if add_success:
-                    app_state.processed_files.add(file.name)
-                    
-                    # Convert sets to lists for storage
-                    for entity_type in all_tourism_entities:
-                        all_tourism_entities[entity_type] = list(all_tourism_entities[entity_type])
-                    
-                    # Merge with existing entities
-                    for entity_type, entities in all_tourism_entities.items():
-                        if entity_type not in app_state.extracted_entities:
-                            app_state.extracted_entities[entity_type] = []
-                        app_state.extracted_entities[entity_type].extend(entities)
-                        # Remove duplicates
-                        app_state.extracted_entities[entity_type] = list(set(app_state.extracted_entities[entity_type]))
-                    
-                    # Process tourism metrics
-                    if tourism_metrics["segments"]:
-                        for segment, count in tourism_metrics["segments"].items():
+            log_error("Failed to load required components for file processing")
+            await cl.Message(
+                content="⚠️ Tourism analysis system is not properly initialized. Please refresh and try again.",
+                author="System"
+            ).send()
+            return
+
+    for file in files:
+        # Check file type using the file object's attributes
+        if not hasattr(file, 'type') or not file.type.startswith("application/pdf"):
+            await cl.Message(
+                content=f"⚠️ Only PDF documents are supported for tourism analysis. Skipped: {file.name}",
+                author="System"
+            ).send()
+            continue
+
+        temp_file_path = None
+        try:
+            # Get file content and name from the cl.File object
+            file_content = await file.get_bytes()
+            file_name = file.name
+
+            # Create a temporary file
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
+                temp_file.write(file_content)
+                temp_file_path = temp_file.name
+
+            # Create processing message
+            process_msg = cl.Message(content=f"🔍 Analyzing tourism document: {file_name}...", author="System")
+            await process_msg.send()
+
+            # Process the document with advanced analysis
+            async with cl.Step(name=f"Processing {file_name}", show_input=True, show_feedback=True) as step:
+                step.input = file_name
+
+                try:
+                    # Convert file to proper format for processing
+                    # The 'file' object from AskFileResponse already has 'name' and 'content'
+                    # We need a 'read' method for process_uploaded_pdf
+                    uploaded_file_obj = type('obj', (object,), {
+                        'name': file.name,
+                        'read': lambda: file_content # Use the fetched content
+                    })
+
+                    # Process with tourism-focused extraction
+                    print(f"--- DEBUG: Calling process_uploaded_pdf for {file_name} ---")
+                    chunks = await asyncio.to_thread(
+                        process_uploaded_pdf,
+                        uploaded_file=uploaded_file_obj,
+                        chunk_size=app_state.settings["chunk_size"],
+                        overlap=app_state.settings["overlap"],
+                        extract_images=True # Keep image extraction if needed
+                    )
+                    print(f"--- DEBUG: process_uploaded_pdf returned {len(chunks)} chunks for {file_name} ---")
+
+                    if not chunks:
+                        step.output = f"No content could be extracted from {file.name}."
+                        step.status = cl.StepStatus.FAILED
+                        await step.update()
+
+                        await process_msg.update(content=f"⚠️ No content could be extracted from {file.name}. Please check if the PDF contains text content.")
+                        print(f"--- DEBUG: No content extracted from {file_name} ---")
+                        continue # Process next file
+
+                    # Process chunks and extract tourism entities/metrics
+                    file_tourism_entities = {
+                        "DESTINATION": set(), "ACCOMMODATION": set(), "TRANSPORTATION": set(),
+                        "ACTIVITY": set(), "ATTRACTION": set()
+                    }
+                    file_tourism_metrics = {"segments": {}, "payment_methods": {}}
+
+                    batch_size = 10 # Process in batches if needed
+                    for i in range(0, len(chunks), batch_size):
+                        batch = chunks[i:i+batch_size]
+                        step.output = f"Analyzing content batch {i//batch_size + 1}/{(len(chunks) + batch_size - 1)//batch_size}..."
+                        await step.update()
+
+                        for chunk in batch:
+                            try:
+                                # Extract entities
+                                if "tourism_entities" not in chunk.get("metadata", {}):
+                                    entities = extract_tourism_entities(chunk["text"])
+                                    chunk["metadata"]["tourism_entities"] = entities
+                                else:
+                                    entities = chunk["metadata"]["tourism_entities"]
+
+                                # Aggregate entities for this file
+                                for entity_type, items in entities.items():
+                                    if entity_type in file_tourism_entities:
+                                        file_tourism_entities[entity_type].update(items)
+
+                                # Process segment information
+                                if "segment_matches" in chunk["metadata"]:
+                                    for segment, has_match in chunk["metadata"]["segment_matches"].items():
+                                        if has_match:
+                                            file_tourism_metrics["segments"][segment] = file_tourism_metrics["segments"].get(segment, 0) + 1
+
+                                # Process payment information
+                                if chunk["metadata"].get("has_payment_info", False):
+                                    payment_keywords = ["credit card", "debit card", "cash", "digital wallet",
+                                                    "mobile payment", "cryptocurrency"]
+                                    for payment in payment_keywords:
+                                        if payment in chunk["text"].lower():
+                                            file_tourism_metrics["payment_methods"][payment] = file_tourism_metrics["payment_methods"].get(payment, 0) + 1
+
+                            except Exception as chunk_err:
+                                log_error(f"Error processing chunk from {file_name}: {str(chunk_err)}")
+                                # Continue with next chunk
+
+                    # Add chunks to collection (ensure embedding_model and collection are valid)
+                    print(f"--- DEBUG: Calling add_chunks_to_collection for {len(chunks)} chunks from {file.name} ---")
+                    add_success = await asyncio.to_thread(
+                        add_chunks_to_collection,
+                        chunks=[c["text"] for c in chunks], # Pass only text
+                        metadatas=[c.get("metadata", {}) for c in chunks], # Pass metadata
+                        embedding_model=app_state.embedding_model,
+                        collection=app_state.collection
+                    )
+                    print(f"--- DEBUG: add_chunks_to_collection returned: {add_success} for {file_name} ---")
+
+                    if add_success:
+                        app_state.processed_files.add(file_name)
+
+                        # Convert sets to lists for storage and merge with global state
+                        for entity_type in file_tourism_entities:
+                            entities_list = list(file_tourism_entities[entity_type])
+                            if entity_type not in app_state.extracted_entities:
+                                app_state.extracted_entities[entity_type] = []
+                            app_state.extracted_entities[entity_type].extend(entities_list)
+                            # Remove duplicates globally
+                            app_state.extracted_entities[entity_type] = list(set(app_state.extracted_entities[entity_type]))
+
+                        # Merge metrics with global state
+                        if file_tourism_metrics["segments"]:
                             app_state.tourism_metrics.setdefault("segments", {})
-                            app_state.tourism_metrics["segments"][segment] = app_state.tourism_metrics["segments"].get(segment, 0) + count
-                    
-                    if tourism_metrics["payment_methods"]:
-                        for payment, count in tourism_metrics["payment_methods"].items():
+                            for segment, count in file_tourism_metrics["segments"].items():
+                                app_state.tourism_metrics["segments"][segment] = app_state.tourism_metrics["segments"].get(segment, 0) + count
+
+                        if file_tourism_metrics["payment_methods"]:
                             app_state.tourism_metrics.setdefault("payment_methods", {})
-                            app_state.tourism_metrics["payment_methods"][payment] = app_state.tourism_metrics["payment_methods"].get(payment, 0) + count
-                    
-                    # Update step
-                    step.output = f"Successfully processed {file.name} with {len(chunks)} content segments."
-                    step.status = cl.StepStatus.COMPLETED
-                    
-                    # Create entity summary
-                    entity_summary = ""
-                    for entity_type, entities in all_tourism_entities.items():
-                        if entities:
-                            entity_summary += f"**{entity_type}**: {', '.join(list(entities)[:5])}"
-                            if len(entities) > 5:
-                                entity_summary += f" and {len(entities) - 5} more"
-                            entity_summary += "\n\n"
-                    
-                    # Update processing message
-                    await process_msg.update(
-                        content=f"""✅ Successfully analyzed tourism document: **{file.name}**
+                            for payment, count in file_tourism_metrics["payment_methods"].items():
+                                app_state.tourism_metrics["payment_methods"][payment] = app_state.tourism_metrics["payment_methods"].get(payment, 0) + count
+
+                        # Update step
+                        step.output = f"Successfully processed {file_name} with {len(chunks)} content segments."
+                        step.status = cl.StepStatus.COMPLETED
+
+                        # Create entity summary for this file
+                        entity_summary = ""
+                        total_entities_found = 0
+                        for entity_type, entities in file_tourism_entities.items():
+                            if entities:
+                                entity_list = list(entities)
+                                total_entities_found += len(entity_list)
+                                entity_summary += f"**{entity_type}**: {', '.join(entity_list[:5])}"
+                                if len(entity_list) > 5:
+                                    entity_summary += f" and {len(entity_list) - 5} more"
+                                entity_summary += "\n\n"
+
+                        # Update processing message
+                        await process_msg.update(
+                            content=f"""✅ Successfully analyzed tourism document: **{file_name}**
 
 **Document Statistics:**
 - 📄 {len(chunks)} content segments extracted
-- 🔍 {sum(len(entities) for entities in all_tourism_entities.values())} tourism entities identified
+- 🔍 {total_entities_found} tourism entities identified in this document
 - 📊 Document added to knowledge base
 
-**Key Entities Identified:**
-{entity_summary}
+**Key Entities Identified in this Document:**
+{entity_summary if entity_summary else "None"}
 
 You can now ask questions about this document!"""
-                    )
-                else:
-                    step.output = f"Failed to add {file.name} to tourism knowledge base."
+                        )
+
+                    else:
+                        step.output = f"Failed to add {file_name} to tourism knowledge base."
+                        step.status = cl.StepStatus.FAILED
+                        await step.update()
+
+                        await process_msg.update(content=f"❌ Failed to add {file_name} to tourism knowledge base. Please try again.")
+                        print(f"--- DEBUG: Failed to add {file_name} to collection ---")
+
+                except Exception as e:
+                    logger.error(f"Error processing tourism document {file_name}: {str(e)}")
+                    step.output = f"Error processing document: {str(e)}"
                     step.status = cl.StepStatus.FAILED
                     await step.update()
-                    
-                    await process_msg.update(content=f"❌ Failed to add {file.name} to tourism knowledge base. Please try again.")
-            except Exception as e:
-                logger.error(f"Error processing tourism document {file.name}: {str(e)}")
-                step.output = f"Error processing document: {str(e)}"
-                step.status = cl.StepStatus.FAILED
-                await step.update()
-                
-                await process_msg.update(content=f"❌ Error processing tourism document {file.name}: {str(e)}")
-            
-            # Display tourism insights if available
-            if app_state.extracted_entities:
-                # Create entity display
-                entities_data = {
-                    "DESTINATION": ", ".join(app_state.extracted_entities.get("DESTINATION", [])[:10]),
-                    "ACCOMMODATION": ", ".join(app_state.extracted_entities.get("ACCOMMODATION", [])[:10]),
-                    "TRANSPORTATION": ", ".join(app_state.extracted_entities.get("TRANSPORTATION", [])[:10]),
-                    "ACTIVITY": ", ".join(app_state.extracted_entities.get("ACTIVITY", [])[:10]),
-                    "ATTRACTION": ", ".join(app_state.extracted_entities.get("ATTRACTION", [])[:10])
-                }
-                
-                # Create segments display if available
-                segments_data = None
-                if "segments" in app_state.tourism_metrics and app_state.tourism_metrics["segments"]:
-                    total_segments = sum(app_state.tourism_metrics["segments"].values())
-                    segments_data = {
-                        segment: f"{round((count / total_segments) * 100, 1)}%"
-                        for segment, count in app_state.tourism_metrics["segments"].items()
-                    }
-                
-                # Create payment methods display if available
-                payment_data = None
-                if "payment_methods" in app_state.tourism_metrics and app_state.tourism_metrics["payment_methods"]:
-                    total_payments = sum(app_state.tourism_metrics["payment_methods"].values())
-                    payment_data = {
-                        payment: f"{round((count / total_payments) * 100, 1)}%"
-                        for payment, count in app_state.tourism_metrics["payment_methods"].items()
-                    }
-                
-                # Create elements for display
-                elements = []
-                
-                # Create tourism entities element
-                entities_element = cl.Dataframe(
-                    data=[[entities_data["DESTINATION"], entities_data["ACCOMMODATION"], entities_data["TRANSPORTATION"], entities_data["ACTIVITY"], entities_data["ATTRACTION"]]],
-                    columns=["Destinations", "Accommodations", "Transportation", "Activities", "Attractions"],
-                )
-                
-                # Create segments element if available
-                if segments_data:
-                    segments_element = cl.Dataframe(
-                        data=[[segment, percentage] for segment, percentage in segments_data.items()],
-                        columns=["Market Segment", "Percentage"]
-                    )
-                    elements.append(segments_element)
-                
-                # Create payment methods element if available
-                if payment_data:
-                    payment_element = cl.Dataframe(
-                        data=[[payment, percentage] for payment, percentage in payment_data.items()],
-                        columns=["Payment Method", "Percentage"]
-                    )
-                    elements.append(payment_element)
-                
-                # Send insights message with elements
-                await cl.Message(
-                    content=f"## 📊 Tourism Document Insights\n\nHere's a summary of key tourism entities and insights extracted from your documents:",
-                    elements=elements,
-                    author="Tourism Insights"
-                ).send()
-        
-        # Clean up temporary file
-        try:
-            os.unlink(temp_file_path)
-        except:
-            pass
-    
-    except Exception as e:
-        logger.error(f"Error handling tourism file upload: {str(e)}")
+
+                    await process_msg.update(content=f"❌ Error processing tourism document {file_name}: {str(e)}")
+                    print(f"--- DEBUG: Exception during PDF processing for {file_name}: {e} ---")
+
+                await step.update() # Final update for the step
+
+            # Display updated global tourism insights if available
+            if app_state.extracted_entities or app_state.tourism_metrics:
+                await display_global_insights()
+
+        except Exception as e:
+            logger.error(f"Error handling tourism file upload for {file.name}: {str(e)}")
+            await cl.Message(
+                content=f"❌ An error occurred while processing {file.name}: {str(e)}",
+                author="System"
+            ).send() # Use file.name here as file_name might not be set if error is early
+            print(f"--- DEBUG: Outer exception in on_file_upload for {file.name}: {e} ---")
+
+        finally:
+            # Clean up temporary file
+            try:
+                if temp_file_path and os.path.exists(temp_file_path):
+                    os.unlink(temp_file_path)
+            except Exception as cleanup_err:
+                log_error(f"Error cleaning up temporary file {temp_file_path}: {str(cleanup_err)}")
+
+async def display_global_insights():
+    """Helper function to display aggregated insights in the UI."""
+    print("--- DEBUG: Updating global insights display ---")
+    elements = []
+
+    # Create tourism entities element (using global state)
+    entities_data = {
+        "DESTINATION": ", ".join(app_state.extracted_entities.get("DESTINATION", [])[:10]),
+        "ACCOMMODATION": ", ".join(app_state.extracted_entities.get("ACCOMMODATION", [])[:10]),
+        "TRANSPORTATION": ", ".join(app_state.extracted_entities.get("TRANSPORTATION", [])[:10]),
+        "ACTIVITY": ", ".join(app_state.extracted_entities.get("ACTIVITY", [])[:10]),
+        "ATTRACTION": ", ".join(app_state.extracted_entities.get("ATTRACTION", [])[:10])
+    }
+    entities_element = cl.Dataframe(
+        data=[[entities_data["DESTINATION"], entities_data["ACCOMMODATION"], entities_data["TRANSPORTATION"], entities_data["ACTIVITY"], entities_data["ATTRACTION"]]],
+        columns=["Destinations (Top 10)", "Accommodations (Top 10)", "Transportation (Top 10)", "Activities (Top 10)", "Attractions (Top 10)"],
+        title="Aggregated Tourism Entities"
+    )
+    elements.append(entities_element)
+
+    # Create segments element if available (using global state)
+    if "segments" in app_state.tourism_metrics and app_state.tourism_metrics["segments"]:
+        total_segments = sum(app_state.tourism_metrics["segments"].values())
+        if total_segments > 0:
+            segments_data = {
+                segment: f"{round((count / total_segments) * 100, 1)}%"
+                for segment, count in sorted(app_state.tourism_metrics["segments"].items(), key=lambda item: item[1], reverse=True)
+            }
+            segments_element = cl.Dataframe(
+                data=[[segment, percentage] for segment, percentage in segments_data.items()],
+                columns=["Market Segment", "Mention Frequency"],
+                title="Aggregated Market Segment Mentions"
+            )
+            elements.append(segments_element)
+
+    # Create payment methods element if available (using global state)
+    if "payment_methods" in app_state.tourism_metrics and app_state.tourism_metrics["payment_methods"]:
+        total_payments = sum(app_state.tourism_metrics["payment_methods"].values())
+        if total_payments > 0:
+            payment_data = {
+                payment: f"{round((count / total_payments) * 100, 1)}%"
+                for payment, count in sorted(app_state.tourism_metrics["payment_methods"].items(), key=lambda item: item[1], reverse=True)
+            }
+            payment_element = cl.Dataframe(
+                data=[[payment, percentage] for payment, percentage in payment_data.items()],
+                columns=["Payment Method", "Mention Frequency"],
+                title="Aggregated Payment Method Mentions"
+            )
+            elements.append(payment_element)
+
+    # Send insights message with elements
+    if elements:
         await cl.Message(
-            content=f"❌ An error occurred while processing your tourism document: {str(e)}",
-            author="System"
+            content=f"## 📊 Updated Global Tourism Insights\n\nHere's a summary of key tourism entities and insights extracted from **all processed documents**:",
+            elements=elements,
+            author="Tourism Insights"
         ).send()
-
-# Custom CSS to enhance the UI for tourism industry professionals
-custom_css = """
-/* Tourism-themed UI */
-:root {
-    --primary-color: #1E88E5;
-    --secondary-color: #26A69A;
-    --accent-color: #FFC107;
-    --success-color: #4CAF50;
-    --warning-color: #FF9800;
-    --error-color: #F44336;
-}
-
-/* Custom font for tourism professionalism */
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap');
-
-body {
-    font-family: 'Poppins', sans-serif;
-}
-
-/* Header styling */
-.cl-main-header {
-    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
-    color: white !important;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-
-.cl-main-header-appname {
-    font-weight: 600 !important;
-}
-
-/* Message styling for tourism chat */
-.cl-message-container[data-author="Tourism Assistant"] .cl-message-content,
-.cl-message-container[data-author="Travel Trends Analyst"] .cl-message-content,
-.cl-message-container[data-author="Payment Specialist"] .cl-message-content,
-.cl-message-container[data-author="Market Segmentation Expert"] .cl-message-content,
-.cl-message-container[data-author="Sustainability Tourism Advisor"] .cl-message-content,
-.cl-message-container[data-author="Gen Z Travel Specialist"] .cl-message-content,
-.cl-message-container[data-author="Luxury Tourism Consultant"] .cl-message-content,
-.cl-message-container[data-author="Tourism Analytics Expert"] .cl-message-content,
-.cl-message-container[data-author="General Tourism Assistant"] .cl-message-content,
-.cl-message-container[data-author="Tourism Insights"] .cl-message-content {
-    background-color: #E8F5E9;
-    border-radius: 12px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-}
-
-/* User message styling */
-.cl-message-container[data-author="user"] .cl-message-content {
-    background-color: #E3F2FD;
-    border-radius: 12px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-}
-
-/* System message styling */
-.cl-message-container[data-author="system"] .cl-message-content {
-    background-color: #FFF8E1;
-    border-radius: 8px;
-    border-left: 4px solid var(--accent-color);
-}
-
-/* File upload styling */
-.cl-file-dropzone {
-    border: 2px dashed var(--secondary-color);
-    background-color: rgba(38, 166, 154, 0.05);
-    transition: all 0.3s ease;
-}
-
-.cl-file-dropzone:hover {
-    background-color: rgba(38, 166, 154, 0.1);
-    border-color: var(--primary-color);
-}
-
-/* Action button styling */
-.cl-action-button {
-    border-radius: 20px;
-    font-weight: 500;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-
-.cl-action-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-}
-
-/* Tables for tourism data */
-table {
-    border-collapse: separate;
-    border-spacing: 0;
-    width: 100%;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-}
-
-th {
-    background-color: var(--primary-color);
-    color: white;
-    font-weight: 500;
-    text-align: left;
-    padding: 12px 15px;
-}
-
-td {
-    padding: 10px 15px;
-    border-bottom: 1px solid #f0f0f0;
-}
-
-tr:last-child td {
-    border-bottom: none;
-}
-
-tr:nth-child(even) {
-    background-color: #f9f9f9;
-}
-
-/* Input field styling */
-.cl-chat-input-container {
-    border-radius: 12px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-    transition: all 0.3s ease;
-}
-
-.cl-chat-input-container:focus-within {
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12);
-}
-
-/* Loading indicators */
-.cl-step-loading {
-    color: var(--primary-color);
-}
-
-/* Chat settings */
-.cl-chat-settings-container {
-    border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-.cl-chat-settings-option-label {
-    font-weight: 500;
-}
-
-/* Source references styling */
-.cl-reference-list-header {
-    color: var(--primary-color);
-    font-weight: 600;
-}
-
-.cl-reference-item {
-    border-left: 3px solid var(--secondary-color);
-    padding-left: 10px;
-    margin: 8px 0;
-    background-color: rgba(38, 166, 154, 0.05);
-    border-radius: 0 6px 6px 0;
-}
-
-/* Mobile optimization */
-@media (max-width: 768px) {
-    .cl-main-container {
-        padding: 10px;
-    }
-    
-    .cl-message-content {
-        padding: 12px;
-    }
-    
-    .cl-action-panel {
-        flex-wrap: wrap;
-    }
-}
-"""
-
-# Configure Chainlit with tourism theme
-cl.configure(
-    title="Tourism Insights Explorer",
-    description="Analyze tourism documents for trends, payment methods, market segments, and sustainability",
-    logo_url="https://cdn-icons-png.flaticon.com/512/2161/2161470.png",
-    theme=cl.Theme(
-        primary="#1E88E5",
-        secondary="#26A69A",
-        accent="#FFC107",
-        success="#4CAF50",
-        warning="#FF9800",
-        error="#F44336",
-    ),
-    custom_css=custom_css,
-    code=True,  # For code highlighting
-    markdown=True,  # For better formatting
-    host="0.0.0.0",  # Accept connections from all interfaces
-    port=8000,  # Default port
-    debug=False,  # Disable debug mode for production
-    watch=False  # Disable hot reloading for better performance
-)
+        print(f"--- DEBUG: Sent updated global tourism insights message ---")
+    else:
+        print(f"--- DEBUG: No global insights to display yet ---")

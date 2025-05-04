@@ -774,7 +774,12 @@ def initialize_system():
 
     # --- Load NLP Resources ---
     logger.info("Loading tourism analysis models...")
-    load_nltk_resources()
+    nltk_ready = load_nltk_resources()
+    if not nltk_ready:
+        overall_success = False
+        error_messages.append("Failed to download/verify NLTK resources (e.g., 'punkt'). Chunking may fail.")
+        # Continue for now, but log the error
+
     nlp_model = load_spacy_model()
     embedding_model = load_embedding_model()
     if not nlp_model or not embedding_model:

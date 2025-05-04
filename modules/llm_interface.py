@@ -11,13 +11,18 @@ import streamlit as st
 import ollama
 import time
 import asyncio
+import torch # Added for CUDA cache management
 from typing import List, Dict, Any, Optional, Tuple, Union, Awaitable
 from modules.utils import log_error
 from modules.vector_store import hybrid_retrieval, async_hybrid_retrieval
 
 # Try to import flash_attn for optimization
 try:
-    from flash_attn import flash_attn_func
+    try:
+        from flash_attn import flash_attn_func
+        HAS_FLASH_ATTN = True
+    except ImportError:
+        HAS_FLASH_ATTN = False
     HAS_FLASH_ATTN = True
 except ImportError:
     HAS_FLASH_ATTN = False
@@ -202,12 +207,13 @@ async def async_query_llm(
         # Step 2: Start retrieval (can be run in parallel with reformulation)
         # We'll use the original query for now and potentially update it
         retrieval_task = asyncio.create_task(
-            async_hybrid_retrieval(
+            async_hybrid_retrieval( # Initial call
                 query=user_query,
                 embedding_model=embedding_model,
                 collection=collection,
                 top_n=top_n,
                 alpha=hybrid_alpha,
+                # Note: use_hybrid_retrieval check is outside, this assumes hybrid is used
                 use_reranker=use_reranker
             ) if use_hybrid_retrieval else asyncio.to_thread(
                 lambda: collection.query(
@@ -229,12 +235,13 @@ async def async_query_llm(
                     
                 # Start a new retrieval with the reformulated query
                 retrieval_task = asyncio.create_task(
-                    async_hybrid_retrieval(
+                    async_hybrid_retrieval( # Call after reformulation
                         query=effective_query,
                         embedding_model=embedding_model,
                         collection=collection,
                         top_n=top_n,
                         alpha=hybrid_alpha,
+                        # Note: use_hybrid_retrieval check is outside, this assumes hybrid is used
                         use_reranker=use_reranker
                     ) if use_hybrid_retrieval else asyncio.to_thread(
                         lambda: collection.query(
@@ -277,6 +284,12 @@ async def async_query_llm(
         
         # Clearer prompt structure
         query_prompt = f"""{final_system_prompt}
+
+        # --- Clear CUDA cache before LLM call ---
+        if torch.cuda.is_available():
+            log_error("async_query_llm: Clearing CUDA cache before Ollama call...")
+            torch.cuda.empty_cache()
+            log_error("async_query_llm: CUDA cache cleared.")
 
 <DOCUMENT_CONTEXT>
 {context}
@@ -367,12 +380,13 @@ def query_llm(
                 use_flash_attn = HAS_FLASH_ATTN and hasattr(embedding_model, 'forward_with_flash_attn')
                 
                 if use_hybrid_retrieval:
-                    results = hybrid_retrieval(
+                    results = hybrid_retrieval( # Synchronous call
                         query=effective_query,
                         embedding_model=embedding_model,
                         collection=collection,
                         top_n=top_n,
                         alpha=hybrid_alpha,
+                        # Note: use_hybrid_retrieval check is outside, this assumes hybrid is used
                         use_reranker=use_reranker
                     )
                     
@@ -427,6 +441,12 @@ def query_llm(
 
             # Clearer prompt structure
             query_prompt = f"""{final_system_prompt}
+
+            # --- Clear CUDA cache before LLM call ---
+            if torch.cuda.is_available():
+                log_error("query_llm: Clearing CUDA cache before Ollama call...")
+                torch.cuda.empty_cache()
+                log_error("query_llm: CUDA cache cleared.")
 
 <DOCUMENT_CONTEXT>
 {context}
