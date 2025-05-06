@@ -16,7 +16,7 @@ from modules.pdf_processor import process_uploaded_pdf
 from modules.nlp_models import load_embedding_model, get_embedding_dimensions
 from modules.vector_store import add_chunks_to_collection
 from modules.llm_interface import query_llm, SlidingWindowMemory
-from modules.ui_components import show_system_resources, apply_tourism_theme, render_tourism_dashboard_lazy, display_chat
+from modules.ui_components import show_system_resources, render_tourism_dashboard_lazy, display_chat
 from modules.utils import log_error, TourismLogger
 from modules.model_selection import render_model_selection_dashboard, ModelSelector
 from modules.insights_generator import render_insights_dashboard, TourismInsightsGenerator
@@ -95,16 +95,255 @@ def get_memory_monitor():
     """Get global memory monitor instance"""
     return memory_monitor
 
+def apply_tourism_theme():
+    """Apply enhanced tourism-themed CSS with strong light theme overrides"""
+    st.markdown("""
+    <style>
+        /* Force light mode and override dark theme */
+        html, body, [class*="css"] {
+            color: #212121 !important;
+            background-color: white !important;
+        }
+        
+        /* Dark text on all elements to ensure visibility */
+        div, span, p, h1, h2, h3, h4, h5, h6, li, label, a {
+            color: #212121 !important;
+        }
+        
+        /* Force light background on all containers */
+        .stApp, .main .block-container, div[data-testid="stAppViewContainer"] {
+            background-color: white !important;
+        }
+        
+        /* Sidebar force light theme */
+        [data-testid="stSidebar"] {
+            background-color: #f8f9fa !important;
+            border-right: 1px solid #e0e0e0 !important;
+        }
+        
+        /* Sidebar text and elements */
+        [data-testid="stSidebar"] div, [data-testid="stSidebar"] span, 
+        [data-testid="stSidebar"] p, [data-testid="stSidebar"] h1, 
+        [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3, 
+        [data-testid="stSidebar"] h4, [data-testid="stSidebar"] button {
+            color: #212121 !important;
+        }
+        
+        /* Main container styling */
+        .main-container {
+            background-color: white !important;
+            padding: 20px !important;
+            border-radius: 10px !important;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05) !important;
+            margin: 20px 0 !important;
+        }
+        
+        /* Header styling */
+        .main-header { 
+            color: #1976D2 !important;
+            font-size: 2.4rem !important; 
+            font-weight: 600 !important;
+            text-align: center !important;
+            margin-bottom: 0.5rem !important;
+        }
+        
+        .sub-header { 
+            color: #616161 !important;
+            font-size: 1.2rem !important;
+            text-align: center !important;
+            margin-bottom: 2rem !important;
+        }
+        
+        /* Chat container with auto-scroll support */
+        .chat-container {
+            display: flex !important;
+            flex-direction: column !important;
+            height: 65vh !important;
+            background-color: #f8f9fa !important;
+            border-radius: 12px !important;
+            padding: 20px !important;
+            margin-top: 20px !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05) !important;
+            overflow-y: auto !important;
+        }
+        
+        /* Messages container to allow scroll */
+        .messages-container {
+            flex: 1 !important;
+            overflow-y: auto !important;
+            padding-right: 10px !important;
+            margin-bottom: 15px !important;
+        }
+        
+        /* User message styling */
+        .stChatMessage[data-testid="user-message"] {
+            background-color: #e3f2fd !important;
+            border-radius: 18px 18px 0 18px !important;
+            padding: 12px 18px !important;
+            margin-bottom: 15px !important;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1) !important;
+            border: none !important;
+            color: #0d47a1 !important;
+        }
+        
+        /* Assistant message styling */
+        .stChatMessage[data-testid="assistant-message"] {
+            background-color: white !important;
+            border-radius: 18px 18px 18px 0 !important;
+            padding: 12px 18px !important;
+            margin-bottom: 15px !important;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1) !important;
+            border: 1px solid #e0e0e0 !important;
+            color: #212121 !important;
+        }
+        
+        /* Chat input area - fixed at bottom */
+        .chat-input-container {
+            position: sticky !important;
+            bottom: 0 !important;
+            background-color: #f8f9fa !important;
+            padding: 10px 0 !important;
+            border-top: 1px solid #e0e0e0 !important;
+        }
+        
+        /* Question buttons styling */
+        .question-btn {
+            background-color: #f3f7fa !important;
+            border: 1px solid #e0e0e0 !important;
+            border-radius: 10px !important;
+            padding: 10px !important;
+            margin-bottom: 10px !important;
+            transition: all 0.2s !important;
+            color: #1976D2 !important;
+            font-weight: 500 !important;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08) !important;
+        }
+        
+        .question-btn:hover {
+            background-color: #e3f2fd !important;
+            transform: translateY(-2px) !important;
+            box-shadow: 0 3px 5px rgba(0,0,0,0.1) !important;
+        }
+        
+        /* Button styling */
+        .stButton button {
+            background-color: #1976D2 !important;
+            color: white !important;
+            border: none !important;
+            font-weight: 500 !important;
+        }
+        
+        /* Secondary button */
+        button[kind="secondary"] {
+            background-color: #f0f0f0 !important;
+            color: #212121 !important;
+            border: 1px solid #e0e0e0 !important;
+        }
+        
+        /* Chat message avatars */
+        .stChatMessageAvatar {
+            background-color: white !important;
+        }
+        
+        /* Status elements */
+        .stStatusWidget {
+            background-color: white !important;
+            color: #212121 !important;
+            border: 1px solid #e0e0e0 !important;
+        }
+        
+        /* Metrics */
+        [data-testid="stMetric"] {
+            background-color: white !important;
+            color: #212121 !important;
+        }
+        
+        [data-testid="stMetricLabel"] {
+            color: #1976D2 !important;
+        }
+        
+        [data-testid="stMetricValue"] {
+            color: #212121 !important;
+        }
+        
+        /* Form elements */
+        .stTextInput, .stSelectbox select, .stSlider {
+            background-color: white !important;
+            color: #212121 !important;
+            border: 1px solid #e0e0e0 !important;
+        }
+        
+        /* Welcome message styling */
+        .welcome-message {
+            background-color: #f9f9f9 !important;
+            border: 1px solid #e0e0e0 !important;
+            border-radius: 10px !important;
+            padding: 20px !important;
+            text-align: center !important;
+            margin: 20px 0 !important;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.08) !important;
+        }
+        
+        .welcome-message h3 {
+            color: #1976D2 !important;
+            font-size: 1.5rem !important;
+            margin-bottom: 10px !important;
+        }
+        
+        /* Make sure file uploader is visible */
+        .stFileUploader {
+            background-color: white !important;
+        }
+        
+        .stFileUploader label {
+            color: #212121 !important;
+        }
+        
+        .stFileUploader button {
+            background-color: #1976D2 !important;
+            color: white !important;
+        }
+        
+        /* Fix for any other dark elements */
+        .stAlert, .stInfo, .stSuccess, .stWarning, .stError {
+            background-color: white !important;
+            color: #212121 !important;
+        }
+    </style>
+    
+    <script>
+        // Auto-scroll chat function
+        function autoScrollChat() {
+            const chatContainer = document.querySelector('.chat-container');
+            if (chatContainer) {
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+        }
+        
+        // Call scroll function when content changes
+        const observer = new MutationObserver(autoScrollChat);
+        
+        // Start observing when DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            const chatContainer = document.querySelector('.chat-container');
+            if (chatContainer) {
+                observer.observe(chatContainer, { childList: true, subtree: true });
+                autoScrollChat();
+            }
+        });
+    </script>
+    """, unsafe_allow_html=True)
+
 def main():
     """Memory-optimized main application entry point with improved UI"""
     st.set_page_config(
         page_title="Tourism Insights Explorer Pro",
         page_icon="🌍",
         layout="wide",
-        initial_sidebar_state="expanded"  # Start with expanded sidebar initially for visibility
+        initial_sidebar_state="expanded",  # Start with expanded sidebar initially for visibility
     )
     
-    # Apply light-themed custom CSS
+    # Apply custom light-themed CSS
     apply_tourism_theme()
     
     if "system_initialized" not in st.session_state:
@@ -117,7 +356,7 @@ def main():
     if st.session_state.get("memory_monitoring_enabled", True):
         monitor.check()
 
-    # Render sidebar with all complexity
+    # Render sidebar with all functionality
     sidebar_params = render_enhanced_sidebar()
     
     # Main content area with centered chat experience
@@ -163,33 +402,38 @@ def main():
                 st.session_state.welcome_message_shown = True
             
             # Quick access prompt buttons with high visibility
-            st.markdown("<p style='font-weight:500; color:#0277bd; margin-bottom:10px;'>Explore key tourism questions:</p>", unsafe_allow_html=True)
+            st.markdown("<p style='font-weight:500; color:#1976D2; margin-bottom:10px;'>Explore key tourism questions:</p>", unsafe_allow_html=True)
             prompt_cols = st.columns(2)
             for i, question in enumerate(KEY_TOURISM_QUESTIONS):
                 col = prompt_cols[i % 2]
                 with col:
-                    if st.button(question, key=f"prompt_{i}", use_container_width=True):
+                    if st.button(question, key=f"prompt_{i}", use_container_width=True, 
+                               help=f"Click to explore {question.lower()}"):
                         st.session_state.messages.append({"role": "user", "content": question})
                         st.rerun()
             
-            # High visibility separator
-            st.markdown("<hr style='margin: 20px 0; border-color: #e0e0e0;'>", unsafe_allow_html=True)
+            # Enhanced chat interface with auto-scroll
+            st.markdown('<div class="chat-container" id="chat-container">', unsafe_allow_html=True)
             
-            # Clean, central chat interface
-            st.markdown('<div class="chat-container">', unsafe_allow_html=True)
+            # Messages area (scrollable)
+            st.markdown('<div class="messages-container">', unsafe_allow_html=True)
             
             # Display chat history
-            display_chat(
-                st.session_state.messages,
-                current_role=st.session_state.get("current_agent_role", "Tourism Assistant")
-            )
+            for message in st.session_state.messages:
+                with st.chat_message(message["role"]):
+                    st.markdown(message["content"])
             
-            # Clean chat input
+            st.markdown('</div>', unsafe_allow_html=True)
+            
+            # Fixed chat input at bottom
+            st.markdown('<div class="chat-input-container">', unsafe_allow_html=True)
+            
             user_query = st.chat_input(
                 "Ask about travel trends, market segments, payment methods, or deep dive topics...",
                 disabled=not bool(st.session_state.processed_files)
             )
             
+            st.markdown('</div>', unsafe_allow_html=True)
             st.markdown('</div>', unsafe_allow_html=True)
             st.markdown('</div>', unsafe_allow_html=True)
             
@@ -577,7 +821,7 @@ def process_documents(uploaded_files, chunk_size, overlap):
         all_chunks = []
         
         for pdf_file in files_to_process:
-            status.update(f"Processing: {pdf_file.name}...")
+            status.update(label=f"Processing: {pdf_file.name}...")
             try:
                 # Check memory before each file
                 memory_monitor.check()

@@ -501,74 +501,108 @@ def apply_tourism_theme():
     """Apply tourism-themed CSS with enhanced styling for light theme and central chat design."""
     st.markdown("""
     <style>
-        /* Use high-contrast colors for better visibility */
-        :root {
-            --primary-color: #1976D2;
-            --secondary-color: #00897B;
-            --accent-color: #FFC107;
-            --background-color: #FFFFFF;
-            --text-color: #212121;
-            --light-text-color: #616161;
-            --error-color: #D32F2F;
-            --success-color: #388E3C;
-            --warning-color: #F57C00;
+        /* Force light mode and override dark theme */
+        html, body, [class*="css"] {
+            color: #212121 !important;
+            background-color: white !important;
         }
         
-        /* Force light background */
-        .stApp {
+        /* Dark text on all elements to ensure visibility */
+        div, span, p, h1, h2, h3, h4, h5, h6, li, label, a {
+            color: #212121 !important;
+        }
+        
+        /* Force light background on all containers */
+        .stApp, .main .block-container, div[data-testid="stAppViewContainer"] {
+            background-color: white !important;
+        }
+        
+        /* Sidebar force light theme */
+        [data-testid="stSidebar"] {
+            background-color: #f8f9fa !important;
+            border-right: 1px solid #e0e0e0 !important;
+        }
+        
+        /* Chat container elements */
+        .stChatMessage {
+            background-color: white !important;
+            border: 1px solid #e6e6e6 !important;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.08) !important;
+        }
+        
+        /* User messages in chat */
+        .stChatMessage[data-test="user"] {
+            background-color: #e3f2fd !important;
+            color: #0d47a1 !important;
+        }
+        
+        /* Assistant messages in chat */
+        .stChatMessage[data-test="assistant"] {
+            background-color: #f5f5f5 !important;
+            color: #212121 !important;
+        }
+        
+        /* Button styling */
+        .stButton button {
+            background-color: #1976D2 !important;
+            color: white !important;
+            border: none !important;
+        }
+        
+        /* Secondary button */
+        .stButton button[kind="secondary"] {
+            background-color: #f0f0f0 !important;
+            color: #212121 !important;
+            border: 1px solid #e0e0e0 !important;
+        }
+        
+        /* Metrics */
+        [data-testid="stMetric"] {
+            background-color: white !important;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12) !important;
+            padding: 10px !important;
+            border-radius: 8px !important;
+            color: #212121 !important;
+        }
+        
+        [data-testid="stMetricLabel"] {
+            color: #1976D2 !important;
+        }
+        
+        [data-testid="stMetricValue"] {
+            color: #212121 !important;
+        }
+        
+        /* Status container */
+        .stStatusWidget {
+            background-color: white !important;
+            border: 1px solid #e0e0e0 !important;
+        }
+        
+        /* All other elements */
+        .element-container, .stTextInput > div, .stSelectbox, 
+        .stFileUploader, .stSlider, .stExpander {
             background-color: white !important;
             color: #212121 !important;
         }
         
-        /* Ensure content is visible */
+        /* Keep important elements from previous theme */
         .main-container {
-            background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            margin-top: 20px;
+            background-color: white !important;
+            padding: 20px !important;
+            border-radius: 8px !important;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
+            margin-top: 20px !important;
         }
         
-        /* Make header more visible */
         .main-header { 
             font-size: 2.4rem !important; 
             font-weight: 600 !important; 
             color: var(--primary-color) !important;
             margin-bottom: 0.5rem !important;
             text-align: center !important;
-            text-shadow: 0px 1px 2px rgba(0,0,0,0.1) !important;
         }
         
-        .sub-header { 
-            font-size: 1.2rem !important;
-            color: var(--text-color) !important;
-            margin-bottom: 1.5rem !important;
-            text-align: center !important;
-        }
-        
-        /* Make welcome message highly visible */
-        .welcome-message {
-            background-color: #f9f9f9 !important;
-            border: 1px solid #e0e0e0 !important;
-            border-radius: 10px !important;
-            padding: 20px !important;
-            text-align: center !important;
-            margin: 20px 0 !important;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.08) !important;
-        }
-        
-        .welcome-message h3 {
-            color: var(--primary-color) !important;
-            font-size: 1.5rem !important;
-            margin-bottom: 10px !important;
-        }
-        
-        .welcome-message p {
-            color: var(--text-color) !important;
-            font-size: 1.1rem !important;
-        }
-        
-        /* Chat container with clear styling */
         .chat-container {
             max-width: 800px !important;
             margin: 0 auto !important;
@@ -576,126 +610,6 @@ def apply_tourism_theme():
             background-color: #f5f8fa !important;
             border-radius: 12px !important;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05) !important;
-        }
-        
-        /* Enhance chat messages */
-        .stChatMessage {
-            background-color: white !important;
-            border-radius: 15px !important;
-            padding: 12px !important;
-            margin-bottom: 15px !important;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.08) !important;
-            border: 1px solid #e6e6e6 !important;
-        }
-        
-        /* More visible buttons */
-        .stButton>button { 
-            border-radius: 8px !important;
-            transition: all 0.15s ease !important;
-            background-color: #f0f7ff !important;
-            color: var(--primary-color) !important;
-            border: 1px solid #c0d6f9 !important;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.08) !important;
-            font-weight: 500 !important;
-            padding: 4px 15px !important;
-        }
-        
-        .stButton>button:hover { 
-            transform: translateY(-1px) !important;
-            background-color: #e1effe !important;
-            border-color: var(--primary-color) !important;
-            box-shadow: 0 3px 5px rgba(0,0,0,0.12) !important;
-        }
-        
-        /* Primary button */
-        button[data-baseweb="button"][kind="primary"] {
-            background-color: var(--primary-color) !important;
-            color: white !important;
-            font-weight: 500 !important;
-        }
-        
-        /* Emphasize badges */
-        .tourism-badge {
-            display: inline-block !important;
-            padding: 4px 10px !important;
-            border-radius: 12px !important;
-            font-size: 0.8rem !important;
-            font-weight: 500 !important;
-            margin-right: 6px !important;
-            margin-bottom: 6px !important;
-            background-color: #e3f2fd !important;
-            color: var(--primary-color) !important;
-            border: 1px solid #90caf9 !important;
-        }
-        
-        /* Enhance cards */
-        .insight-card {
-            background: white !important;
-            border-radius: 10px !important;
-            padding: 20px !important;
-            margin: 15px 0 !important;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
-            border: 1px solid #e0e0e0 !important;
-        }
-        
-        /* Charts */
-        .js-plotly-plot {
-            background: white !important;
-            border-radius: 10px !important;
-            padding: 15px !important;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
-            border: 1px solid #e0e0e0 !important;
-        }
-        
-        /* Style sidebar navigation */
-        .sidebar-nav {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 15px;
-            border-bottom: 1px solid #e0e0e0;
-            padding-bottom: 10px;
-        }
-        
-        .sidebar-nav button {
-            padding: 5px 10px !important;
-            font-size: 0.8rem !important;
-            min-height: 0 !important;
-        }
-        
-        /* Override sidebar style */
-        section[data-testid="stSidebar"] {
-            background-color: #f8f9fa !important;
-            border-right: 1px solid #e0e0e0 !important;
-        }
-        
-        section[data-testid="stSidebar"] > div {
-            padding: 2rem 1rem !important;
-        }
-        
-        /* Style sidebar section headers */
-        .sidebar-header {
-            font-size: 1.2rem !important;
-            font-weight: 600 !important;
-            color: var(--primary-color) !important;
-            margin-top: 20px !important;
-            margin-bottom: 10px !important;
-            padding-bottom: 5px !important;
-            border-bottom: 2px solid var(--primary-color) !important;
-        }
-        
-        /* Make warnings and errors more visible */
-        .stAlert {
-            background-color: #fff3e0 !important;
-            color: #e65100 !important;
-            padding: 10px 15px !important;
-            border-radius: 6px !important;
-            border-left: 4px solid #ff9800 !important;
-            margin: 10px 0 !important;
-        }
-        
-        /* Default text */
-        p, li, div {
-            color: var(--text-color) !important;
         }
     </style>
     """, unsafe_allow_html=True)

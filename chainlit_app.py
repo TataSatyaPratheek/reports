@@ -1,17 +1,16 @@
 import os
 import time
 import asyncio
-import json
 import tempfile
 from typing import Dict, List, Any, Optional, Tuple, Union
 
 import chainlit as cl
-# Update import for newer Chainlit versions - AskFileResponse was renamed
-try:
-    from chainlit.types import AskFileResponse  # For older versions
-except ImportError:
-    # For newer versions, we'll handle file objects directly
-    pass
+# Use cl.File for newer versions
+if hasattr(cl, 'File'):
+    FileType = cl.File
+else:
+    # Fallback for older versions if needed, though cl.File is standard now
+    FileType = Any # Or define a placeholder if strict typing is needed
 
 import numpy as np
 import chromadb
@@ -19,15 +18,15 @@ import chromadb
 # Import modules
 from modules.system_setup import (
     ensure_dependencies, setup_ollama, refresh_available_models,
-    download_model, DEFAULT_MODEL_NAME, TOURISM_RECOMMENDED_MODELS
+    install_package, download_model, DEFAULT_MODEL_NAME, TOURISM_RECOMMENDED_MODELS
 )
 from modules.vector_store import initialize_vector_db, reset_vector_db, get_chroma_collection, hybrid_retrieval
-from modules.nlp_models import load_nltk_resources, load_spacy_model, load_embedding_model, extract_tourism_entities
+from modules.nlp_models import load_embedding_model, get_embedding_dimensions, extract_tourism_entities_streaming # Use streaming version
 from modules.pdf_processor import process_uploaded_pdf
 from modules.vector_store import add_chunks_to_collection
 from modules.llm_interface import query_llm, SlidingWindowMemory
-from modules.utils import log_error, PerformanceMonitor, TourismLogger, extract_tourism_metrics_from_text
-
+from modules.utils import log_error, TourismLogger, extract_tourism_metrics_from_text
+from modules.memory_utils import memory_monitor # Import memory monitor
 # Check Chainlit version and set compatibility flags
 try:
     cl_version = cl.__version__
@@ -49,15 +48,15 @@ except (AttributeError, ValueError, IndexError):
     USE_ASYNC_ACTIONS = True
 
 # Initialize logger
-logger = TourismLogger()
+logger = TourismLogger(log_dir=".chainlit/logs") # Log within chainlit folder if possible
 
 # --- Constants and AGENT_ROLES ---
-DEFAULT_CHUNK_SIZE = 250
-DEFAULT_OVERLAP = 50
-DEFAULT_TOP_N = 10
+DEFAULT_CHUNK_SIZE = 512 # Match app.py
+DEFAULT_OVERLAP = 64   # Match app.py
+DEFAULT_TOP_N = 5      # Match app.py
 DEFAULT_CONVERSATION_MEMORY = 3
 DEFAULT_HYBRID_ALPHA = 0.7  # Weight balance between vector and BM25 search
-
+DEFAULT_PERFORMANCE_TARGET = "balanced"
 # Tourism agent roles with specialized system prompts
 AGENT_ROLES = {
     "Travel Trends Analyst": "You are an expert travel trends analyst. Focus on identifying macro trends in the travel industry, emerging destinations, changing consumer preferences, and industry forecasts. Provide data-driven insights when available and contextualize trends within broader economic and social patterns. Reference specific metrics, percentages, and growth figures when present in the documents.",
@@ -77,16 +76,16 @@ AGENT_ROLES = {
     "General Tourism Assistant": "You are a helpful tourism information assistant. Provide clear, accurate, and balanced information about travel topics based on the provided document context. Offer insights on destinations, travel planning, industry trends, and tourism services. Present information in an accessible manner suitable for both industry professionals and travelers. Focus on presenting factual information rather than personal opinions."
 }
 
-# --- Global state --- # This class definition remains the same as provided
+# --- Global state ---
 class AppState:
     def __init__(self):
         self.current_role = "Travel Trends Analyst"
         self.conversation_memory = SlidingWindowMemory(max_tokens=2048)
         self.processed_files = set()
         self.extracted_entities = {}
-        self.tourism_metrics = {}
+        self.tourism_insights = {} # Renamed from tourism_metrics for consistency
         self.initialization_complete = False
-        self.collection = None
+        self.collection = None # Chroma collection
         self.embedding_model = None
         self.nlp_model = None
         self.settings = {
@@ -94,11 +93,12 @@ class AppState:
             "overlap": DEFAULT_OVERLAP,
             "top_n": DEFAULT_TOP_N,
             "model": DEFAULT_MODEL_NAME,
+            "performance_target": DEFAULT_PERFORMANCE_TARGET,
             "use_hybrid_retrieval": True,
             "use_reranker": True,
-            "use_query_reformulation": True,
             "hybrid_alpha": DEFAULT_HYBRID_ALPHA
         }
+        self.available_models = [DEFAULT_MODEL_NAME] # Store available LLMs
         
     def get_system_prompt(self):
         """Get the current system prompt based on selected role."""
@@ -107,13 +107,11 @@ class AppState:
 # Initialize app state
 app_state = AppState()
 
-# --- Rest of the code follows with appropriate adaptations ---
-# ... (The rest of your code like on_chat_start, etc.)
 # --- Setup and initialization ---
 @cl.on_chat_start
 async def on_chat_start():
     """Initialize the tourism RAG chatbot when a new chat starts."""
-    # Send a welcome message
+    # Send welcome message
     await cl.Message(
         content="""# 🌍 Welcome to Tourism Insights Explorer!
 
@@ -128,106 +126,84 @@ Analyze your tourism documents to extract valuable insights about:
         metadata={"role": "system"}
     ).send()
 
-    # Check and fix Chainlit config if needed
-    try:
-        config_dir = os.path.join(os.path.expanduser("~"), ".chainlit")
-        config_file = os.path.join(config_dir, "config.toml")
-
-        if os.path.exists(config_file):
-            # Check if config file is valid
-            try:
-                with open(config_file, 'r') as f:
-                    config_content = f.read()
-
-                # Simple validation - check if it contains expected sections
-                if "[project]" not in config_content or "[UI]" not in config_content:
-                    # Config file may be corrupt - backup and remove
-                    backup_file = f"{config_file}.bak"
-                    os.rename(config_file, backup_file)
-                    log_error(f"Detected potentially corrupt Chainlit config. Backed up to {backup_file}")
-
-                    await cl.Message(
-                        content="⚠️ Chainlit configuration has been reset due to potential corruption. Please refresh the page.",
-                        author="System"
-                    ).send()
-
-                    return
-            except Exception as e:
-                # Error reading config file - might be corrupt
-                log_error(f"Error reading Chainlit config file: {str(e)}")
-                try:
-                    # Try to backup and remove
-                    backup_file = f"{config_file}.error"
-                    os.rename(config_file, backup_file)
-                    log_error(f"Backed up problematic config to {backup_file}")
-
-                    await cl.Message(
-                        content="⚠️ Chainlit configuration has been reset due to errors. Please refresh the page.",
-                        author="System"
-                    ).send()
-
-                    return
-                except Exception as rename_err:
-                    log_error(f"Failed to backup/remove corrupt config: {str(rename_err)}")
-    except Exception as config_check_err:
-        log_error(f"Error checking Chainlit config: {str(config_check_err)}")
-
     # Initialize tourism system components
     if not app_state.initialization_complete:
-        with cl.Step("System Initialization", show_feedback=True) as step:
+        async with cl.Step(name="System Initialization", show_input=False) as step:
             step.input = "Initializing Tourism Analysis System"
+            await step.update()
 
             try:
-                # Initialize NLP resources
                 step.status = cl.StepStatus.RUNNING
                 await step.update()
 
-                # More robust NLTK resources loading
-                nltk_success = await asyncio.to_thread(load_nltk_resources)
-                if not nltk_success:
-                    step.output = "❌ Failed to initialize NLTK resources. Document processing may fail."
-                    step.status = cl.StepStatus.WARNING
+                # 1. Check dependencies
+                step.output = "Checking dependencies..."
+                await step.update()
+                mismatched = await asyncio.to_thread(ensure_dependencies)
+                if mismatched:
+                    pkgs = ", ".join([f"{p[0]}=={p[1]}" for p in mismatched])
+                    step.output = f"⚠️ Missing/mismatched dependencies: {pkgs}. Please install them."
+                    step.status = cl.StepStatus.FAILED
                     await step.update()
-
-                    # Send a warning message
                     await cl.Message(
-                        content="⚠️ NLTK resources could not be loaded. Document processing may be limited.",
+                        content=f"⚠️ Missing dependencies: `{pkgs}`. Please install them (`pip install ...`) and restart.",
                         author="System"
                     ).send()
+                    return # Stop initialization if dependencies are missing
 
-                    # Don't return - attempt to initialize other components
-
-                # Load NLP and embedding models
-                app_state.nlp_model = await asyncio.to_thread(load_spacy_model)
-                app_state.embedding_model = await asyncio.to_thread(load_embedding_model)
-
-                # Check for critical model failures
-                if not app_state.nlp_model:
-                    step.output = "❌ Failed to load NLP model. Document processing will be limited."
-                    step.status = cl.StepStatus.WARNING
+                # 2. Setup Ollama
+                step.output = "Setting up Ollama..."
+                await step.update()
+                ollama_ok = await asyncio.to_thread(setup_ollama)
+                if not ollama_ok:
+                    step.output = "❌ Ollama setup failed. Please ensure Ollama is installed and running."
+                    step.status = cl.StepStatus.FAILED
                     await step.update()
-
                     await cl.Message(
-                        content="⚠️ NLP model could not be loaded. Entity extraction will be limited.",
+                        content="❌ Ollama is not detected or failed to set up. Please install and run Ollama.",
                         author="System"
                     ).send()
+                    return # Stop if Ollama isn't ready
 
-                    # Continue with limited functionality
+                # 3. Check available LLM models
+                step.output = "Checking available LLM models..."
+                await step.update()
+                app_state.available_models = await asyncio.to_thread(refresh_available_models)
+                if not app_state.available_models:
+                    step.output = f"⚠️ No Ollama models found. Attempting to download default: {DEFAULT_MODEL_NAME}"
+                    await step.update()
+                    success, msg = await asyncio.to_thread(download_model, DEFAULT_MODEL_NAME)
+                    if success:
+                        step.output = f"✅ Downloaded {DEFAULT_MODEL_NAME}. Refreshing models..."
+                        await step.update()
+                        app_state.available_models = await asyncio.to_thread(refresh_available_models)
+                    else:
+                        step.output = f"❌ Failed to download {DEFAULT_MODEL_NAME}: {msg}"
+                        step.status = cl.StepStatus.FAILED
+                        await step.update()
+                        await cl.Message(content=f"❌ Failed to download default model: {msg}", author="System").send()
+                        return # Stop if no model available
 
+                # 4. Load Embedding Model
+                step.output = f"Loading embedding model ({app_state.settings['performance_target']} target)..."
+                await step.update()
+                app_state.embedding_model = await asyncio.to_thread(
+                    load_embedding_model,
+                    performance_target=app_state.settings['performance_target']
+                )
                 if not app_state.embedding_model:
                     step.output = "❌ Failed to load embedding model. Search functionality will not work."
                     step.status = cl.StepStatus.FAILED
                     await step.update()
-
                     await cl.Message(
                         content="❌ Embedding model could not be loaded. Please refresh and try again.",
                         author="System"
                     ).send()
-
-                    # This is a critical failure - return early
                     return
 
-                # Initialize vector database
+                # 5. Initialize Vector Database
+                step.output = "Initializing vector database..."
+                await step.update()
                 db_success = await asyncio.to_thread(initialize_vector_db)
                 if not db_success:
                     step.output = "❌ Failed to initialize vector database. Search will not work."
@@ -238,10 +214,8 @@ Analyze your tourism documents to extract valuable insights about:
                         content="❌ Vector database initialization failed. Please refresh and try again.",
                         author="System"
                     ).send()
-
-                    # This is a critical failure - return early
                     return
-
+                
                 app_state.collection = await asyncio.to_thread(get_chroma_collection)
 
                 if not app_state.collection:
@@ -253,12 +227,10 @@ Analyze your tourism documents to extract valuable insights about:
                         content="❌ Vector collection could not be accessed. Please refresh and try again.",
                         author="System"
                     ).send()
-
-                    # This is a critical failure - return early
                     return
 
                 # If we made it here with all critical components, mark as complete
-                if app_state.embedding_model and app_state.collection:
+                if app_state.embedding_model and app_state.collection is not None:
                     app_state.initialization_complete = True
                     step.output = "✅ Tourism Analysis System initialized successfully!"
                     step.status = cl.StepStatus.COMPLETED
@@ -266,10 +238,10 @@ Analyze your tourism documents to extract valuable insights about:
                     step.output = "⚠️ Tourism Analysis System initialized with limitations."
                     step.status = cl.StepStatus.WARNING
             except Exception as e:
-                logger.error(f"Initialization error: {str(e)}")
+                logger.error(f"Initialization error: {str(e)}", exc_info=True)
                 step.output = f"❌ Error during initialization: {str(e)}"
                 step.status = cl.StepStatus.FAILED
-
+                await step.update()
                 await cl.Message(
                     content=f"❌ System initialization failed: {str(e)}\n\nPlease refresh and try again.",
                     author="System"
@@ -277,85 +249,10 @@ Analyze your tourism documents to extract valuable insights about:
 
                 return
 
-            await step.update()
-
     # Add a message indicating readiness for file upload
-    await cl.Message(
-        content="System initialized. You can now upload your PDF documents for analysis.",
-        author="System"
-    ).send()
+    if app_state.initialization_complete:
+        await cl.Message(content="System initialized. You can now upload PDF documents.", author="System").send()
 
-    # Create action buttons for tourism expertise roles
-    # ... [rest of the function remains unchanged] ...
-
-
-@cl.on_chat_start
-async def on_chat_start_old(): # Renamed the old function temporarily
-    """Initialize the tourism RAG chatbot when a new chat starts."""
-    print("--- DEBUG: Entering on_chat_start ---")
-    # Send a welcome message
-    await cl.Message(
-        content="""# 🌍 Welcome to Tourism Insights Explorer!
-        
-Analyze your tourism documents to extract valuable insights about:
-- 📊 Travel market trends
-- 💳 Payment methods across segments
-- 👥 Customer segmentation strategies
-- 🌱 Sustainability initiatives
-
-**Upload your tourism PDF documents to get started!**
-        """,
-        metadata={"role": "system"}
-    ).send()
-    
-    # Initialize tourism system components (OLD VERSION - TO BE REMOVED)
-    if not app_state.initialization_complete:
-        print("--- DEBUG: Starting System Initialization block ---")
-        async with cl.Step(name="System Initialization", show_input=True) as step:
-            step.input = "Initializing Tourism Analysis System"
-            print("--- DEBUG: System Initialization Step created ---")
-            
-            try:
-                # Initialize NLP resources
-                step.status = cl.StepStatus.RUNNING
-                await step.update()
-                
-                print("--- DEBUG: Calling load_nltk_resources() ---")
-                load_nltk_resources()
-                print("--- DEBUG: Calling load_spacy_model() ---")
-                app_state.nlp_model = load_spacy_model()
-                print("--- DEBUG: Calling load_embedding_model() ---")
-                app_state.embedding_model = load_embedding_model()
-                print("--- DEBUG: Calling initialize_vector_db() ---")
-                # Initialize vector database
-                initialize_vector_db()
-                app_state.collection = get_chroma_collection()
-                
-                if app_state.nlp_model and app_state.embedding_model and app_state.collection:
-                    app_state.initialization_complete = True
-                    step.output = "✅ Tourism Analysis System initialized successfully!"
-                    step.status = cl.StepStatus.COMPLETED
-                    print("--- DEBUG: System Initialization successful ---")
-                else:
-                    step.output = "❌ Failed to initialize Tourism Analysis System. Please check logs."
-                    step.status = cl.StepStatus.FAILED
-                    print("--- DEBUG: System Initialization failed (component check) ---")
-            except Exception as e:
-                logger.error(f"Initialization error: {str(e)}")
-                step.output = f"❌ Error during initialization: {str(e)}"
-                step.status = cl.StepStatus.FAILED
-                print(f"--- DEBUG: System Initialization failed with exception: {e} ---")
-            
-            await step.update()
-        print("--- DEBUG: Exiting System Initialization block ---")
-    
-    
-    # Wait for all file processing tasks to complete
-    if file_processing_tasks:
-        print(f"--- DEBUG: Waiting for {len(file_processing_tasks)} file processing tasks ---")
-        await asyncio.gather(*file_processing_tasks)
-        print("--- DEBUG: File processing tasks complete ---")
-    
     # Create action buttons for tourism expertise roles
     actions = [
         cl.Action(name="trends", value="Travel Trends Analyst", label="📊 Travel Trends"),
@@ -365,7 +262,8 @@ Analyze your tourism documents to extract valuable insights about:
         cl.Action(name="genz", value="Gen Z Travel Specialist", label="👧 Gen Z Travel"),
         cl.Action(name="luxury", value="Luxury Tourism Consultant", label="💎 Luxury Tourism"),
         cl.Action(name="analytics", value="Tourism Analytics Expert", label="📈 Tourism Analytics"),
-        cl.Action(name="general", value="General Tourism Assistant", label="🧭 General Tourism")
+        cl.Action(name="general", value="General Tourism Assistant", label="🧭 General Tourism"),
+        cl.Action(name="reset_db", value="reset", label="🗑️ Reset Database") # Add reset action
     ]
     
     # Add expertise selector
@@ -374,60 +272,102 @@ Analyze your tourism documents to extract valuable insights about:
         actions=actions,
         metadata={"role": "system"}
     ).send()
-    print("--- DEBUG: Sent role selection message ---")
     
     # Create settings element
-    settings = cl.ChatSettings(
-        [
-            cl.ChatSettingsOption(
-                name="chunk_size",
-                label="Document Chunk Size",
-                initial_value=app_state.settings["chunk_size"],
-                description="Size of document chunks in words",
-                component=cl.ChatSettingsSlider(min=100, max=1000, step=50)
-            ),
-            cl.ChatSettingsOption(
-                name="top_n",
-                label="Search Results",
-                initial_value=app_state.settings["top_n"],
-                description="Number of document chunks to retrieve per query",
-                component=cl.ChatSettingsSlider(min=1, max=20, step=1)
-            ),
-            cl.ChatSettingsOption(
-                name="use_hybrid_retrieval",
-                label="Hybrid Search",
-                initial_value=app_state.settings["use_hybrid_retrieval"],
-                description="Combine vector and keyword search for better results",
-                component=cl.ChatSettingsSwitch()
-            ),
-            cl.ChatSettingsOption(
-                name="use_reranker",
-                label="Neural Reranking",
-                initial_value=app_state.settings["use_reranker"],
-                description="Use AI to improve search result quality",
-                component=cl.ChatSettingsSwitch()
-            ),
-            cl.ChatSettingsOption(
-                name="use_query_reformulation",
-                label="Query Enhancement",
-                initial_value=app_state.settings["use_query_reformulation"],
-                description="Automatically improve queries with context",
-                component=cl.ChatSettingsSwitch()
-            )
-        ]
-    )
-    await settings.send()
-    print("--- DEBUG: Exiting on_chat_start ---")
-
+    settings_elements = [
+        cl.ChatSettingsSlider(
+            id="chunk_size", # Use id for mapping in on_settings_update
+            label="Document Chunk Size",
+            initial=app_state.settings["chunk_size"],
+            min=100, max=1000, step=50,
+            description="Size of document chunks in characters (approx)."
+        ),
+        cl.ChatSettingsSlider(
+            id="overlap",
+            label="Chunk Overlap",
+            initial=app_state.settings["overlap"],
+            min=0, max=200, step=10,
+            description="Overlap between chunks."
+        ),
+        cl.ChatSettingsSlider(
+            id="top_n",
+            label="Search Results (Top N)",
+            initial=app_state.settings["top_n"],
+            min=1, max=20, step=1,
+            description="Number of document chunks to retrieve per query."
+        ),
+        cl.ChatSettingsSelect(
+            id="model",
+            label="LLM Model",
+            values=app_state.available_models,
+            initial_value=app_state.settings["model"]
+        ),
+        cl.ChatSettingsSwitch(
+            id="use_hybrid_retrieval",
+            label="Hybrid Search (Vector + Keyword)",
+            initial=app_state.settings["use_hybrid_retrieval"],
+            description="Combine vector and keyword search for potentially better results."
+        ),
+        cl.ChatSettingsSlider(
+            id="hybrid_alpha",
+            label="Hybrid Search Balance (Alpha)",
+            initial=app_state.settings["hybrid_alpha"],
+            min=0.0, max=1.0, step=0.1,
+            description="Weight for vector search (1.0 = pure vector, 0.0 = pure keyword)."
+        ),
+        cl.ChatSettingsSwitch(
+            id="use_reranker",
+            label="Neural Reranking",
+            initial=app_state.settings["use_reranker"],
+            description="Use AI to improve search result relevance (requires more computation)."
+        ),
+        cl.ChatSettingsSelect(
+            id="performance_target",
+            label="Embedding Performance Target",
+            values=["low_latency", "balanced", "high_accuracy"],
+            initial_value=app_state.settings["performance_target"],
+            description="Optimize embedding model selection for speed, accuracy, or balance."
+        )
+    ]
+    await cl.ChatSettings(elements=settings_elements).send()
+    logger.info("Chat started and UI elements sent.")
 
 @cl.on_settings_update
 async def on_settings_update(settings: Dict[str, Any]):
     """Update app settings when user changes them."""
+    logger.info(f"Settings update received: {settings}")
+    needs_model_reload = False
     # Update app state with new settings
     for key, value in settings.items():
         if key in app_state.settings:
+            if key == "performance_target" and app_state.settings[key] != value:
+                needs_model_reload = True
             app_state.settings[key] = value
-    
+            logger.info(f"Updated setting '{key}' to '{value}'")
+        else:
+            logger.warning(f"Received unknown setting key: {key}")
+
+    # Reload embedding model if performance target changed
+    if needs_model_reload and app_state.initialization_complete:
+        await cl.Message(content="🔄 Performance target changed. Reloading embedding model...", author="System").send()
+        # Removed stray opening square bracket
+        async with cl.Step(name="Reloading Embedding Model") as step:
+            step.output = f"Loading model for '{app_state.settings['performance_target']}' target..."
+            await step.update()
+            app_state.embedding_model = await asyncio.to_thread(
+                load_embedding_model,
+                performance_target=app_state.settings['performance_target']
+            )
+            if app_state.embedding_model:
+                step.output = f"✅ Embedding model reloaded successfully!"
+                step.status = cl.StepStatus.COMPLETED
+                await cl.Message(content="✅ Embedding model reloaded.", author="System").send()
+            else:
+                step.output = "❌ Failed to reload embedding model."
+                step.status = cl.StepStatus.FAILED
+                await cl.Message(content="❌ Failed to reload embedding model.", author="System").send()
+            await step.update()
+
     # Notify user of updated settings
     await cl.Message(
         content=f"✅ Tourism analysis settings updated successfully!",
@@ -443,10 +383,11 @@ async def on_settings_update(settings: Dict[str, Any]):
 @cl.action_callback("genz")
 @cl.action_callback("luxury")
 @cl.action_callback("analytics")
-@cl.action_callback("general")
+@cl.action_callback("general") # Role selection callbacks
+@cl.action_callback("reset_db") # Reset DB callback
 async def on_action(action: cl.Action):
     """Handle action button clicks for tourism expertise selection."""
-    print(f"--- DEBUG: Action callback triggered: {action.name} ({action.value}) ---")
+    logger.info(f"Action callback triggered: {action.name} ({action.value})")
     if action.value in AGENT_ROLES:
         app_state.current_role = action.value
         
@@ -456,17 +397,33 @@ async def on_action(action: cl.Action):
             author="Tourism Assistant"
         ).send()
         
-        # Update sidebar
-        elements = []
-        elements.append(cl.Image(name="role", path="./assets/roles/" + action.value.lower().replace(" ", "_") + ".png"))
-        elements.append(cl.Text(name="description", content=f"**Current Expertise:** {action.value}\n\n{AGENT_ROLES[action.value]}"))
-        await cl.ChatSettings(elements).send()
-        print(f"--- DEBUG: Updated role to {action.value} ---")
+        # Optionally update a sidebar element if you have one showing the role
+        # Example: await cl.ChatSettings(elements=[cl.Text(name="current_role_display", content=f"Role: {action.value}")]).send()
+        logger.info(f"Updated role to {action.value}")
+
+    elif action.value == "reset":
+        await cl.Message(content="🗑️ Resetting vector database and clearing processed files...", author="System").send()
+        async with cl.Step(name="Resetting Database") as step:
+            success, message = await asyncio.to_thread(reset_vector_db)
+            if success:
+                app_state.processed_files.clear()
+                app_state.conversation_memory.clear()
+                app_state.extracted_entities = {}
+                app_state.tourism_insights = {}
+                # Re-initialize collection (it might be None after reset)
+                app_state.collection = await asyncio.to_thread(get_chroma_collection)
+                step.output = "✅ Database reset successfully."
+                step.status = cl.StepStatus.COMPLETED
+                await cl.Message(content=f"✅ {message}", author="System").send()
+            else:
+                step.output = f"❌ {message}"
+                step.status = cl.StepStatus.FAILED
+                await cl.Message(content=f"❌ {message}", author="System").send()
+            await step.update()
 
 @cl.on_message
 async def on_message(message: cl.Message):
     """Process user messages and generate responses."""
-    print(f"--- DEBUG: Entering on_message for query: '{message.content[:50]}...' ---")
     if not app_state.initialization_complete:
         await cl.Message(
             content="⚠️ Tourism Analysis System is not fully initialized. Please refresh and try again.",
@@ -475,7 +432,7 @@ async def on_message(message: cl.Message):
         return
     
     if not app_state.processed_files:
-        await cl.Message(
+        await cl.Message( # Check if files have been processed
             content="⚠️ No tourism documents have been processed. Please upload PDF documents to begin analysis.",
             author="Tourism Assistant"
         ).send()
@@ -491,6 +448,7 @@ async def on_message(message: cl.Message):
     
     # Get user query
     user_query = message.content
+    logger.info(f"Received query: '{user_query[:100]}...'")
     if not user_query or not user_query.strip():
         await cl.Message(
             content="Please enter a valid question about your tourism documents.",
@@ -498,6 +456,9 @@ async def on_message(message: cl.Message):
         ).send()
         return
     
+    # Check memory before processing
+    memory_monitor.check()
+
     # Process user query with streaming response
     try:
         # Add loading message
@@ -507,17 +468,13 @@ async def on_message(message: cl.Message):
         # Get conversation memory
         conversation_memory = app_state.conversation_memory.get_formatted_history()
         
-        # Create a TokenStream for analyzing and returning results
-        token_stream = cl.TokenStream(message_id=msg.id)
-        await token_stream.init()
-        
         # Start a background task to process the query
-        async with cl.Step(name="Searching Tourism Knowledge Base", show_input=True) as step:
-            print(f"--- DEBUG: Starting hybrid retrieval for query: '{user_query}' ---")
+        async with cl.Step(name="Searching Tourism Knowledge Base", show_input=False) as search_step:
             step.input = user_query
+            await search_step.update()
             
             results = await asyncio.to_thread(
-                hybrid_retrieval,
+                hybrid_retrieval, # Use hybrid retrieval from vector_store module
                 query=user_query,
                 embedding_model=app_state.embedding_model,
                 collection=app_state.collection,
@@ -525,7 +482,7 @@ async def on_message(message: cl.Message):
                 alpha=app_state.settings["hybrid_alpha"],
                 use_reranker=app_state.settings["use_reranker"]
             )
-            print(f"--- DEBUG: Hybrid retrieval returned {len(results)} results ---")
+            logger.info(f"Hybrid retrieval returned {len(results)} results")
             
             # Create source documents for citation
             source_documents = []
@@ -535,7 +492,7 @@ async def on_message(message: cl.Message):
                         cl.SourceDocument(
                             page_content=result['text'],
                             metadata={
-                                "source": result['metadata'].get('filename', f"Document {i+1}"),
+                                "source": result['metadata'].get('filename', f"Source {i+1}"),
                                 "score": f"{result['score']:.2f}"
                             }
                         )
@@ -544,25 +501,29 @@ async def on_message(message: cl.Message):
                     source_documents.append(
                         cl.SourceDocument(
                             page_content=result['text'],
-                            metadata={"source": f"Document {i+1}", "score": f"{result['score']:.2f}"}
+                            metadata={"source": f"Source {i+1}", "score": f"{result['score']:.2f}"}
                         )
                     )
             
             if not results:
-                step.output = "No relevant information found in the tourism documents."
-                await step.update()
-                await token_stream.append("I couldn't find relevant information in your tourism documents. Please try a different question or upload more documents related to this topic.")
-                await token_stream.end()
+                search_step.output = "No relevant information found in the tourism documents."
+                search_step.status = cl.StepStatus.WARNING
+                await search_step.update()
+                await msg.update(content="I couldn't find relevant information in your tourism documents for that query. Please try rephrasing or asking about topics covered in the uploaded files.")
                 return
                 
             # Log the search results
-            step.output = f"Found {len(results)} relevant document segments"
-            await step.update()
+            search_step.output = f"Found {len(results)} relevant document segments."
+            search_step.status = cl.StepStatus.COMPLETED
+            await search_step.update()
         
         # Process query with LLM
-        async with cl.Step(name="Generating Tourism Insights", show_input=True) as step:
-            print(f"--- DEBUG: Starting LLM query for: '{user_query}' ---")
+        async with cl.Step(name="Generating Tourism Insights", show_input=False) as step:
             step.input = user_query
+            await step.update()
+
+            # Use TokenStream for LLM response
+            stream = cl.Message(content="", author=app_state.current_role, parent_id=msg.parent_id).stream_token
             
             # Simulate token streaming for faster response
             async def stream_tokens():
@@ -576,47 +537,45 @@ async def on_message(message: cl.Message):
                     conversation_memory=conversation_memory,
                     system_prompt=app_state.get_system_prompt(),
                     use_hybrid_retrieval=app_state.settings["use_hybrid_retrieval"],
-                    use_query_reformulation=app_state.settings["use_query_reformulation"],
                     hybrid_alpha=app_state.settings["hybrid_alpha"],
                     use_reranker=app_state.settings["use_reranker"]
                 )
-                print(f"--- DEBUG: LLM query returned answer (length: {len(answer)}) ---")
+                logger.info(f"LLM query returned answer (length: {len(answer)})")
                 
                 # Stream tokens
-                tokens = answer.split()
-                for token in tokens:
-                    await token_stream.append(token + " ")
-                    # Random small delay for natural reading feel
-                    await asyncio.sleep(0.02)
+                # Simple streaming by word - more sophisticated tokenization could be used
+                for word in answer.split():
+                    await stream(word + " ")
+                    await asyncio.sleep(0.01) # Small delay for effect
                 
                 # Update memory
                 app_state.conversation_memory.add("User", user_query)
                 app_state.conversation_memory.add("Assistant", answer)
                 
                 # Update step
-                step.output = "Generated tourism insights based on document analysis."
+                step.output = "Generated tourism insights."
+                step.status = cl.StepStatus.COMPLETED
                 await step.update()
                 
                 return answer
             
             # Stream tokens and wait for completion
             final_answer = await stream_tokens()
-            print("--- DEBUG: Token streaming complete ---")
+            logger.info("Token streaming complete.")
             
             # End the token stream
-            await token_stream.end()
+            await stream.end()
             
             # Add source documents to the message
-            await msg.update(source_documents=source_documents)
+            await cl.Message(content="", author=app_state.current_role, source_documents=source_documents).send() # Send sources separately
     
     except Exception as e:
-        error_message = f"Error processing tourism query: {str(e)}"
-        logger.error(error_message)
+        error_message = f"Error processing query: {str(e)}"
+        logger.error(error_message, exc_info=True)
         await cl.Message(
             content=f"❌ An error occurred: {error_message}",
             author="System"
         ).send()
-        print(f"--- DEBUG: Error in on_message: {error_message} ---")
         return
     
     print("--- DEBUG: Exiting on_message ---")
@@ -624,7 +583,7 @@ async def on_message(message: cl.Message):
 # For most recent Chainlit versions:
 @cl.on_chat_message_files
 async def on_chat_message_files(files: List[cl.File]): # Use cl.File for type hint if available
-    """Process uploaded tourism document files."""
+    """Process uploaded tourism document files (PDFs)."""
     if not files: # Check if the list is empty
         return
 
@@ -639,11 +598,11 @@ async def on_chat_message_files(files: List[cl.File]): # Use cl.File for type hi
     # Check if we have the required components
     if not app_state.embedding_model or app_state.collection is None:
         # Try to load them if not available (useful after refresh)
-        log_error("Missing components during file upload, attempting to reload...")
+        logger.warning("Missing components during file upload, attempting to reload...")
         app_state.embedding_model = await asyncio.to_thread(load_embedding_model)
         app_state.collection = await asyncio.to_thread(get_chroma_collection)
 
-        if not app_state.embedding_model or app_state.collection is None:
+        if not app_state.embedding_model or app_state.collection is None: # Check again
             log_error("Failed to load required components for file processing")
             await cl.Message(
                 content="⚠️ Tourism analysis system is not properly initialized. Please refresh and try again.",
@@ -653,7 +612,7 @@ async def on_chat_message_files(files: List[cl.File]): # Use cl.File for type hi
 
     for file in files:
         # Check file type using the file object's attributes
-        if not hasattr(file, 'type') or not file.type.startswith("application/pdf"):
+        if not file.mime or not file.mime == "application/pdf":
             await cl.Message(
                 content=f"⚠️ Only PDF documents are supported for tourism analysis. Skipped: {file.name}",
                 author="System"
@@ -664,7 +623,7 @@ async def on_chat_message_files(files: List[cl.File]): # Use cl.File for type hi
         try:
             # Get file content and name from the cl.File object
             file_content = await file.get_bytes()
-            file_name = file.name
+            file_name = file.name # Use file.name
 
             # Create a temporary file
             with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
@@ -675,10 +634,13 @@ async def on_chat_message_files(files: List[cl.File]): # Use cl.File for type hi
             process_msg = cl.Message(content=f"🔍 Analyzing tourism document: {file_name}...", author="System")
             await process_msg.send()
 
-            # Process the document with advanced analysis
-            async with cl.Step(name=f"Processing {file_name}", show_input=True, show_feedback=True) as step:
-                step.input = file_name
+            # Check memory before processing
+            memory_monitor.check()
 
+            # Process the document with advanced analysis
+            async with cl.Step(name=f"Processing {file_name}", show_input=False) as step:
+                step.input = file_name
+                await step.update()
                 try:
                     # Convert file to proper format for processing
                     # The 'file' object from AskFileResponse already has 'name' and 'content'
@@ -689,7 +651,7 @@ async def on_chat_message_files(files: List[cl.File]): # Use cl.File for type hi
                     })
 
                     # Process with tourism-focused extraction
-                    print(f"--- DEBUG: Calling process_uploaded_pdf for {file_name} ---")
+                    logger.info(f"Calling process_uploaded_pdf for {file_name}")
                     chunks = await asyncio.to_thread(
                         process_uploaded_pdf,
                         uploaded_file=uploaded_file_obj,
@@ -697,15 +659,14 @@ async def on_chat_message_files(files: List[cl.File]): # Use cl.File for type hi
                         overlap=app_state.settings["overlap"],
                         extract_images=True # Keep image extraction if needed
                     )
-                    print(f"--- DEBUG: process_uploaded_pdf returned {len(chunks)} chunks for {file_name} ---")
+                    logger.info(f"process_uploaded_pdf returned {len(chunks)} chunks for {file_name}")
 
                     if not chunks:
                         step.output = f"No content could be extracted from {file.name}."
                         step.status = cl.StepStatus.FAILED
                         await step.update()
-
                         await process_msg.update(content=f"⚠️ No content could be extracted from {file.name}. Please check if the PDF contains text content.")
-                        print(f"--- DEBUG: No content extracted from {file_name} ---")
+                        logger.warning(f"No content extracted from {file_name}")
                         continue # Process next file
 
                     # Process chunks and extract tourism entities/metrics
@@ -713,7 +674,7 @@ async def on_chat_message_files(files: List[cl.File]): # Use cl.File for type hi
                         "DESTINATION": set(), "ACCOMMODATION": set(), "TRANSPORTATION": set(),
                         "ACTIVITY": set(), "ATTRACTION": set()
                     }
-                    file_tourism_metrics = {"segments": {}, "payment_methods": {}}
+                    file_tourism_insights = {"segments": {}, "payment_methods": {}} # Use insights naming
 
                     batch_size = 10 # Process in batches if needed
                     for i in range(0, len(chunks), batch_size):
@@ -724,11 +685,13 @@ async def on_chat_message_files(files: List[cl.File]): # Use cl.File for type hi
                         for chunk in batch:
                             try:
                                 # Extract entities
-                                if "tourism_entities" not in chunk.get("metadata", {}):
-                                    entities = extract_tourism_entities(chunk["text"])
+                                # Use streaming/optimized entity extraction if available
+                                if "tourism_entities" not in chunk.get("metadata", {}): # Check if already processed
+                                    # Assuming extract_tourism_entities_streaming exists and works on single chunks
+                                    entities = extract_tourism_entities_streaming(chunk["text"]) # Adapt if needed
                                     chunk["metadata"]["tourism_entities"] = entities
                                 else:
-                                    entities = chunk["metadata"]["tourism_entities"]
+                                    entities = chunk["metadata"]["tourism_entities"] # Reuse if present
 
                                 # Aggregate entities for this file
                                 for entity_type, items in entities.items():
@@ -739,30 +702,30 @@ async def on_chat_message_files(files: List[cl.File]): # Use cl.File for type hi
                                 if "segment_matches" in chunk["metadata"]:
                                     for segment, has_match in chunk["metadata"]["segment_matches"].items():
                                         if has_match:
-                                            file_tourism_metrics["segments"][segment] = file_tourism_metrics["segments"].get(segment, 0) + 1
+                                            file_tourism_insights["segments"][segment] = file_tourism_insights["segments"].get(segment, 0) + 1
 
                                 # Process payment information
                                 if chunk["metadata"].get("has_payment_info", False):
                                     payment_keywords = ["credit card", "debit card", "cash", "digital wallet",
                                                     "mobile payment", "cryptocurrency"]
                                     for payment in payment_keywords:
-                                        if payment in chunk["text"].lower():
-                                            file_tourism_metrics["payment_methods"][payment] = file_tourism_metrics["payment_methods"].get(payment, 0) + 1
+                                        if payment in chunk["text"].lower(): # Simple keyword check
+                                            file_tourism_insights["payment_methods"][payment] = file_tourism_insights["payment_methods"].get(payment, 0) + 1
 
                             except Exception as chunk_err:
                                 log_error(f"Error processing chunk from {file_name}: {str(chunk_err)}")
                                 # Continue with next chunk
 
                     # Add chunks to collection (ensure embedding_model and collection are valid)
-                    print(f"--- DEBUG: Calling add_chunks_to_collection for {len(chunks)} chunks from {file.name} ---")
+                    logger.info(f"Calling add_chunks_to_collection for {len(chunks)} chunks from {file.name}")
                     add_success = await asyncio.to_thread(
                         add_chunks_to_collection,
-                        chunks=[c["text"] for c in chunks], # Pass only text
-                        metadatas=[c.get("metadata", {}) for c in chunks], # Pass metadata
+                        chunks=[c["text"] for c in chunks],
+                        metadatas=[c.get("metadata", {}) for c in chunks],
                         embedding_model=app_state.embedding_model,
                         collection=app_state.collection
                     )
-                    print(f"--- DEBUG: add_chunks_to_collection returned: {add_success} for {file_name} ---")
+                    logger.info(f"add_chunks_to_collection returned: {add_success} for {file_name}")
 
                     if add_success:
                         app_state.processed_files.add(file_name)
@@ -777,16 +740,16 @@ async def on_chat_message_files(files: List[cl.File]): # Use cl.File for type hi
                             app_state.extracted_entities[entity_type] = list(set(app_state.extracted_entities[entity_type]))
 
                         # Merge metrics with global state
-                        if file_tourism_metrics["segments"]:
-                            app_state.tourism_metrics.setdefault("segments", {})
-                            for segment, count in file_tourism_metrics["segments"].items():
-                                app_state.tourism_metrics["segments"][segment] = app_state.tourism_metrics["segments"].get(segment, 0) + count
+                        if file_tourism_insights["segments"]:
+                            app_state.tourism_insights.setdefault("segments", {})
+                            for segment, count in file_tourism_insights["segments"].items():
+                                app_state.tourism_insights["segments"][segment] = app_state.tourism_insights["segments"].get(segment, 0) + count
 
-                        if file_tourism_metrics["payment_methods"]:
-                            app_state.tourism_metrics.setdefault("payment_methods", {})
-                            for payment, count in file_tourism_metrics["payment_methods"].items():
-                                app_state.tourism_metrics["payment_methods"][payment] = app_state.tourism_metrics["payment_methods"].get(payment, 0) + count
-
+                        if file_tourism_insights["payment_methods"]:
+                            app_state.tourism_insights.setdefault("payment_methods", {})
+                            for payment, count in file_tourism_insights["payment_methods"].items():
+                                app_state.tourism_insights["payment_methods"][payment] = app_state.tourism_insights["payment_methods"].get(payment, 0) + count
+                        
                         # Update step
                         step.output = f"Successfully processed {file_name} with {len(chunks)} content segments."
                         step.status = cl.StepStatus.COMPLETED
@@ -824,25 +787,25 @@ You can now ask questions about this document!"""
                         await step.update()
 
                         await process_msg.update(content=f"❌ Failed to add {file_name} to tourism knowledge base. Please try again.")
-                        print(f"--- DEBUG: Failed to add {file_name} to collection ---")
+                        logger.error(f"Failed to add {file_name} to collection")
 
                 except Exception as e:
-                    logger.error(f"Error processing tourism document {file_name}: {str(e)}")
+                    logger.error(f"Error processing tourism document {file_name}: {str(e)}", exc_info=True)
                     step.output = f"Error processing document: {str(e)}"
                     step.status = cl.StepStatus.FAILED
                     await step.update()
 
                     await process_msg.update(content=f"❌ Error processing tourism document {file_name}: {str(e)}")
-                    print(f"--- DEBUG: Exception during PDF processing for {file_name}: {e} ---")
+                    logger.error(f"Exception during PDF processing for {file_name}: {e}")
 
                 await step.update() # Final update for the step
 
             # Display updated global tourism insights if available
-            if app_state.extracted_entities or app_state.tourism_metrics:
+            if app_state.extracted_entities or app_state.tourism_insights:
                 await display_global_insights()
 
         except Exception as e:
-            logger.error(f"Error handling tourism file upload for {file.name}: {str(e)}")
+            logger.error(f"Error handling tourism file upload for {file.name}: {str(e)}", exc_info=True)
             await cl.Message(
                 content=f"❌ An error occurred while processing {file.name}: {str(e)}",
                 author="System"
@@ -859,7 +822,7 @@ You can now ask questions about this document!"""
 
 async def display_global_insights():
     """Helper function to display aggregated insights in the UI."""
-    print("--- DEBUG: Updating global insights display ---")
+    logger.info("Updating global insights display")
     elements = []
 
     # Create tourism entities element (using global state)
@@ -878,13 +841,13 @@ async def display_global_insights():
     elements.append(entities_element)
 
     # Create segments element if available (using global state)
-    if "segments" in app_state.tourism_metrics and app_state.tourism_metrics["segments"]:
-        total_segments = sum(app_state.tourism_metrics["segments"].values())
+    if "segments" in app_state.tourism_insights and app_state.tourism_insights["segments"]:
+        total_segments = sum(app_state.tourism_insights["segments"].values())
         if total_segments > 0:
             segments_data = {
                 segment: f"{round((count / total_segments) * 100, 1)}%"
-                for segment, count in sorted(app_state.tourism_metrics["segments"].items(), key=lambda item: item[1], reverse=True)
-            }
+                for segment, count in sorted(app_state.tourism_insights["segments"].items(), key=lambda item: item[1], reverse=True)
+            } # Sort by count desc
             segments_element = cl.Dataframe(
                 data=[[segment, percentage] for segment, percentage in segments_data.items()],
                 columns=["Market Segment", "Mention Frequency"],
@@ -893,13 +856,13 @@ async def display_global_insights():
             elements.append(segments_element)
 
     # Create payment methods element if available (using global state)
-    if "payment_methods" in app_state.tourism_metrics and app_state.tourism_metrics["payment_methods"]:
-        total_payments = sum(app_state.tourism_metrics["payment_methods"].values())
+    if "payment_methods" in app_state.tourism_insights and app_state.tourism_insights["payment_methods"]:
+        total_payments = sum(app_state.tourism_insights["payment_methods"].values())
         if total_payments > 0:
             payment_data = {
                 payment: f"{round((count / total_payments) * 100, 1)}%"
-                for payment, count in sorted(app_state.tourism_metrics["payment_methods"].items(), key=lambda item: item[1], reverse=True)
-            }
+                for payment, count in sorted(app_state.tourism_insights["payment_methods"].items(), key=lambda item: item[1], reverse=True)
+            } # Sort by count desc
             payment_element = cl.Dataframe(
                 data=[[payment, percentage] for payment, percentage in payment_data.items()],
                 columns=["Payment Method", "Mention Frequency"],
@@ -914,6 +877,6 @@ async def display_global_insights():
             elements=elements,
             author="Tourism Insights"
         ).send()
-        print(f"--- DEBUG: Sent updated global tourism insights message ---")
+        logger.info("Sent updated global tourism insights message")
     else:
-        print(f"--- DEBUG: No global insights to display yet ---")
+        logger.info("No global insights to display yet")

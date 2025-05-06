@@ -5,3 +5,5 @@ messageFormat = "%(asctime)s %(message)s"
 fastReruns = false
 [server]
 fileWatcherType = "none"
+[theme]
+base="light"
