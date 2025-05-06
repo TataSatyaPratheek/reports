@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="900" height="650" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <linearGradient id="headerGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#5614B0;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#DBD65C;stop-opacity:1" />
+        </linearGradient>
+        <linearGradient id="saasGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#4CAF50;stop-opacity:0.1" />
+            <stop offset="100%" style="stop-color:#81C784;stop-opacity:0.1" />
+        </linearGradient>
+        <linearGradient id="enterpriseGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#2196F3;stop-opacity:0.1" />
+            <stop offset="100%" style="stop-color:#64B5F6;stop-opacity:0.1" />
+        </linearGradient>
+        <linearGradient id="componentGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#FF9800;stop-opacity:0.1" />
+            <stop offset="100%" style="stop-color:#FFB74D;stop-opacity:0.1" />
+        </linearGradient>
+        <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.3"/>
+        </filter>
+    </defs>
+
+    <!-- Title -->
+    <rect x="50" y="20" width="800" height="60" rx="10" ry="10" fill="url(#headerGrad)" filter="url(#shadow)"/>
+    <text x="450" y="55" font-family="Arial" font-size="24" font-weight="bold" text-anchor="middle" fill="white">End-to-End RAG Solutions Comparison</text>
+    <text x="450" y="75" font-family="Arial" font-size="16" text-anchor="middle" fill="white">For 100K Pages Monthly Processing</text>
+
+    <!-- SaaS Solutions -->
+    <rect x="50" y="100" width="800" height="160" rx="10" ry="10" fill="url(#saasGrad)" stroke="#4CAF50" stroke-width="2"/>
+    <text x="450" y="125" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" fill="#333">Pure SaaS Solutions: Upload and Deploy</text>
+    
+    <rect x="70" y="140" width="760" height="100" rx="5" ry="5" fill="white" stroke="#ddd" stroke-width="1"/>
+    
+    <!-- SaaS Comparison Table -->
+    <rect x="80" y="150" width="180" height="30" fill="#E8F5E9" stroke="#ddd" stroke-width="1"/>
+    <rect x="260" y="150" width="180" height="30" fill="#E8F5E9" stroke="#ddd" stroke-width="1"/>
+    <rect x="440" y="150" width="180" height="30" fill="#E8F5E9" stroke="#ddd" stroke-width="1"/>
+    <rect x="620" y="150" width="200" height="30" fill="#E8F5E9" stroke="#ddd" stroke-width="1"/>
+    
+    <text x="170" y="170" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle" fill="#333">Provider</text>
+    <text x="350" y="170" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle" fill="#333">Document Types</text>
+    <text x="530" y="170" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle" fill="#333">Pricing Model</text>
+    <text x="720" y="170" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle" fill="#333">Key Differentiators</text>
+    
+    <!-- DocsBot AI Row -->
+    <rect x="80" y="180" width="180" height="50" fill="#ffffff" stroke="#ddd" stroke-width="1"/>
+    <rect x="260" y="180" width="180" height="50" fill="#ffffff" stroke="#ddd" stroke-width="1"/>
+    <rect x="440" y="180" width="180" height="50" fill="#ffffff" stroke="#ddd" stroke-width="1"/>
+    <rect x="620" y="180" width="200" height="50" fill="#ffffff" stroke="#ddd" stroke-width="1"/>
+    
+    <text x="170" y="200" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle" fill="#4CAF50">DocsBot AI</text>
+    <text x="170" y="220" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">Recommended</text>
+    
+    <text x="260" y="200" font-family="Arial" font-size="12" text-anchor="start" fill="#333">37+ sources including:</text>
+    <text x="260" y="220" font-family="Arial" font-size="12" text-anchor="start" fill="#333">Docs, PDFs, websites, CRM</text>
+    
+    <text x="440" y="200" font-family="Arial" font-size="12" text-anchor="start" fill="#333">$19-$299/mo</text>
+    <text x="440" y="220" font-family="Arial" font-size="12" text-anchor="start" fill="#333">+ volume pricing</text>
+    
+    <text x="620" y="200" font-family="Arial" font-size="12" text-anchor="start" fill="#333">Pre-built connectors</text>
+    <text x="620" y="220" font-family="Arial" font-size="12" text-anchor="start" fill="#333">Team dashboards, low technical needs</text>
+
+    <!-- Enterprise Solutions -->
+    <rect x="50" y="280" width="800" height="160" rx="10" ry="10" fill="url(#enterpriseGrad)" stroke="#2196F3" stroke-width="2"/>
+    <text x="450" y="305" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" fill="#333">Enterprise Platforms: Full Integration and Scale</text>
+    
+    <rect x="70" y="320" width="760" height="100" rx="5" ry="5" fill="white" stroke="#ddd" stroke-width="1"/>
+    
+    <!-- Enterprise Comparison Table -->
+    <rect x="80" y="330" width="180" height="30" fill="#E3F2FD" stroke="#ddd" stroke-width="1"/>
+    <rect x="260" y="330" width="180" height="30" fill="#E3F2FD" stroke="#ddd" stroke-width="1"/>
+    <rect x="440" y="330" width="180" height="30" fill="#E3F2FD" stroke="#ddd" stroke-width="1"/>
+    <rect x="620" y="330" width="200" height="30" fill="#E3F2FD" stroke="#ddd" stroke-width="1"/>
+    
+    <text x="170" y="350" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle" fill="#333">Provider</text>
+    <text x="350" y="350" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle" fill="#333">Architecture Support</text>
+    <text x="530" y="350" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle" fill="#333">Enterprise Features</text>
+    <text x="720" y="350" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle" fill="#333">Technical Complexity</text>
+    
+    <!-- NVIDIA RAG Row -->
+    <rect x="80" y="360" width="180" height="50" fill="#ffffff" stroke="#ddd" stroke-width="1"/>
+    <rect x="260" y="360" width="180" height="50" fill="#ffffff" stroke="#ddd" stroke-width="1"/>
+    <rect x="440" y="360" width="180" height="50" fill="#ffffff" stroke="#ddd" stroke-width="1"/>
+    <rect x="620" y="360" width="200" height="50" fill="#ffffff" stroke="#ddd" stroke-width="1"/>
+    
+    <text x="170" y="380" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle" fill="#2196F3">NVIDIA RAG Solutions</text>
+    <text x="170" y="400" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">High performance</text>
+    
+    <text x="260" y="380" font-family="Arial" font-size="12" text-anchor="start" fill="#333">All architectures</text>
+    <text x="260" y="400" font-family="Arial" font-size="12" text-anchor="start" fill="#333">via NIM microservices</text>
+    
+    <text x="440" y="380" font-family="Arial" font-size="12" text-anchor="start" fill="#333">GPU-optimized</text>
+    <text x="440" y="400" font-family="Arial" font-size="12" text-anchor="start" fill="#333">On-premises support</text>
+    
+    <text x="620" y="380" font-family="Arial" font-size="12" text-anchor="start" fill="#333">High (technical team needed)</text>
+    <text x="620" y="400" font-family="Arial" font-size="12" text-anchor="start" fill="#333">Requires ML/AI expertise</text>
+
+    <!-- Component Frameworks -->
+    <rect x="50" y="460" width="800" height="160" rx="10" ry="10" fill="url(#componentGrad)" stroke="#FF9800" stroke-width="2"/>
+    <text x="450" y="485" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" fill="#333">Component Framework Platforms: Lego-like Building</text>
+    
+    <rect x="70" y="500" width="760" height="100" rx="5" ry="5" fill="white" stroke="#ddd" stroke-width="1"/>
+    
+    <!-- Component Comparison Table -->
+    <rect x="80" y="510" width="180" height="30" fill="#FFF3E0" stroke="#ddd" stroke-width="1"/>
+    <rect x="260" y="510" width="180" height="30" fill="#FFF3E0" stroke="#ddd" stroke-width="1"/>
+    <rect x="440" y="510" width="180" height="30" fill="#FFF3E0" stroke="#ddd" stroke-width="1"/>
+    <rect x="620" y="510" width="200" height="30" fill="#FFF3E0" stroke="#ddd" stroke-width="1"/>
+    
+    <text x="170" y="530" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle" fill="#333">Framework</text>
+    <text x="350" y="530" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle" fill="#333">Component Flexibility</text>
+    <text x="530" y="530" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle" fill="#333">Technical Requirement</text>
+    <text x="720" y="530" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle" fill="#333">Strategic Fit</text>
+    
+    <!-- LangChain Row -->
+    <rect x="80" y="540" width="180" height="50" fill="#ffffff" stroke="#ddd" stroke-width="1"/>
+    <rect x="260" y="540" width="180" height="50" fill="#ffffff" stroke="#ddd" stroke-width="1"/>
+    <rect x="440" y="540" width="180" height="50" fill="#ffffff" stroke="#ddd" stroke-width="1"/>
+    <rect x="620" y="540" width="200" height="50" fill="#ffffff" stroke="#ddd" stroke-width="1"/>
+    
+    <text x="170" y="560" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle" fill="#FF9800">LangChain</text>
+    <text x="170" y="580" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">Framework-based</text>
+    
+    <text x="260" y="560" font-family="Arial" font-size="12" text-anchor="start" fill="#333">High</text>
+    <text x="260" y="580" font-family="Arial" font-size="12" text-anchor="start" fill="#333">(all components customizable)</text>
+    
+    <text x="440" y="560" font-family="Arial" font-size="12" text-anchor="start" fill="#333">Medium-High</text>
+    <text x="440" y="580" font-family="Arial" font-size="12" text-anchor="start" fill="#333">Software development skills</text>
+    
+    <text x="620" y="560" font-family="Arial" font-size="12" text-anchor="start" fill="#333">Technical organizations</text>
+    <text x="620" y="580" font-family="Arial" font-size="12" text-anchor="start" fill="#333">Maximum customization</text>
+</svg>

@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="900" height="650" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <linearGradient id="headerGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#4776E6;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#8E54E9;stop-opacity:1" />
+        </linearGradient>
+        <linearGradient id="boxGrad1" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#56ab2f;stop-opacity:0.7" />
+            <stop offset="100%" style="stop-color:#a8e063;stop-opacity:0.7" />
+        </linearGradient>
+        <linearGradient id="boxGrad2" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#4776E6;stop-opacity:0.7" />
+            <stop offset="100%" style="stop-color:#8E54E9;stop-opacity:0.7" />
+        </linearGradient>
+        <linearGradient id="boxGrad3" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#ff9966;stop-opacity:0.7" />
+            <stop offset="100%" style="stop-color:#ff5e62;stop-opacity:0.7" />
+        </linearGradient>
+        <linearGradient id="boxGrad4" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#667eea;stop-opacity:0.7" />
+            <stop offset="100%" style="stop-color:#764ba2;stop-opacity:0.7" />
+        </linearGradient>
+        <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.3"/>
+        </filter>
+    </defs>
+
+    <!-- Title -->
+    <rect x="50" y="20" width="800" height="60" rx="10" ry="10" fill="url(#headerGrad)" filter="url(#shadow)"/>
+    <text x="450" y="55" font-family="Arial" font-size="24" font-weight="bold" text-anchor="middle" fill="white">RAG Component Integration Architecture</text>
+    <text x="450" y="75" font-family="Arial" font-size="16" text-anchor="middle" fill="white">For 100K Pages Monthly Processing</text>
+
+    <!-- Architecture Diagram -->
+    <rect x="50" y="100" width="800" height="400" rx="10" ry="10" fill="#f8f9fa" stroke="#ddd" stroke-width="2"/>
+
+    <!-- Document Processing Component -->
+    <rect x="120" y="150" width="200" height="80" rx="10" ry="10" fill="url(#boxGrad1)" filter="url(#shadow)"/>
+    <text x="220" y="190" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="white">Document Processing</text>
+    <text x="220" y="210" font-family="Arial" font-size="12" text-anchor="middle" fill="white">Unstructured.io / Azure</text>
+    
+    <!-- Document Storage -->
+    <rect x="120" y="280" width="200" height="60" rx="10" ry="10" fill="#E0E0E0" stroke="#ddd" stroke-width="1"/>
+    <text x="220" y="315" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle" fill="#333">Document Storage</text>
+    
+    <!-- Flow arrow -->
+    <line x1="220" y1="230" x2="220" y2="280" stroke="#333" stroke-width="2" stroke-dasharray="5,5"/>
+    <polygon points="220,280 215,270 225,270" fill="#333"/>
+
+    <!-- Embedding Generation Component -->
+    <rect x="400" y="150" width="200" height="80" rx="10" ry="10" fill="url(#boxGrad2)" filter="url(#shadow)"/>
+    <text x="500" y="190" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="white">Embedding Generation</text>
+    <text x="500" y="210" font-family="Arial" font-size="12" text-anchor="middle" fill="white">OpenAI / Cohere</text>
+    
+    <!-- Flow arrow -->
+    <line x1="320" y1="190" x2="400" y2="190" stroke="#333" stroke-width="2"/>
+    <polygon points="400,190 390,185 390,195" fill="#333"/>
+
+    <!-- Vector Database Component -->
+    <rect x="580" y="280" width="200" height="80" rx="10" ry="10" fill="url(#boxGrad3)" filter="url(#shadow)"/>
+    <text x="680" y="320" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="white">Vector Database</text>
+    <text x="680" y="340" font-family="Arial" font-size="12" text-anchor="middle" fill="white">Pinecone / Weaviate / Qdrant</text>
+    
+    <!-- Flow arrow -->
+    <line x1="500" y1="230" x2="500" y2="320" stroke="#333" stroke-width="2" stroke-dasharray="5,5"/>
+    <line x1="500" y1="320" x2="580" y2="320" stroke="#333" stroke-width="2"/>
+    <polygon points="580,320 570,315 570,325" fill="#333"/>
+
+    <!-- LLM Generation Component -->
+    <rect x="400" y="380" width="200" height="80" rx="10" ry="10" fill="url(#boxGrad4)" filter="url(#shadow)"/>
+    <text x="500" y="420" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="white">LLM Generation</text>
+    <text x="500" y="440" font-family="Arial" font-size="12" text-anchor="middle" fill="white">OpenAI / Anthropic / Google</text>
+    
+    <!-- Flow arrow -->
+    <line x1="680" y1="360" x2="680" y2="420" stroke="#333" stroke-width="2" stroke-dasharray="5,5"/>
+    <line x1="680" y1="420" x2="600" y2="420" stroke="#333" stroke-width="2"/>
+    <polygon points="600,420 610,415 610,425" fill="#333"/>
+
+    <!-- Orchestration Layer -->
+    <rect x="100" y="360" width="240" height="60" rx="10" ry="10" fill="#B39DDB" opacity="0.7" filter="url(#shadow)"/>
+    <text x="220" y="395" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="#333">Orchestration Layer</text>
+    <text x="220" y="415" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">LangChain / LlamaIndex</text>
+    
+    <!-- Flow arrows to orchestration -->
+    <line x1="220" y1="340" x2="220" y2="360" stroke="#333" stroke-width="2"/>
+    <polygon points="220,360 215,350 225,350" fill="#333"/>
+    
+    <line x1="220" y1="390" x2="400" y2="420" stroke="#333" stroke-width="2"/>
+    <polygon points="400,420 390,415 390,425" fill="#333"/>
+
+    <!-- Integration Approaches -->
+    <rect x="50" y="520" width="800" height="110" rx="10" ry="10" fill="#f8f9fa" stroke="#ddd" stroke-width="2"/>
+    <text x="450" y="545" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" fill="#333">Integration Approaches</text>
+    
+    <rect x="70" y="565" width="230" height="50" rx="5" ry="5" fill="#E0E0E0" stroke="#ddd" stroke-width="1"/>
+    <text x="185" y="585" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="#333">API-Based Integration</text>
+    <text x="185" y="603" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">Flexible, minimal lock-in</text>
+    
+    <rect x="330" y="565" width="230" height="50" rx="5" ry="5" fill="#E0E0E0" stroke="#ddd" stroke-width="1"/>
+    <text x="445" y="585" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="#333">Framework-Based</text>
+    <text x="445" y="603" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">LangChain, LlamaIndex, Haystack</text>
+    
+    <rect x="590" y="565" width="230" height="50" rx="5" ry="5" fill="#E0E0E0" stroke="#ddd" stroke-width="1"/>
+    <text x="705" y="585" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="#333">Platform Approach</text>
+    <text x="705" y="603" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">AWS Bedrock, Google Vertex AI</text>
+</svg>

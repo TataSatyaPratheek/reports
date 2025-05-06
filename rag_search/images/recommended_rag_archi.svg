@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="900" height="650" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <linearGradient id="headerGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#2193b0;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#6dd5ed;stop-opacity:1" />
+        </linearGradient>
+        <linearGradient id="phaseGrad1" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#56ab2f;stop-opacity:0.7" />
+            <stop offset="100%" style="stop-color:#a8e063;stop-opacity:0.7" />
+        </linearGradient>
+        <linearGradient id="phaseGrad2" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#4776E6;stop-opacity:0.7" />
+            <stop offset="100%" style="stop-color:#8E54E9;stop-opacity:0.7" />
+        </linearGradient>
+        <linearGradient id="phaseGrad3" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#ff9966;stop-opacity:0.7" />
+            <stop offset="100%" style="stop-color:#ff5e62;stop-opacity:0.7" />
+        </linearGradient>
+        <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.3"/>
+        </filter>
+    </defs>
+
+    <!-- Title -->
+    <rect x="50" y="20" width="800" height="60" rx="10" ry="10" fill="url(#headerGrad)" filter="url(#shadow)"/>
+    <text x="450" y="55" font-family="Arial" font-size="24" font-weight="bold" text-anchor="middle" fill="white">Recommended RAG Architecture</text>
+    <text x="450" y="75" font-family="Arial" font-size="16" text-anchor="middle" fill="white">For 100K Pages Monthly Processing</text>
+
+    <!-- Main Content Area -->
+    <rect x="50" y="100" width="800" height="530" rx="10" ry="10" fill="#f8f9fa" stroke="#ddd" stroke-width="2"/>
+
+    <!-- Phase 1: Foundation -->
+    <rect x="70" y="120" width="760" height="150" rx="10" ry="10" fill="url(#phaseGrad1)" opacity="0.3" stroke="#56ab2f" stroke-width="2"/>
+    <text x="400" y="145" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" fill="#333">Phase 1: Foundation (Months 0-6)</text>
+    
+    <rect x="90" y="160" width="220" height="90" rx="5" ry="5" fill="#fff" stroke="#ddd" stroke-width="1" filter="url(#shadow)"/>
+    <text x="200" y="180" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="#333">Architecture</text>
+    <text x="200" y="200" font-family="Arial" font-size="14" text-anchor="middle" fill="#666">Retrieve-and-Rerank</text>
+    <text x="200" y="220" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">• Two-stage retrieval</text>
+    <text x="200" y="240" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">• Improved relevance</text>
+    
+    <rect x="340" y="160" width="220" height="90" rx="5" ry="5" fill="#fff" stroke="#ddd" stroke-width="1" filter="url(#shadow)"/>
+    <text x="450" y="180" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="#333">Key Components</text>
+    <text x="450" y="200" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">• Unstructured.io (Processing)</text>
+    <text x="450" y="220" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">• OpenAI (Embeddings)</text>
+    <text x="450" y="240" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">• Qdrant (Vector DB)</text>
+    
+    <rect x="590" y="160" width="220" height="90" rx="5" ry="5" fill="#fff" stroke="#ddd" stroke-width="1" filter="url(#shadow)"/>
+    <text x="700" y="180" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="#333">Metrics Focus</text>
+    <text x="700" y="200" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">• Establish evaluation framework</text>
+    <text x="700" y="220" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">• RAGAS implementation</text>
+    <text x="700" y="240" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">• Recall@10 > 90%</text>
+
+    <!-- Phase 2: Scaling -->
+    <rect x="70" y="290" width="760" height="150" rx="10" ry="10" fill="url(#phaseGrad2)" opacity="0.3" stroke="#4776E6" stroke-width="2"/>
+    <text x="400" y="315" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" fill="#333">Phase 2: Scaling (Months 6-18)</text>
+    
+    <rect x="90" y="330" width="220" height="90" rx="5" ry="5" fill="#fff" stroke="#ddd" stroke-width="1" filter="url(#shadow)"/>
+    <text x="200" y="350" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="#333">Architecture</text>
+    <text x="200" y="370" font-family="Arial" font-size="14" text-anchor="middle" fill="#666">Hybrid RAG</text>
+    <text x="200" y="390" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">• Multiple retrieval methods</text>
+    <text x="200" y="410" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">• Context fusion</text>
+    
+    <rect x="340" y="330" width="220" height="90" rx="5" ry="5" fill="#fff" stroke="#ddd" stroke-width="1" filter="url(#shadow)"/>
+    <text x="450" y="350" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="#333">Key Components</text>
+    <text x="450" y="370" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">• Add reranking models</text>
+    <text x="450" y="390" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">• Implement monitoring dashboard</text>
+    <text x="450" y="410" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">• LangChain orchestration</text>
+    
+    <rect x="590" y="330" width="220" height="90" rx="5" ry="5" fill="#fff" stroke="#ddd" stroke-width="1" filter="url(#shadow)"/>
+    <text x="700" y="350" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="#333">Metrics Focus</text>
+    <text x="700" y="370" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">• A/B testing of components</text>
+    <text x="700" y="390" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">• Latency less than 500ms</text>
+    <text x="700" y="410" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">• Faithfulness score greater than 0.8</text>
+
+    <!-- Phase 3: Optimization -->
+    <rect x="70" y="460" width="760" height="150" rx="10" ry="10" fill="url(#phaseGrad3)" opacity="0.3" stroke="#ff9966" stroke-width="2"/>
+    <text x="400" y="485" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" fill="#333">Phase 3: Optimization (Months 18-36)</text>
+    
+    <rect x="90" y="500" width="220" height="90" rx="5" ry="5" fill="#fff" stroke="#ddd" stroke-width="1" filter="url(#shadow)"/>
+    <text x="200" y="520" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="#333">Architecture</text>
+    <text x="200" y="540" font-family="Arial" font-size="14" text-anchor="middle" fill="#666">Multimodal/Graph RAG</text>
+    <text x="200" y="560" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">• Add specialized capabilities</text>
+    <text x="200" y="580" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">• Explore Agentic components</text>
+    
+    <rect x="340" y="500" width="220" height="90" rx="5" ry="5" fill="#fff" stroke="#ddd" stroke-width="1" filter="url(#shadow)"/>
+    <text x="450" y="520" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="#333">Key Components</text>
+    <text x="450" y="540" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">• Continuous evaluation system</text>
+    <text x="450" y="560" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">• Auto-retrieval augmentation</text>
+    <text x="450" y="580" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">• Add Weaviate for multimodal</text>
+    
+    <rect x="590" y="500" width="220" height="90" rx="5" ry="5" fill="#fff" stroke="#ddd" stroke-width="1" filter="url(#shadow)"/>
+    <text x="700" y="520" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="#333">Metrics Focus</text>
+    <text x="700" y="540" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">• ROI measurement</text>
+    <text x="700" y="560" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">• Advanced evaluation frameworks</text>
+    <text x="700" y="580" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">• User satisfaction metrics</text>
+</svg>

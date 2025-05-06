@@ -1,0 +1,102 @@
+<svg viewBox="0 0 900 600" xmlns="http://www.w3.org/2000/svg">
+    <!-- Background -->
+    <rect x="0" y="0" width="900" height="600" fill="#f8f8f8" />
+    
+    <!-- Title -->
+    <text x="450" y="40" font-family="Arial" font-size="24" font-weight="bold" text-anchor="middle">Component Framework Platforms Comparison</text>
+    
+    <!-- Legend for component frameworks -->
+    <rect x="50" y="70" width="800" height="40" rx="5" fill="#eaeaea" stroke="#333" stroke-width="1" />
+    <text x="450" y="95" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle">Component Framework Platforms: Lego-like Building</text>
+    
+    <!-- Framework comparison matrix -->
+    <!-- Headers -->
+    <rect x="50" y="130" width="200" height="50" rx="5" fill="#4472c4" stroke="#333" stroke-width="1" />
+    <rect x="250" y="130" width="160" height="50" rx="5" fill="#4472c4" stroke="#333" stroke-width="1" />
+    <rect x="410" y="130" width="160" height="50" rx="5" fill="#4472c4" stroke="#333" stroke-width="1" />
+    <rect x="570" y="130" width="160" height="50" rx="5" fill="#4472c4" stroke="#333" stroke-width="1" />
+    <rect x="730" y="130" width="120" height="50" rx="5" fill="#4472c4" stroke="#333" stroke-width="1" />
+    
+    <text x="150" y="160" font-family="Arial" font-size="16" font-weight="bold" fill="white" text-anchor="middle">Framework</text>
+    <text x="330" y="160" font-family="Arial" font-size="16" font-weight="bold" fill="white" text-anchor="middle">Component Flexibility</text>
+    <text x="490" y="160" font-family="Arial" font-size="16" font-weight="bold" fill="white" text-anchor="middle">Technical Requirement</text>
+    <text x="650" y="160" font-family="Arial" font-size="16" font-weight="bold" fill="white" text-anchor="middle">Strategic Fit</text>
+    <text x="790" y="160" font-family="Arial" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Value Proposition</text>
+    
+    <!-- LangChain -->
+    <rect x="50" y="180" width="200" height="80" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    <rect x="250" y="180" width="160" height="80" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    <rect x="410" y="180" width="160" height="80" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    <rect x="570" y="180" width="160" height="80" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    <rect x="730" y="180" width="120" height="80" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    
+    <text x="150" y="210" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle">LangChain</text>
+    <text x="330" y="210" font-family="Arial" font-size="14" text-anchor="middle">High</text>
+    <text x="330" y="230" font-family="Arial" font-size="12" text-anchor="middle">(all components)</text>
+    <text x="490" y="220" font-family="Arial" font-size="14" text-anchor="middle">Medium-High</text>
+    <text x="650" y="220" font-family="Arial" font-size="14" text-anchor="middle">Technical organizations</text>
+    <text x="790" y="210" font-family="Arial" font-size="12" text-anchor="middle">Maximum</text>
+    <text x="790" y="230" font-family="Arial" font-size="12" text-anchor="middle">customization,</text>
+    <text x="790" y="250" font-family="Arial" font-size="12" text-anchor="middle">open-source</text>
+    
+    <!-- LlamaIndex -->
+    <rect x="50" y="260" width="200" height="80" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    <rect x="250" y="260" width="160" height="80" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    <rect x="410" y="260" width="160" height="80" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    <rect x="570" y="260" width="160" height="80" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    <rect x="730" y="260" width="120" height="80" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    
+    <text x="150" y="290" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle">LlamaIndex</text>
+    <text x="330" y="290" font-family="Arial" font-size="14" text-anchor="middle">Medium-High</text>
+    <text x="330" y="310" font-family="Arial" font-size="12" text-anchor="middle">(document-centric)</text>
+    <text x="490" y="300" font-family="Arial" font-size="14" text-anchor="middle">Medium</text>
+    <text x="650" y="290" font-family="Arial" font-size="14" text-anchor="middle">Document-heavy</text>
+    <text x="650" y="310" font-family="Arial" font-size="12" text-anchor="middle">operations</text>
+    <text x="790" y="290" font-family="Arial" font-size="12" text-anchor="middle">Document</text>
+    <text x="790" y="310" font-family="Arial" font-size="12" text-anchor="middle">processing focus</text>
+    
+    <!-- Haystack -->
+    <rect x="50" y="340" width="200" height="80" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    <rect x="250" y="340" width="160" height="80" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    <rect x="410" y="340" width="160" height="80" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    <rect x="570" y="340" width="160" height="80" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    <rect x="730" y="340" width="120" height="80" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    
+    <text x="150" y="370" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle">Haystack</text>
+    <text x="330" y="370" font-family="Arial" font-size="14" text-anchor="middle">Medium</text>
+    <text x="330" y="390" font-family="Arial" font-size="12" text-anchor="middle">(pipeline design)</text>
+    <text x="490" y="380" font-family="Arial" font-size="14" text-anchor="middle">Medium</text>
+    <text x="650" y="370" font-family="Arial" font-size="14" text-anchor="middle">Research/legal</text>
+    <text x="650" y="390" font-family="Arial" font-size="12" text-anchor="middle">applications</text>
+    <text x="790" y="380" font-family="Arial" font-size="12" text-anchor="middle">Mature relevance optimization</text>
+    
+    <!-- OpenAI Assistants -->
+    <rect x="50" y="420" width="200" height="80" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    <rect x="250" y="420" width="160" height="80" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    <rect x="410" y="420" width="160" height="80" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    <rect x="570" y="420" width="160" height="80" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    <rect x="730" y="420" width="120" height="80" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    
+    <text x="150" y="450" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle">OpenAI Assistants</text>
+    <text x="330" y="450" font-family="Arial" font-size="14" text-anchor="middle">Low-Medium</text>
+    <text x="490" y="460" font-family="Arial" font-size="14" text-anchor="middle">Low</text>
+    <text x="650" y="450" font-family="Arial" font-size="14" text-anchor="middle">Rapid</text>
+    <text x="650" y="470" font-family="Arial" font-size="12" text-anchor="middle">implementation</text>
+    <text x="790" y="450" font-family="Arial" font-size="12" text-anchor="middle">Simplicity with</text>
+    <text x="790" y="470" font-family="Arial" font-size="12" text-anchor="middle">OpenAI quality</text>
+    
+    <!-- Cohere Coral -->
+    <rect x="50" y="500" width="200" height="80" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    <rect x="250" y="500" width="160" height="80" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    <rect x="410" y="500" width="160" height="80" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    <rect x="570" y="500" width="160" height="80" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    <rect x="730" y="500" width="120" height="80" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    
+    <text x="150" y="530" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle">Cohere Coral</text>
+    <text x="330" y="530" font-family="Arial" font-size="14" text-anchor="middle">Medium</text>
+    <text x="490" y="530" font-family="Arial" font-size="14" text-anchor="middle">Low-Medium</text>
+    <text x="650" y="530" font-family="Arial" font-size="14" text-anchor="middle">Multilingual</text>
+    <text x="650" y="550" font-family="Arial" font-size="12" text-anchor="middle">applications</text>
+    <text x="790" y="530" font-family="Arial" font-size="12" text-anchor="middle">Strong multilingual</text>
+    <text x="790" y="550" font-family="Arial" font-size="12" text-anchor="middle">performance</text>
+  </svg>

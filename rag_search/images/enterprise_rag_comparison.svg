@@ -1,0 +1,99 @@
+<svg viewBox="0 0 900 600" xmlns="http://www.w3.org/2000/svg">
+    <!-- Background -->
+    <rect x="0" y="0" width="900" height="600" fill="#f8f8f8" />
+    
+    <!-- Title -->
+    <text x="450" y="40" font-family="Arial" font-size="24" font-weight="bold" text-anchor="middle">Enterprise RAG Platforms Comparison</text>
+    
+    <!-- Legend for enterprise platforms -->
+    <rect x="50" y="70" width="800" height="40" rx="5" fill="#eaeaea" stroke="#333" stroke-width="1" />
+    <text x="450" y="95" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle">Enterprise Platforms: Full Integration and Scale</text>
+    
+    <!-- Platform cards -->
+    <!-- NVIDIA RAG Solutions -->
+    <rect x="50" y="130" width="250" height="200" rx="10" fill="white" stroke="#4472c4" stroke-width="2" />
+    <rect x="50" y="130" width="250" height="50" rx="10" fill="#4472c4" />
+    <text x="175" y="162" font-family="Arial" font-size="16" font-weight="bold" fill="white" text-anchor="middle">NVIDIA RAG Solutions</text>
+    
+    <text x="70" y="195" font-family="Arial" font-size="14" font-weight="bold" text-anchor="start">Architecture Support:</text>
+    <text x="80" y="215" font-family="Arial" font-size="12" text-anchor="start">All architectures via NIM</text>
+    
+    <text x="70" y="240" font-family="Arial" font-size="14" font-weight="bold" text-anchor="start">Enterprise Features:</text>
+    <text x="80" y="260" font-family="Arial" font-size="12" text-anchor="start">• GPU-optimized</text>
+    <text x="80" y="280" font-family="Arial" font-size="12" text-anchor="start">• On-prem support</text>
+    
+    <text x="70" y="305" font-family="Arial" font-size="14" font-weight="bold" text-anchor="start">Positioning:</text>
+    <text x="80" y="325" font-family="Arial" font-size="12" text-anchor="start">Technical complexity, high performance</text>
+    
+    <!-- Google Document AI + Vertex AI -->
+    <rect x="320" y="130" width="250" height="200" rx="10" fill="white" stroke="#70ad47" stroke-width="2" />
+    <rect x="320" y="130" width="250" height="50" rx="10" fill="#70ad47" />
+    <text x="445" y="162" font-family="Arial" font-size="16" font-weight="bold" fill="white" text-anchor="middle">Google Document AI + Vertex AI</text>
+    
+    <text x="340" y="195" font-family="Arial" font-size="14" font-weight="bold" text-anchor="start">Architecture Support:</text>
+    <text x="350" y="215" font-family="Arial" font-size="12" text-anchor="start">Traditional, Multimodal</text>
+    
+    <text x="340" y="240" font-family="Arial" font-size="14" font-weight="bold" text-anchor="start">Enterprise Features:</text>
+    <text x="350" y="260" font-family="Arial" font-size="12" text-anchor="start">• Document processing depth</text>
+    <text x="350" y="280" font-family="Arial" font-size="12" text-anchor="start">• Google ecosystem</text>
+    
+    <text x="340" y="305" font-family="Arial" font-size="14" font-weight="bold" text-anchor="start">Positioning:</text>
+    <text x="350" y="325" font-family="Arial" font-size="12" text-anchor="start">Broad Google ecosystem play</text>
+    
+    <!-- Microsoft Azure AI -->
+    <rect x="590" y="130" width="250" height="200" rx="10" fill="white" stroke="#ed7d31" stroke-width="2" />
+    <rect x="590" y="130" width="250" height="50" rx="10" fill="#ed7d31" />
+    <text x="715" y="155" font-family="Arial" font-size="15" font-weight="bold" fill="white" text-anchor="middle">Microsoft Azure AI</text>
+    <text x="715" y="175" font-family="Arial" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Document Intelligence</text>
+    
+    <text x="610" y="195" font-family="Arial" font-size="14" font-weight="bold" text-anchor="start">Architecture Support:</text>
+    <text x="620" y="215" font-family="Arial" font-size="12" text-anchor="start">All architectures</text>
+    
+    <text x="610" y="240" font-family="Arial" font-size="14" font-weight="bold" text-anchor="start">Enterprise Features:</text>
+    <text x="620" y="260" font-family="Arial" font-size="12" text-anchor="start">• Microsoft ecosystem</text>
+    <text x="620" y="280" font-family="Arial" font-size="12" text-anchor="start">• Enterprise governance</text>
+    
+    <text x="610" y="305" font-family="Arial" font-size="14" font-weight="bold" text-anchor="start">Positioning:</text>
+    <text x="620" y="325" font-family="Arial" font-size="12" text-anchor="start">Comprehensive MS stack integration</text>
+    
+    <!-- IBM watsonx -->
+    <rect x="50" y="350" width="250" height="200" rx="10" fill="white" stroke="#5b9bd5" stroke-width="2" />
+    <rect x="50" y="350" width="250" height="50" rx="10" fill="#5b9bd5" />
+    <text x="175" y="382" font-family="Arial" font-size="16" font-weight="bold" fill="white" text-anchor="middle">IBM watsonx</text>
+    
+    <text x="70" y="415" font-family="Arial" font-size="14" font-weight="bold" text-anchor="start">Architecture Support:</text>
+    <text x="80" y="435" font-family="Arial" font-size="12" text-anchor="start">Advanced, Agentic</text>
+    
+    <text x="70" y="460" font-family="Arial" font-size="14" font-weight="bold" text-anchor="start">Enterprise Features:</text>
+    <text x="80" y="480" font-family="Arial" font-size="12" text-anchor="start">• Enterprise governance</text>
+    <text x="80" y="500" font-family="Arial" font-size="12" text-anchor="start">• Regulated industry focus</text>
+    
+    <text x="70" y="525" font-family="Arial" font-size="14" font-weight="bold" text-anchor="start">Positioning:</text>
+    <text x="80" y="545" font-family="Arial" font-size="12" text-anchor="start">Enterprise/compliance focus</text>
+    
+    <!-- AWS Bedrock + Textract -->
+    <rect x="320" y="350" width="250" height="200" rx="10" fill="white" stroke="#a5a5a5" stroke-width="2" />
+    <rect x="320" y="350" width="250" height="50" rx="10" fill="#a5a5a5" />
+    <text x="445" y="382" font-family="Arial" font-size="16" font-weight="bold" fill="white" text-anchor="middle">AWS Bedrock + Textract</text>
+    
+    <text x="340" y="415" font-family="Arial" font-size="14" font-weight="bold" text-anchor="start">Architecture Support:</text>
+    <text x="350" y="435" font-family="Arial" font-size="12" text-anchor="start">Multiple architectures</text>
+    
+    <text x="340" y="460" font-family="Arial" font-size="14" font-weight="bold" text-anchor="start">Enterprise Features:</text>
+    <text x="350" y="480" font-family="Arial" font-size="12" text-anchor="start">• AWS integration</text>
+    <text x="350" y="500" font-family="Arial" font-size="12" text-anchor="start">• Serverless option</text>
+    
+    <text x="340" y="525" font-family="Arial" font-size="14" font-weight="bold" text-anchor="start">Positioning:</text>
+    <text x="350" y="545" font-family="Arial" font-size="12" text-anchor="start">Developer/AWS-centric</text>
+    
+    <!-- Key integration capabilities -->
+    <rect x="590" y="350" width="250" height="200" rx="10" fill="#e6f2ff" stroke="#333" stroke-width="1" />
+    <text x="715" y="380" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle">Integration Features</text>
+    
+    <text x="600" y="410" font-family="Arial" font-size="14" text-anchor="start">• NVIDIA: LangChain, LlamaIndex</text>
+    <text x="600" y="435" font-family="Arial" font-size="14" text-anchor="start">• Google: BigQuery, Cloud</text>
+    <text x="600" y="460" font-family="Arial" font-size="14" text-anchor="start">• Microsoft: Azure OpenAI,</text>
+    <text x="610" y="480" font-family="Arial" font-size="14" text-anchor="start">  Cognitive Services</text>
+    <text x="600" y="505" font-family="Arial" font-size="14" text-anchor="start">• IBM: IBM ecosystem integration</text>
+    <text x="600" y="530" font-family="Arial" font-size="14" text-anchor="start">• AWS: Lambda, S3, AWS suite</text>
+  </svg>

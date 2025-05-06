@@ -1,0 +1,115 @@
+<svg viewBox="0 0 900 600" xmlns="http://www.w3.org/2000/svg">
+    <!-- Background -->
+    <rect x="0" y="0" width="900" height="600" fill="#f8f8f8" />
+    
+    <!-- Title -->
+    <text x="450" y="40" font-family="Arial" font-size="24" font-weight="bold" text-anchor="middle">Total Cost of Ownership: 3-Year Model</text>
+    
+    <!-- Axes -->
+    <line x1="120" y1="500" x2="850" y2="500" stroke="#333" stroke-width="2" /> <!-- X-axis -->
+    <line x1="120" y1="500" x2="120" y2="80" stroke="#333" stroke-width="2" /> <!-- Y-axis -->
+    
+    <!-- X-axis labels -->
+    <text x="200" y="525" font-family="Arial" font-size="14" text-anchor="middle">Pure SaaS</text>
+    <text x="200" y="545" font-family="Arial" font-size="14" text-anchor="middle">(Basic)</text>
+    
+    <text x="350" y="525" font-family="Arial" font-size="14" text-anchor="middle">Pure SaaS</text>
+    <text x="350" y="545" font-family="Arial" font-size="14" text-anchor="middle">(Enterprise)</text>
+    
+    <text x="500" y="525" font-family="Arial" font-size="14" text-anchor="middle">Component-Based</text>
+    <text x="500" y="545" font-family="Arial" font-size="14" text-anchor="middle">(Basic)</text>
+    
+    <text x="650" y="525" font-family="Arial" font-size="14" text-anchor="middle">Component-Based</text>
+    <text x="650" y="545" font-family="Arial" font-size="14" text-anchor="middle">(Advanced)</text>
+    
+    <text x="800" y="525" font-family="Arial" font-size="14" text-anchor="middle">Custom-Built</text>
+    
+    <!-- Y-axis labels and grid lines -->
+    <text x="100" y="500" font-family="Arial" font-size="14" text-anchor="end">$0</text>
+    <line x1="120" y1="500" x2="850" y2="500" stroke="#ddd" stroke-width="1" stroke-dasharray="5,5" />
+    
+    <text x="100" y="425" font-family="Arial" font-size="14" text-anchor="end">$200K</text>
+    <line x1="120" y1="425" x2="850" y2="425" stroke="#ddd" stroke-width="1" stroke-dasharray="5,5" />
+    
+    <text x="100" y="350" font-family="Arial" font-size="14" text-anchor="end">$400K</text>
+    <line x1="120" y1="350" x2="850" y2="350" stroke="#ddd" stroke-width="1" stroke-dasharray="5,5" />
+    
+    <text x="100" y="275" font-family="Arial" font-size="14" text-anchor="end">$600K</text>
+    <line x1="120" y1="275" x2="850" y2="275" stroke="#ddd" stroke-width="1" stroke-dasharray="5,5" />
+    
+    <text x="100" y="200" font-family="Arial" font-size="14" text-anchor="end">$800K</text>
+    <line x1="120" y1="200" x2="850" y2="200" stroke="#ddd" stroke-width="1" stroke-dasharray="5,5" />
+    
+    <text x="100" y="125" font-family="Arial" font-size="14" text-anchor="end">$1M</text>
+    <line x1="120" y1="125" x2="850" y2="125" stroke="#ddd" stroke-width="1" stroke-dasharray="5,5" />
+    
+    <!-- Y-axis title -->
+    <text x="40" y="300" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" transform="rotate(-90,40,300)">Total 3-Year Cost (USD)</text>
+    
+    <!-- Stacked bar charts -->
+    <!-- Pure SaaS (Basic) -->
+    <rect x="160" y="473" width="80" height="27" fill="#4472c4" stroke="#333" stroke-width="1" /> <!-- Implementation $5K-$15K (avg $10K) -->
+    <rect x="160" y="427" width="80" height="46" fill="#5b9bd5" stroke="#333" stroke-width="1" /> <!-- Licensing $12K-$36K (avg $24K) -->
+    <rect x="160" y="413" width="80" height="14" fill="#70ad47" stroke="#333" stroke-width="1" /> <!-- Operational $8K-$20K (avg $14K) -->
+    
+    <!-- Pure SaaS (Enterprise) -->
+    <rect x="310" y="438" width="80" height="62" fill="#4472c4" stroke="#333" stroke-width="1" /> <!-- Implementation $20K-$50K (avg $35K) -->
+    <rect x="310" y="360" width="80" height="78" fill="#5b9bd5" stroke="#333" stroke-width="1" /> <!-- Licensing $36K-$120K (avg $78K) -->
+    <rect x="310" y="332" width="80" height="28" fill="#70ad47" stroke="#333" stroke-width="1" /> <!-- Operational $15K-$40K (avg $27.5K) -->
+    
+    <!-- Component-Based (Basic) -->
+    <rect x="460" y="400" width="80" height="100" fill="#4472c4" stroke="#333" stroke-width="1" /> <!-- Implementation $30K-$70K (avg $50K) -->
+    <rect x="460" y="358" width="80" height="42" fill="#5b9bd5" stroke="#333" stroke-width="1" /> <!-- Licensing $24K-$60K (avg $42K) -->
+    <rect x="460" y="298" width="80" height="60" fill="#70ad47" stroke="#333" stroke-width="1" /> <!-- Operational $40K-$80K (avg $60K) -->
+    
+    <!-- Component-Based (Advanced) -->
+    <rect x="610" y="385" width="80" height="115" fill="#4472c4" stroke="#333" stroke-width="1" /> <!-- Implementation $80K-$150K (avg $115K) -->
+    <rect x="610" y="301" width="80" height="84" fill="#5b9bd5" stroke="#333" stroke-width="1" /> <!-- Licensing $48K-$120K (avg $84K) -->
+    <rect x="610" y="196" width="80" height="105" fill="#70ad47" stroke="#333" stroke-width="1" /> <!-- Operational $60K-$150K (avg $105K) -->
+    
+    <!-- Custom-Built -->
+    <rect x="760" y="275" width="80" height="225" fill="#4472c4" stroke="#333" stroke-width="1" /> <!-- Implementation $150K-$300K (avg $225K) -->
+    <rect x="760" y="217" width="80" height="58" fill="#5b9bd5" stroke="#333" stroke-width="1" /> <!-- Licensing $36K-$80K (avg $58K) -->
+    <rect x="760" y="67" width="80" height="150" fill="#70ad47" stroke="#333" stroke-width="1" /> <!-- Operational $100K-$200K (avg $150K) -->
+    
+    <!-- Range indicators -->
+    <line x1="200" y1="485" x2="200" y2="395" stroke="#333" stroke-width="2" /> <!-- Pure SaaS (Basic) range $41K-$127K -->
+    <line x1="190" y1="485" x2="210" y2="485" stroke="#333" stroke-width="2" />
+    <line x1="190" y1="395" x2="210" y2="395" stroke="#333" stroke-width="2" />
+    
+    <line x1="350" y1="415" x2="350" y2="325" stroke="#333" stroke-width="2" /> <!-- Pure SaaS (Enterprise) range $127K-$350K -->
+    <line x1="340" y1="415" x2="360" y2="415" stroke="#333" stroke-width="2" />
+    <line x1="340" y1="325" x2="360" y2="325" stroke="#333" stroke-width="2" />
+    
+    <line x1="500" y1="416" x2="500" y2="286" stroke="#333" stroke-width="2" /> <!-- Component-Based (Basic) range $166K-$370K -->
+    <line x1="490" y1="416" x2="510" y2="416" stroke="#333" stroke-width="2" />
+    <line x1="490" y1="286" x2="510" y2="286" stroke="#333" stroke-width="2" />
+    
+    <line x1="650" y1="266" x2="650" y2="176" stroke="#333" stroke-width="2" /> <!-- Component-Based (Advanced) range $284K-$750K -->
+    <line x1="640" y1="266" x2="660" y2="266" stroke="#333" stroke-width="2" />
+    <line x1="640" y1="176" x2="660" y2="176" stroke="#333" stroke-width="2" />
+    
+    <line x1="800" y1="296" x2="800" y2="96" stroke="#333" stroke-width="2" /> <!-- Custom-Built range $436K-$980K -->
+    <line x1="790" y1="296" x2="810" y2="296" stroke="#333" stroke-width="2" />
+    <line x1="790" y1="96" x2="810" y2="96" stroke="#333" stroke-width="2" />
+    
+    <!-- Legend -->
+    <rect x="650" y="80" width="200" height="100" rx="5" fill="white" stroke="#ccc" stroke-width="1" />
+    <text x="750" y="100" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle">Legend</text>
+    
+    <rect x="670" y="120" width="20" height="15" fill="#4472c4" stroke="#333" stroke-width="1" />
+    <text x="765" y="132" font-family="Arial" font-size="14" text-anchor="start">Initial Implementation</text>
+    
+    <rect x="670" y="145" width="20" height="15" fill="#5b9bd5" stroke="#333" stroke-width="1" />
+    <text x="765" y="157" font-family="Arial" font-size="14" text-anchor="start">Annual Licensing</text>
+    
+    <rect x="670" y="170" width="20" height="15" fill="#70ad47" stroke="#333" stroke-width="1" />
+    <text x="765" y="182" font-family="Arial" font-size="14" text-anchor="start">Operational Costs</text>
+    
+    <!-- Cost ranges -->
+    <text x="200" y="570" font-family="Arial" font-size="12" text-anchor="middle">$41K-$127K</text>
+    <text x="350" y="570" font-family="Arial" font-size="12" text-anchor="middle">$127K-$350K</text>
+    <text x="500" y="570" font-family="Arial" font-size="12" text-anchor="middle">$166K-$370K</text>
+    <text x="650" y="570" font-family="Arial" font-size="12" text-anchor="middle">$284K-$750K</text>
+    <text x="800" y="570" font-family="Arial" font-size="12" text-anchor="middle">$436K-$980K</text>
+  </svg>

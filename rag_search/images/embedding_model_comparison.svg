@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="900" height="600" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <linearGradient id="headerGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#00c6ff;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#0072ff;stop-opacity:1" />
+        </linearGradient>
+        <linearGradient id="gradOpenAI" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#74ebd5;stop-opacity:0.5" />
+            <stop offset="100%" style="stop-color:#ACB6E5;stop-opacity:0.5" />
+        </linearGradient>
+        <linearGradient id="gradCohere" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#FF9966;stop-opacity:0.5" />
+            <stop offset="100%" style="stop-color:#FF5E62;stop-opacity:0.5" />
+        </linearGradient>
+        <linearGradient id="gradAnthropicGoogle" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#a770ef;stop-opacity:0.5" />
+            <stop offset="100%" style="stop-color:#cf8bf3;stop-opacity:0.5" />
+        </linearGradient>
+        <linearGradient id="gradOpenSource" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#16A085;stop-opacity:0.5" />
+            <stop offset="100%" style="stop-color:#F4D03F;stop-opacity:0.5" />
+        </linearGradient>
+        <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.3"/>
+        </filter>
+    </defs>
+
+    <!-- Title -->
+    <text x="450" y="30" font-family="Arial" font-size="24" font-weight="bold" text-anchor="middle" filter="url(#shadow)">Embedding Model Comparison</text>
+    <text x="450" y="60" font-family="Arial" font-size="16" text-anchor="middle">For 100K Pages RAG Implementation</text>
+
+    <!-- Table Header -->
+    <rect x="50" y="80" width="800" height="60" rx="10" ry="10" fill="url(#headerGrad)" filter="url(#shadow)"/>
+    <line x1="200" y1="80" x2="200" y2="140" stroke="white" stroke-width="2"/>
+    <line x1="350" y1="80" x2="350" y2="140" stroke="white" stroke-width="2"/>
+    <line x1="500" y1="80" x2="500" y2="140" stroke="white" stroke-width="2"/>
+    <line x1="650" y1="80" x2="650" y2="140" stroke="white" stroke-width="2"/>
+    
+    <text x="125" y="110" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="white">Provider</text>
+    <text x="125" y="130" font-family="Arial" font-size="12" text-anchor="middle" fill="white">Model Options</text>
+    
+    <text x="275" y="110" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="white">Dimensions</text>
+    <text x="275" y="130" font-family="Arial" font-size="12" text-anchor="middle" fill="white">Vector Size</text>
+    
+    <text x="425" y="110" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="white">Cost</text>
+    <text x="425" y="130" font-family="Arial" font-size="12" text-anchor="middle" fill="white">75M tokens</text>
+    
+    <text x="575" y="110" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="white">Key Strengths</text>
+    <text x="575" y="130" font-family="Arial" font-size="12" text-anchor="middle" fill="white">Advantages</text>
+    
+    <text x="725" y="110" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="white">Performance</text>
+    <text x="725" y="130" font-family="Arial" font-size="12" text-anchor="middle" fill="white">MTEB Benchmarks</text>
+    
+    <text x="825" y="110" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="white">Best For</text>
+    <text x="825" y="130" font-family="Arial" font-size="12" text-anchor="middle" fill="white">Use Cases</text>
+
+    <!-- OpenAI Row -->
+    <rect x="50" y="140" width="800" height="90" rx="0" ry="0" fill="url(#gradOpenAI)" stroke="#ddd" stroke-width="1"/>
+    <line x1="200" y1="140" x2="200" y2="230" stroke="#ddd" stroke-width="1"/>
+    <line x1="350" y1="140" x2="350" y2="230" stroke="#ddd" stroke-width="1"/>
+    <line x1="500" y1="140" x2="500" y2="230" stroke="#ddd" stroke-width="1"/>
+    <line x1="650" y1="140" x2="650" y2="230" stroke="#ddd" stroke-width="1"/>
+    <line x1="800" y1="140" x2="800" y2="230" stroke="#ddd" stroke-width="1"/>
+    
+    <text x="60" y="160" font-family="Arial" font-size="16" font-weight="bold" fill="#333">OpenAI</text>
+    <text x="60" y="180" font-family="Arial" font-size="12" fill="#666">• text-embedding-ada-002</text>
+    <text x="60" y="200" font-family="Arial" font-size="12" fill="#666">• text-embedding-3-small</text>
+    <text x="60" y="220" font-family="Arial" font-size="12" fill="#666">• text-embedding-3-large</text>
+    
+    <text x="210" y="180" font-family="Arial" font-size="14" fill="#333">• 1536 dimensions</text>
+    <text x="210" y="200" font-family="Arial" font-size="14" fill="#333">• 1536 dimensions</text>
+    <text x="210" y="220" font-family="Arial" font-size="14" fill="#333">• 3072 dimensions</text>
+    
+    <text x="360" y="165" font-family="Arial" font-size="14" fill="#333">$7.50</text>
+    <text x="360" y="185" font-family="Arial" font-size="12" fill="#666">(ada-002)</text>
+    <text x="360" y="205" font-family="Arial" font-size="14" fill="#333">$20</text>
+    <text x="360" y="225" font-family="Arial" font-size="12" fill="#666">(text-embedding-3)</text>
+    
+    <text x="510" y="160" font-family="Arial" font-size="14" fill="#333">• Industry standard</text>
+    <text x="510" y="180" font-family="Arial" font-size="12" fill="#666">• Excellent performance</text>
+    <text x="510" y="200" font-family="Arial" font-size="12" fill="#666">• Easy API integration</text>
+    <text x="510" y="220" font-family="Arial" font-size="12" fill="#666">• Reliable infrastructure</text>
+    
+    <rect x="660" y="160" width="130" height="15" rx="7.5" ry="7.5" fill="#4CAF50" stroke="#ddd" stroke-width="1"/>
+    <text x="725" y="172" font-family="Arial" font-size="12" font-weight="bold" text-anchor="middle" fill="white">62.3 MTEB</text>
+    <text x="725" y="190" font-family="Arial" font-size="12" fill="#666">• Top-tier performance</text>
+    <text x="725" y="210" font-family="Arial" font-size="12" fill="#666">• Excellent retrieval</text>
+    
+    <text x="810" y="180" font-family="Arial" font-size="12" fill="#333">• Production</text>
+    <text x="810" y="200" font-family="Arial" font-size="12" fill="#333">• General RAG</text>
+
+    <!-- Cohere Row -->
+    <rect x="50" y="230" width="800" height="90" rx="0" ry="0" fill="url(#gradCohere)" stroke="#ddd" stroke-width="1"/>
+    <line x1="200" y1="230" x2="200" y2="320" stroke="#ddd" stroke-width="1"/>
+    <line x1="350" y1="230" x2="350" y2="320" stroke="#ddd" stroke-width="1"/>
+    <line x1="500" y1="230" x2="500" y2="320" stroke="#ddd" stroke-width="1"/>
+    <line x1="650" y1="230" x2="650" y2="320" stroke="#ddd" stroke-width="1"/>
+    <line x1="800" y1="230" x2="800" y2="320" stroke="#ddd" stroke-width="1"/>
+    
+    <text x="60" y="250" font-family="Arial" font-size="16" font-weight="bold" fill="#333">Cohere</text>
+    <text x="60" y="270" font-family="Arial" font-size="12" fill="#666">• Embed-english</text>
+    <text x="60" y="290" font-family="Arial" font-size="12" fill="#666">• Embed-multilingual</text>
+    <text x="60" y="310" font-family="Arial" font-size="12" fill="#666">• Embed-english-light</text>
+    
+    <text x="210" y="270" font-family="Arial" font-size="14" fill="#333">• 1024 dimensions</text>
+    <text x="210" y="290" font-family="Arial" font-size="14" fill="#333">• 1024 dimensions</text>
+    <text x="210" y="310" font-family="Arial" font-size="14" fill="#333">• 384 dimensions</text>
+    
+    <text x="360" y="255" font-family="Arial" font-size="14" fill="#333">$75-$150</text>
+    <text x="360" y="275" font-family="Arial" font-size="12" fill="#666">(v3 models)</text>
+    <text x="360" y="295" font-family="Arial" font-size="12" fill="#666">• Higher than</text>
+    <text x="360" y="310" font-family="Arial" font-size="12" fill="#666">  OpenAI</text>
+    
+    <text x="510" y="250" font-family="Arial" font-size="14" fill="#333">• Multilingual excellence</text>
+    <text x="510" y="270" font-family="Arial" font-size="12" fill="#666">• Strong with non-English</text>
+    <text x="510" y="290" font-family="Arial" font-size="12" fill="#666">• Enterprise focus</text>
+    <text x="510" y="310" font-family="Arial" font-size="12" fill="#666">• Multiple model options</text>
+    
+    <rect x="660" y="260" width="130" height="15" rx="7.5" ry="7.5" fill="#4CAF50" stroke="#ddd" stroke-width="1"/>
+    <text x="725" y="272" font-family="Arial" font-size="12" font-weight="bold" text-anchor="middle" fill="white">61.5 MTEB</text>
+    <text x="725" y="290" font-family="Arial" font-size="12" fill="#666">• Close to OpenAI</text>
+    <text x="725" y="310" font-family="Arial" font-size="12" fill="#666">• Better multilingual</text>
+    
+    <text x="810" y="270" font-family="Arial" font-size="12" fill="#333">• Multilingual</text>
+    <text x="810" y="290" font-family="Arial" font-size="12" fill="#333">• International</text>
+
+    <!-- Anthropic/Google Row -->
+    <rect x="50" y="320" width="800" height="90" rx="0" ry="0" fill="url(#gradAnthropicGoogle)" stroke="#ddd" stroke-width="1"/>
+    <line x1="200" y1="320" x2="200" y2="410" stroke="#ddd" stroke-width="1"/>
+    <line x1="350" y1="320" x2="350" y2="410" stroke="#ddd" stroke-width="1"/>
+    <line x1="500" y1="320" x2="500" y2="410" stroke="#ddd" stroke-width="1"/>
+    <line x1="650" y1="320" x2="650" y2="410" stroke="#ddd" stroke-width="1"/>
+    <line x1="800" y1="320" x2="800" y2="410" stroke="#ddd" stroke-width="1"/>
+    
+    <text x="60" y="340" font-family="Arial" font-size="16" font-weight="bold" fill="#333">Anthropic/Google</text>
+    <text x="60" y="360" font-family="Arial" font-size="12" fill="#666">• Claude embeddings</text>
+    <text x="60" y="380" font-family="Arial" font-size="12" fill="#666">• Vertex AI embeddings</text>
+    <text x="60" y="400" font-family="Arial" font-size="12" fill="#666">• PaLM embeddings</text>
+    
+    <text x="210" y="360" font-family="Arial" font-size="14" fill="#333">• Custom dimensions</text>
+    <text x="210" y="380" font-family="Arial" font-size="14" fill="#333">• 768-1408 dimensions</text>
+    <text x="210" y="400" font-family="Arial" font-size="14" fill="#333">• Variable</text>
+    
+    <text x="360" y="345" font-family="Arial" font-size="14" fill="#333">Custom pricing</text>
+    <text x="360" y="365" font-family="Arial" font-size="12" fill="#666">(Anthropic)</text>
+    <text x="360" y="385" font-family="Arial" font-size="14" fill="#333">$40-$120</text>
+    <text x="360" y="400" font-family="Arial" font-size="12" fill="#666">(Google)</text>
+    
+    <text x="510" y="340" font-family="Arial" font-size="14" fill="#333">• Enterprise integration</text>
+    <text x="510" y="360" font-family="Arial" font-size="12" fill="#666">• Cloud ecosystem</text>
+    <text x="510" y="380" font-family="Arial" font-size="12" fill="#666">• Vertical integration</text>
+    <text x="510" y="400" font-family="Arial" font-size="12" fill="#666">• Google AI platform</text>
+    
+    <rect x="660" y="360" width="130" height="15" rx="7.5" ry="7.5" fill="#FFC107" stroke="#ddd" stroke-width="1"/>
+    <text x="725" y="372" font-family="Arial" font-size="12" font-weight="bold" text-anchor="middle" fill="white">~59.0 MTEB</text>
+    <text x="725" y="390" font-family="Arial" font-size="12" fill="#666">• Competitive performance</text>
+    
+    <text x="810" y="360" font-family="Arial" font-size="12" fill="#333">• Google Cloud</text>
+    <text x="810" y="380" font-family="Arial" font-size="12" fill="#333">• Enterprise</text>
+
+    <!-- Open Source Row -->
+    <rect x="50" y="410" width="800" height="90" rx="0" ry="0" fill="url(#gradOpenSource)" stroke="#ddd" stroke-width="1"/>
+    <line x1="200" y1="410" x2="200" y2="500" stroke="#ddd" stroke-width="1"/>
+    <line x1="350" y1="410" x2="350" y2="500" stroke="#ddd" stroke-width="1"/>
+    <line x1="500" y1="410" x2="500" y2="500" stroke="#ddd" stroke-width="1"/>
+    <line x1="650" y1="410" x2="650" y2="500" stroke="#ddd" stroke-width="1"/>
+    <line x1="800" y1="410" x2="800" y2="500" stroke="#ddd" stroke-width="1"/>
+    
+    <text x="60" y="430" font-family="Arial" font-size="16" font-weight="bold" fill="#333">Hugging Face</text>
+    <text x="60" y="450" font-family="Arial" font-size="12" fill="#666">• BAAI/bge-*</text>
+    <text x="60" y="470" font-family="Arial" font-size="12" fill="#666">• e5-*</text>
+    <text x="60" y="490" font-family="Arial" font-size="12" fill="#666">• sentence-transformers</text>
+    
+    <text x="210" y="450" font-family="Arial" font-size="14" fill="#333">• 384-1536 dimensions</text>
+    <text x="210" y="470" font-family="Arial" font-size="14" fill="#333">• Model dependent</text>
+    <text x="210" y="490" font-family="Arial" font-size="14" fill="#333">• Various options</text>
+    
+    <text x="360" y="435" font-family="Arial" font-size="14" fill="#333">Computing costs</text>
+    <text x="360" y="455" font-family="Arial" font-size="12" fill="#666">• Hardware dependent</text>
+    <text x="360" y="475" font-family="Arial" font-size="12" fill="#666">• Free models</text>
+    <text x="360" y="495" font-family="Arial" font-size="12" fill="#666">• Self-hosting required</text>
+    
+    <text x="510" y="430" font-family="Arial" font-size="14" fill="#333">• Full control</text>
+    <text x="510" y="450" font-family="Arial" font-size="12" fill="#666">• No API dependence</text>
+    <text x="510" y="470" font-family="Arial" font-size="12" fill="#666">• Domain specialization</text>
+    <text x="510" y="490" font-family="Arial" font-size="12" fill="#666">• Customization options</text>
+    
+    <rect x="660" y="460" width="130" height="15" rx="7.5" ry="7.5" fill="#FFC107" stroke="#ddd" stroke-width="1"/>
+    <text x="725" y="472" font-family="Arial" font-size="12" font-weight="bold" text-anchor="middle" fill="white">55.0-60.0 MTEB</text>
+    <text x="725" y="490" font-family="Arial" font-size="12" fill="#666">• Model dependent</text>
+    
+    <text x="810" y="450" font-family="Arial" font-size="12" fill="#333">• Cost-sensitive</text>
+    <text x="810" y="470" font-family="Arial" font-size="12" fill="#333">• Specialized</text>
+
+    <!-- Cost Efficiency Analysis -->
+    <rect x="50" y="520" width="800" height="60" rx="10" ry="10" fill="#f8f9fa" stroke="#ddd" stroke-width="2" filter="url(#shadow)"/>
+    <text x="450" y="545" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="#333">Cost Efficiency for 100K Pages (Approximate)</text>
+    <text x="450" y="565" font-family="Arial" font-size="14" text-anchor="middle" fill="#666">OpenAI: $100-$250 • Cohere: $150-$300 • Open Source: $50-$150 (infrastructure)</text>
+</svg>

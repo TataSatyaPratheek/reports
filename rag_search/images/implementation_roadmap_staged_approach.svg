@@ -1,0 +1,98 @@
+<svg viewBox="0 0 900 500" xmlns="http://www.w3.org/2000/svg">
+    <!-- Background -->
+    <rect x="0" y="0" width="900" height="500" fill="#f8f8f8" />
+    
+    <!-- Title -->
+    <text x="450" y="40" font-family="Arial" font-size="24" font-weight="bold" text-anchor="middle">Implementation Roadmap: Staged Approach</text>
+    
+    <!-- Timeline -->
+    <line x1="100" y1="100" x2="800" y2="100" stroke="#333" stroke-width="4" />
+    
+    <!-- Timeline points -->
+    <circle cx="100" cy="100" r="10" fill="#4472c4" stroke="#333" stroke-width="2" />
+    <text x="100" y="80" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle">Month 0</text>
+    
+    <circle cx="215" cy="100" r="10" fill="#4472c4" stroke="#333" stroke-width="2" />
+    <text x="215" y="80" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle">Month 3</text>
+    
+    <circle cx="330" cy="100" r="10" fill="#70ad47" stroke="#333" stroke-width="2" />
+    <text x="330" y="80" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle">Month 9</text>
+    
+    <circle cx="485" cy="100" r="10" fill="#ffc000" stroke="#333" stroke-width="2" />
+    <text x="485" y="80" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle">Month 18</text>
+    
+    <circle cx="690" cy="100" r="10" fill="#ed7d31" stroke="#333" stroke-width="2" />
+    <text x="690" y="80" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle">Month 24+</text>
+    
+    <!-- Phase boxes -->
+    <rect x="100" y="130" width="115" height="50" rx="10" fill="#4472c4" stroke="#333" stroke-width="2" />
+    <text x="157" y="160" font-family="Arial" font-size="16" font-weight="bold" fill="white" text-anchor="middle">Phase 1</text>
+    
+    <rect x="215" y="130" width="115" height="50" rx="10" fill="#70ad47" stroke="#333" stroke-width="2" />
+    <text x="272" y="160" font-family="Arial" font-size="16" font-weight="bold" fill="white" text-anchor="middle">Phase 2</text>
+    
+    <rect x="330" y="130" width="155" height="50" rx="10" fill="#ffc000" stroke="#333" stroke-width="2" />
+    <text x="407" y="160" font-family="Arial" font-size="16" font-weight="bold" fill="white" text-anchor="middle">Phase 3</text>
+    
+    <rect x="485" y="130" width="205" height="50" rx="10" fill="#ed7d31" stroke="#333" stroke-width="2" />
+    <text x="587" y="160" font-family="Arial" font-size="16" font-weight="bold" fill="white" text-anchor="middle">Phase 4</text>
+    
+    <!-- Phase 1 content -->
+    <rect x="80" y="200" width="155" height="120" rx="10" fill="white" stroke="#4472c4" stroke-width="2" />
+    <text x="157" y="220" font-family="Arial" font-size="16" font-weight="bold" fill="#4472c4" text-anchor="middle">Foundation</text>
+    <text x="157" y="240" font-family="Arial" font-size="14" font-style="italic" fill="#4472c4" text-anchor="middle">(Months 0-3)</text>
+    <text x="90" y="265" font-family="Arial" font-size="14" text-anchor="start">• Document inventory</text>
+    <text x="90" y="285" font-family="Arial" font-size="14" text-anchor="start">• Use case definition</text>
+    <text x="90" y="305" font-family="Arial" font-size="14" text-anchor="start">• SaaS platform selection</text>
+    
+    <!-- Phase 2 content -->
+    <rect x="255" y="200" width="155" height="140" rx="10" fill="white" stroke="#70ad47" stroke-width="2" />
+    <text x="332" y="220" font-family="Arial" font-size="16" font-weight="bold" fill="#70ad47" text-anchor="middle">Expansion</text>
+    <text x="332" y="240" font-family="Arial" font-size="14" font-style="italic" fill="#70ad47" text-anchor="middle">(Months 4-9)</text>
+    <text x="265" y="265" font-family="Arial" font-size="14" text-anchor="start">• Document refinement</text>
+    <text x="265" y="285" font-family="Arial" font-size="14" text-anchor="start">• Use case expansion</text>
+    <text x="265" y="305" font-family="Arial" font-size="14" text-anchor="start">• Integration with systems</text>
+    <text x="265" y="325" font-family="Arial" font-size="14" text-anchor="start">• Performance optimization</text>
+    
+    <!-- Phase 3 content -->
+    <rect x="430" y="200" width="155" height="160" rx="10" fill="white" stroke="#ffc000" stroke-width="2" />
+    <text x="507" y="220" font-family="Arial" font-size="16" font-weight="bold" fill="#ffc000" text-anchor="middle">Advanced Capabilities</text>
+    <text x="507" y="240" font-family="Arial" font-size="14" font-style="italic" fill="#ffc000" text-anchor="middle">(Months 10-18)</text>
+    <text x="440" y="265" font-family="Arial" font-size="14" text-anchor="start">• Component enhancements</text>
+    <text x="440" y="285" font-family="Arial" font-size="14" text-anchor="start">• Advanced retrieval</text>
+    <text x="440" y="305" font-family="Arial" font-size="14" text-anchor="start">• Business process workflows</text>
+    <text x="440" y="325" font-family="Arial" font-size="14" text-anchor="start">• Governance procedures</text>
+    <text x="440" y="345" font-family="Arial" font-size="14" text-anchor="start">• Maintenance framework</text>
+    
+    <!-- Phase 4 content -->
+    <rect x="605" y="200" width="175" height="160" rx="10" fill="white" stroke="#ed7d31" stroke-width="2" />
+    <text x="692" y="220" font-family="Arial" font-size="16" font-weight="bold" fill="#ed7d31" text-anchor="middle">Strategic Differentiation</text>
+    <text x="692" y="240" font-family="Arial" font-size="14" font-style="italic" fill="#ed7d31" text-anchor="middle">(Months 18+)</text>
+    <text x="615" y="265" font-family="Arial" font-size="14" text-anchor="start">• Custom component development</text>
+    <text x="615" y="285" font-family="Arial" font-size="14" text-anchor="start">• Domain-specific knowledge</text>
+    <text x="615" y="305" font-family="Arial" font-size="14" text-anchor="start">• Advanced analytics framework</text>
+    <text x="615" y="325" font-family="Arial" font-size="14" text-anchor="start">• Enterprise system integration</text>
+    <text x="615" y="345" font-family="Arial" font-size="14" text-anchor="start">• Competitive differentiation</text>
+    
+    <!-- Value and maturity indicators -->
+    <path d="M100,400 C215,380 330,350 485,280 S690,200 800,150" fill="none" stroke="#333" stroke-width="3" stroke-dasharray="5,5" />
+    <text x="250" y="420" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle">Increasing Business Value and Solution Maturity</text>
+    
+    <!-- Legend -->
+    <rect x="50" y="430" width="800" height="40" rx="5" fill="#f0f0f0" stroke="#ccc" stroke-width="1" />
+    
+    <rect x="70" y="440" width="20" height="20" fill="#4472c4" />
+    <text x="100" y="455" font-family="Arial" font-size="14" text-anchor="start">Foundation</text>
+    
+    <rect x="200" y="440" width="20" height="20" fill="#70ad47" />
+    <text x="230" y="455" font-family="Arial" font-size="14" text-anchor="start">Expansion</text>
+    
+    <rect x="330" y="440" width="20" height="20" fill="#ffc000" />
+    <text x="360" y="455" font-family="Arial" font-size="14" text-anchor="start">Advanced Capabilities</text>
+    
+    <rect x="520" y="440" width="20" height="20" fill="#ed7d31" />
+    <text x="550" y="455" font-family="Arial" font-size="14" text-anchor="start">Strategic Differentiation</text>
+    
+    <path d="M720,440 L750,440 Q760,440 760,450 T770,460 L800,460" fill="none" stroke="#333" stroke-width="2" stroke-dasharray="5,5" />
+    <text x="770" y="455" font-family="Arial" font-size="14" text-anchor="middle">Value Curve</text>
+  </svg>

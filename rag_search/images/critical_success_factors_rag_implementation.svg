@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="900" height="650" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <linearGradient id="headerGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#8E2DE2;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#4A00E0;stop-opacity:1" />
+        </linearGradient>
+        <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.3"/>
+        </filter>
+    </defs>
+
+    <!-- Title -->
+    <rect x="50" y="20" width="800" height="60" rx="10" ry="10" fill="url(#headerGrad)" filter="url(#shadow)"/>
+    <text x="450" y="55" font-family="Arial" font-size="24" font-weight="bold" text-anchor="middle" fill="white">Critical Success Factors</text>
+    <text x="450" y="75" font-family="Arial" font-size="16" text-anchor="middle" fill="white">For 100K Pages Monthly RAG Implementation</text>
+
+    <!-- Main Content Area -->
+    <rect x="50" y="100" width="800" height="530" rx="10" ry="10" fill="#f8f9fa" stroke="#ddd" stroke-width="2"/>
+
+    <!-- CSF #1 -->
+    <rect x="70" y="120" width="760" height="100" rx="10" ry="10" fill="#E3F2FD" stroke="#2196F3" stroke-width="2"/>
+    <text x="100" y="145" font-family="Arial" font-size="18" font-weight="bold" text-anchor="start" fill="#2196F3">1. Robust Evaluation Framework</text>
+    <text x="100" y="170" font-family="Arial" font-size="14" text-anchor="start" fill="#333">• Implement RAGAS metrics from the beginning (context relevance, faithfulness, answer relevance)</text>
+    <text x="100" y="195" font-family="Arial" font-size="14" text-anchor="start" fill="#333">• Establish golden dataset with domain-specific test cases for your content types</text>
+    <text x="100" y="220" font-family="Arial" font-size="14" text-anchor="start" fill="#333">• Conduct A/B testing between architectural variants with statistical rigor</text>
+
+    <!-- CSF #2 -->
+    <rect x="70" y="235" width="760" height="100" rx="10" ry="10" fill="#E8F5E9" stroke="#4CAF50" stroke-width="2"/>
+    <text x="100" y="260" font-family="Arial" font-size="18" font-weight="bold" text-anchor="start" fill="#4CAF50">2. Content Strategy Optimization</text>
+    <text x="100" y="285" font-family="Arial" font-size="14" text-anchor="start" fill="#333">• Develop optimized chunking strategy specific to your document types</text>
+    <text x="100" y="310" font-family="Arial" font-size="14" text-anchor="start" fill="#333">• Create comprehensive metadata enrichment pipeline for enhanced retrieval</text>
+    <text x="100" y="335" font-family="Arial" font-size="14" text-anchor="start" fill="#333">• Implement content quality filtering to prioritize high-value documents</text>
+
+    <!-- CSF #3 -->
+    <rect x="70" y="350" width="760" height="100" rx="10" ry="10" fill="#FFF3E0" stroke="#FF9800" stroke-width="2"/>
+    <text x="100" y="375" font-family="Arial" font-size="18" font-weight="bold" text-anchor="start" fill="#FF9800">3. Scalable Infrastructure Design</text>
+    <text x="100" y="400" font-family="Arial" font-size="14" text-anchor="start" fill="#333">• Implement batch processing for embedding generation to handle 100K pages volume</text>
+    <text x="100" y="425" font-family="Arial" font-size="14" text-anchor="start" fill="#333">• Design for horizontal scaling with proper load distribution across components</text>
+    <text x="100" y="450" font-family="Arial" font-size="14" text-anchor="start" fill="#333">• Develop comprehensive caching strategy for common queries and embeddings</text>
+
+    <!-- CSF #4 -->
+    <rect x="70" y="465" width="760" height="100" rx="10" ry="10" fill="#E8EAF6" stroke="#3F51B5" stroke-width="2"/>
+    <text x="100" y="490" font-family="Arial" font-size="18" font-weight="bold" text-anchor="start" fill="#3F51B5">4. Continuous Improvement Process</text>
+    <text x="100" y="515" font-family="Arial" font-size="14" text-anchor="start" fill="#333">• Establish feedback collection mechanisms (both explicit and implicit)</text>
+    <text x="100" y="540" font-family="Arial" font-size="14" text-anchor="start" fill="#333">• Implement systematic error analysis and categorization workflow</text>
+    <text x="100" y="565" font-family="Arial" font-size="14" text-anchor="start" fill="#333">• Create regular performance review cadence with improvement prioritization</text>
+
+    <!-- Key Implementation Principles -->
+    <rect x="70" y="580" width="760" height="30" rx="10" ry="10" fill="#673AB7" opacity="0.8"/>
+    <text x="450" y="600" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="white">Key Implementation Principle: Start Small, Scale Gradually, Measure Continuously</text>
+</svg>

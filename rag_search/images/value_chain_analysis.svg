@@ -1,0 +1,96 @@
+<svg viewBox="0 0 900 600" xmlns="http://www.w3.org/2000/svg">
+    <!-- Background -->
+    <rect x="0" y="0" width="900" height="600" fill="#f8f8f8" />
+    
+    <!-- Title -->
+    <text x="450" y="40" font-family="Arial" font-size="24" font-weight="bold" text-anchor="middle">Value Chain Analysis: RAG Impact on Business Functions</text>
+    
+    <!-- Value Chain Arrow -->
+    <polygon points="100,150 800,150 850,225 800,300 100,300 150,225" fill="#e6f2ff" stroke="#333" stroke-width="2" />
+    <text x="450" y="235" font-family="Arial" font-size="20" font-weight="bold" text-anchor="middle">Business Functions</text>
+    
+    <!-- Function Blocks -->
+    <!-- Customer Support -->
+    <rect x="120" y="320" width="200" height="220" rx="10" fill="#4472c4" fill-opacity="0.2" stroke="#4472c4" stroke-width="2" />
+    <text x="220" y="345" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle">Customer Support</text>
+    
+    <rect x="130" y="360" width="180" height="30" fill="#4472c4" fill-opacity="0.6" stroke="#333" stroke-width="1" />
+    <text x="220" y="380" font-family="Arial" font-size="14" text-anchor="middle" fill="white">Impact: HIGH</text>
+    
+    <text x="140" y="410" font-family="Arial" font-size="14" text-anchor="start">• Reduces ticket volume</text>
+    <text x="150" y="430" font-family="Arial" font-size="14" text-anchor="start">(30-70%)</text>
+    <text x="140" y="450" font-family="Arial" font-size="14" text-anchor="start">• Improves CSAT</text>
+    <text x="140" y="470" font-family="Arial" font-size="14" text-anchor="start">• Recommended:</text>
+    <text x="150" y="490" font-family="Arial" font-size="14" text-anchor="start">Full SaaS (DocsBot,</text>
+    <text x="150" y="510" font-family="Arial" font-size="14" text-anchor="start">Document360)</text>
+    
+    <!-- Sales Operations -->
+    <rect x="340" y="320" width="200" height="220" rx="10" fill="#70ad47" fill-opacity="0.2" stroke="#70ad47" stroke-width="2" />
+    <text x="440" y="345" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle">Sales Operations</text>
+    
+    <rect x="350" y="360" width="180" height="30" fill="#70ad47" fill-opacity="0.6" stroke="#333" stroke-width="1" />
+    <text x="440" y="380" font-family="Arial" font-size="14" text-anchor="middle" fill="white">Impact: MEDIUM-HIGH</text>
+    
+    <text x="360" y="410" font-family="Arial" font-size="14" text-anchor="start">• Accelerates prospect</text>
+    <text x="370" y="430" font-family="Arial" font-size="14" text-anchor="start">responses</text>
+    <text x="360" y="450" font-family="Arial" font-size="14" text-anchor="start">• Improves win rates</text>
+    <text x="360" y="470" font-family="Arial" font-size="14" text-anchor="start">• Recommended:</text>
+    <text x="370" y="490" font-family="Arial" font-size="14" text-anchor="start">Hybrid (Vectara +</text>
+    <text x="370" y="510" font-family="Arial" font-size="14" text-anchor="start">custom)</text>
+    
+    <!-- Legal/Compliance -->
+    <rect x="560" y="320" width="200" height="220" rx="10" fill="#ed7d31" fill-opacity="0.2" stroke="#ed7d31" stroke-width="2" />
+    <text x="660" y="345" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle">Legal/Compliance</text>
+    
+    <rect x="570" y="360" width="180" height="30" fill="#ed7d31" fill-opacity="0.6" stroke="#333" stroke-width="1" />
+    <text x="660" y="380" font-family="Arial" font-size="14" text-anchor="middle" fill="white">Impact: VERY HIGH</text>
+    
+    <text x="580" y="410" font-family="Arial" font-size="14" text-anchor="start">• Enhances contract review</text>
+    <text x="580" y="430" font-family="Arial" font-size="14" text-anchor="start">• Reduces risk</text>
+    <text x="580" y="450" font-family="Arial" font-size="14" text-anchor="start">• Improves compliance</text>
+    <text x="580" y="470" font-family="Arial" font-size="14" text-anchor="start">• Recommended:</text>
+    <text x="590" y="490" font-family="Arial" font-size="14" text-anchor="start">Component-based</text>
+    <text x="590" y="510" font-family="Arial" font-size="14" text-anchor="start">(specialized)</text>
+    
+    <!-- Additional Functions -->
+    <rect x="150" y="100" width="600" height="40" fill="white" stroke="#333" stroke-width="1" rx="5" />
+    <text x="450" y="125" font-family="Arial" font-size="14" text-anchor="middle">Additional Business Functions with RAG Impact:</text>
+    
+    <rect x="100" y="550" width="700" height="40" fill="white" stroke="#333" stroke-width="1" rx="5" />
+    <text x="165" y="575" font-family="Arial" font-size="14" text-anchor="start">RnD (HIGH)</text>
+    <text x="300" y="575" font-family="Arial" font-size="14" text-anchor="start">Knowledge Management (MEDIUM-HIGH)</text>
+    <text x="600" y="575" font-family="Arial" font-size="14" text-anchor="start">Training n Onboarding (MEDIUM)</text>
+    
+    <!-- Strategic Value Indicators -->
+    <rect x="50" y="80" width="40" height="460" fill="url(#strategic-gradient)" />
+    <text x="70" y="120" font-family="Arial" font-size="12" font-weight="bold" text-anchor="middle" transform="rotate(-90,70,300)">Strategic Value to Organization</text>
+    
+    <defs>
+      <linearGradient id="strategic-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" style="stop-color:#ed7d31;stop-opacity:1" />
+        <stop offset="50%" style="stop-color:#70ad47;stop-opacity:1" />
+        <stop offset="100%" style="stop-color:#4472c4;stop-opacity:1" />
+      </linearGradient>
+    </defs>
+    
+    <!-- Legend -->
+    <rect x="780" y="100" width="20" height="20" fill="#ed7d31" fill-opacity="0.6" />
+    <text x="805" y="115" font-family="Arial" font-size="12" text-anchor="start">Very High</text>
+    
+    <rect x="780" y="130" width="20" height="20" fill="#ffc000" fill-opacity="0.6" />
+    <text x="805" y="145" font-family="Arial" font-size="12" text-anchor="start">High</text>
+    
+    <rect x="780" y="160" width="20" height="20" fill="#70ad47" fill-opacity="0.6" />
+    <text x="805" y="175" font-family="Arial" font-size="12" text-anchor="start">Medium-High</text>
+    
+    <rect x="780" y="190" width="20" height="20" fill="#4472c4" fill-opacity="0.6" />
+    <text x="805" y="205" font-family="Arial" font-size="12" text-anchor="start">Medium</text>
+    
+    <!-- ROI Callout -->
+    <rect x="100" y="400" width="700" height="90" rx="10" fill="white" stroke="#333" stroke-width="2" opacity="0.8" transform="translate(0, 140)" />
+    <text x="130" y="555" font-family="Arial" font-size="16" font-weight="bold" text-anchor="start">ROI Example (Customer Support):</text>
+    <text x="130" y="580" font-family="Arial" font-size="14" text-anchor="start">• Support team of 10 FTEs ($50/hour fully loaded)</text>
+    <text x="450" y="580" font-family="Arial" font-size="14" text-anchor="start">• RAG chatbot reduces workload by 30%</text>
+    <text x="130" y="605" font-family="Arial" font-size="14" text-anchor="start">• 1% CSAT improvement ($100,000 revenue impact)</text>
+    <text x="450" y="605" font-family="Arial" font-size="14" text-anchor="start">• 3-year ROI: 418% ($312,400 net benefit)</text>
+  </svg>

@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="900" height="620" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <linearGradient id="headerGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#00B4DB;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#0083B0;stop-opacity:1" />
+        </linearGradient>
+        <linearGradient id="retrievalGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#56ab2f;stop-opacity:0.1" />
+            <stop offset="100%" style="stop-color:#a8e063;stop-opacity:0.1" />
+        </linearGradient>
+        <linearGradient id="genGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#f953c6;stop-opacity:0.1" />
+            <stop offset="100%" style="stop-color:#b91d73;stop-opacity:0.1" />
+        </linearGradient>
+        <linearGradient id="systemGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#7F7FD5;stop-opacity:0.1" />
+            <stop offset="50%" style="stop-color:#86A8E7;stop-opacity:0.1" />
+            <stop offset="100%" style="stop-color:#91EAE4;stop-opacity:0.1" />
+        </linearGradient>
+        <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.3"/>
+        </filter>
+    </defs>
+
+    <!-- Title -->
+    <rect x="50" y="20" width="800" height="60" rx="10" ry="10" fill="url(#headerGrad)" filter="url(#shadow)"/>
+    <text x="450" y="55" font-family="Arial" font-size="24" font-weight="bold" text-anchor="middle" fill="white">Comprehensive RAG Evaluation Framework</text>
+    <text x="450" y="75" font-family="Arial" font-size="16" text-anchor="middle" fill="white">For 100K Pages Monthly Processing</text>
+
+    <!-- Framework Overview -->
+    <rect x="50" y="100" width="800" height="100" rx="10" ry="10" fill="#f8f9fa" stroke="#ddd" stroke-width="2"/>
+    <text x="450" y="125" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" fill="#333">Three-Pillar Evaluation Framework</text>
+    
+    <rect x="100" y="140" width="200" height="40" rx="10" ry="10" fill="#4CAF50" opacity="0.7"/>
+    <text x="200" y="165" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="white">Retrieval Quality</text>
+    
+    <rect x="350" y="140" width="200" height="40" rx="10" ry="10" fill="#E91E63" opacity="0.7"/>
+    <text x="450" y="165" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="white">Generation Quality</text>
+    
+    <rect x="600" y="140" width="200" height="40" rx="10" ry="10" fill="#3F51B5" opacity="0.7"/>
+    <text x="700" y="165" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="white">System Performance</text>
+
+    <!-- Retrieval Quality Metrics -->
+    <rect x="50" y="220" width="800" height="120" rx="10" ry="10" fill="url(#retrievalGrad)" stroke="#56ab2f" stroke-width="2"/>
+    <text x="450" y="240" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" fill="#333">1. Retrieval Quality Metrics</text>
+    
+    <rect x="70" y="255" width="250" height="70" rx="5" ry="5" fill="white" stroke="#ddd" stroke-width="1"/>
+    <text x="195" y="275" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="#333">Binary Relevance Metrics</text>
+    <text x="195" y="295" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">• Precision@k: % relevant in top-k results</text>
+    <text x="195" y="310" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">• Recall@k: % of all relevant in top-k</text>
+    <text x="195" y="325" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">• F1 Score: Harmonic mean of precision/recall</text>
+    
+    <rect x="340" y="255" width="250" height="70" rx="5" ry="5" fill="white" stroke="#ddd" stroke-width="1"/>
+    <text x="465" y="275" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="#333">Graded Relevance Metrics</text>
+    <text x="465" y="295" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">• nDCG: Ranked relevance evaluation</text>
+    <text x="465" y="310" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">• MAP: Mean average precision</text>
+    <text x="465" y="325" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">• Recall@k + QPS: Balanced metrics</text>
+    
+    <rect x="610" y="255" width="220" height="70" rx="5" ry="5" fill="white" stroke="#ddd" stroke-width="1"/>
+    <text x="720" y="275" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="#333">Benchmark Performance</text>
+    <text x="720" y="295" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">• Weaviate ANN: 97.24% Recall@10</text>
+    <text x="720" y="310" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">• Pinecone P2: less than 500ms latency (p95)</text>
+    <text x="720" y="325" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">• Qdrant: 1541.86 RPS throughput</text>
+
+    <!-- Generation Quality Metrics -->
+    <rect x="50" y="360" width="800" height="120" rx="10" ry="10" fill="url(#genGrad)" stroke="#f953c6" stroke-width="2"/>
+    <text x="450" y="380" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" fill="#333">2. Generation Quality Metrics</text>
+    
+    <rect x="70" y="395" width="250" height="70" rx="5" ry="5" fill="white" stroke="#ddd" stroke-width="1"/>
+    <text x="195" y="415" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="#333">Content Quality Metrics</text>
+    <text x="195" y="435" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">• ROUGE: Content overlap assessment</text>
+    <text x="195" y="450" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">• BLEU: N-gram precision measure</text>
+    <text x="195" y="465" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">• BERTScore: Semantic similarity</text>
+    
+    <rect x="340" y="395" width="250" height="70" rx="5" ry="5" fill="white" stroke="#ddd" stroke-width="1"/>
+    <text x="465" y="415" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="#333">Factuality Assessment</text>
+    <text x="465" y="435" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">• Faithfulness: Answer derivable from context</text>
+    <text x="465" y="450" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">• Hallucination Detection: False info rate</text>
+    <text x="465" y="465" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">• Contextual Precision: Context usage accuracy</text>
+    
+    <rect x="610" y="395" width="220" height="70" rx="5" ry="5" fill="white" stroke="#ddd" stroke-width="1"/>
+    <text x="720" y="415" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="#333">Evaluation Frameworks</text>
+    <text x="720" y="435" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">• RAGAS: Context recall, faithfulness</text>
+    <text x="720" y="450" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">• ARAGOG: Context relevance evaluator</text>
+    <text x="720" y="465" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">• RAGTruth: 18K annotated responses</text>
+
+    <!-- System Performance Metrics -->
+    <rect x="50" y="500" width="800" height="100" rx="10" ry="10" fill="url(#systemGrad)" stroke="#7F7FD5" stroke-width="2"/>
+    <text x="450" y="520" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" fill="#333">3. System Performance Metrics</text>
+    
+    <rect x="70" y="535" width="230" height="50" rx="5" ry="5" fill="white" stroke="#ddd" stroke-width="1"/>
+    <text x="185" y="555" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="#333">Performance Efficiency</text>
+    <text x="185" y="575" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">• Latency: less than 500ms mean response time</text>
+    
+    <rect x="320" y="535" width="230" height="50" rx="5" ry="5" fill="white" stroke="#ddd" stroke-width="1"/>
+    <text x="435" y="555" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="#333">Throughput</text>
+    <text x="435" y="575" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">• QPS: greater than 1000 queries per second</text>
+    
+    <rect x="570" y="535" width="260" height="50" rx="5" ry="5" fill="white" stroke="#ddd" stroke-width="1"/>
+    <text x="700" y="555" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="#333">Resource Utilization</text>
+    <text x="700" y="575" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">• Cost Per Query: Target less than $0.01 per query</text>
+</svg>

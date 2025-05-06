@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="900" height="620" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <linearGradient id="headerGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#8E2DE2;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#4A00E0;stop-opacity:1" />
+        </linearGradient>
+        <linearGradient id="boxGrad1" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#56ab2f;stop-opacity:0.1" />
+            <stop offset="100%" style="stop-color:#a8e063;stop-opacity:0.1" />
+        </linearGradient>
+        <linearGradient id="boxGrad2" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#4776E6;stop-opacity:0.1" />
+            <stop offset="100%" style="stop-color:#8E54E9;stop-opacity:0.1" />
+        </linearGradient>
+        <linearGradient id="boxGrad3" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#ff9966;stop-opacity:0.1" />
+            <stop offset="100%" style="stop-color:#ff5e62;stop-opacity:0.1" />
+        </linearGradient>
+        <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.3"/>
+        </filter>
+    </defs>
+
+    <!-- Title -->
+    <rect x="50" y="20" width="800" height="60" rx="10" ry="10" fill="url(#headerGrad)" filter="url(#shadow)"/>
+    <text x="450" y="55" font-family="Arial" font-size="24" font-weight="bold" text-anchor="middle" fill="white">Strategic Decision Framework for RAG Implementation</text>
+    <text x="450" y="75" font-family="Arial" font-size="16" text-anchor="middle" fill="white">For 100K Pages Monthly Processing</text>
+
+    <!-- Strategic Alignment Framework -->
+    <rect x="50" y="100" width="800" height="150" rx="10" ry="10" fill="url(#boxGrad1)" stroke="#56ab2f" stroke-width="2"/>
+    <text x="450" y="125" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" fill="#333">Business Strategy Alignment</text>
+    
+    <!-- Decision tree structure -->
+    <line x1="450" y1="150" x2="450" y2="170" stroke="#333" stroke-width="2"/>
+    <line x1="200" y1="170" x2="700" y2="170" stroke="#333" stroke-width="2"/>
+    <line x1="200" y1="170" x2="200" y2="190" stroke="#333" stroke-width="2"/>
+    <line x1="450" y1="170" x2="450" y2="190" stroke="#333" stroke-width="2"/>
+    <line x1="700" y1="170" x2="700" y2="190" stroke="#333" stroke-width="2"/>
+
+    <!-- Strategy options -->
+    <rect x="100" y="190" width="200" height="40" rx="10" ry="10" fill="#4CAF50" opacity="0.7" filter="url(#shadow)"/>
+    <text x="200" y="215" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle" fill="white">Efficiency-Focused</text>
+    
+    <rect x="350" y="190" width="200" height="40" rx="10" ry="10" fill="#2196F3" opacity="0.7" filter="url(#shadow)"/>
+    <text x="450" y="215" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle" fill="white">Experience-Focused</text>
+    
+    <rect x="600" y="190" width="200" height="40" rx="10" ry="10" fill="#9C27B0" opacity="0.7" filter="url(#shadow)"/>
+    <text x="700" y="215" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle" fill="white">Innovation-Focused</text>
+    
+    <!-- Recommended architectures -->
+    <text x="200" y="245" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">Recommended: Naive RAG, </text>
+    <text x="200" y="260" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">Retrieve-and-Rerank</text>
+    
+    <text x="450" y="245" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">Recommended: Retrieve-and-Rerank,</text>
+    <text x="450" y="260" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">Multimodal RAG</text>
+    
+    <text x="700" y="245" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">Recommended: Graph RAG,</text>
+    <text x="700" y="260" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">Hybrid RAG, Agentic RAG</text>
+
+    <!-- Implementation Approach Framework -->
+    <rect x="50" y="270" width="800" height="150" rx="10" ry="10" fill="url(#boxGrad2)" stroke="#4776E6" stroke-width="2"/>
+    <text x="450" y="295" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" fill="#333">Implementation Approach</text>
+    
+    <!-- Implementation approaches -->
+    <rect x="70" y="320" width="240" height="80" rx="5" ry="5" fill="white" stroke="#ddd" stroke-width="1" filter="url(#shadow)"/>
+    <text x="190" y="340" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="#333">Staged Implementation</text>
+    <text x="190" y="360" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">• Progressive architecture adoption</text>
+    <text x="190" y="375" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">• Begin with Retrieve-and-Rerank</text>
+    <text x="190" y="390" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">• Add specialized components later</text>
+    
+    <rect x="330" y="320" width="240" height="80" rx="5" ry="5" fill="white" stroke="#ddd" stroke-width="1" filter="url(#shadow)"/>
+    <text x="450" y="340" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="#333">Focused Use Case</text>
+    <text x="450" y="360" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">• Specialized architecture for key use case</text>
+    <text x="450" y="375" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">• Graph RAG for complex relationships</text>
+    <text x="450" y="390" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">• Multimodal RAG for diverse content</text>
+    
+    <rect x="590" y="320" width="240" height="80" rx="5" ry="5" fill="white" stroke="#ddd" stroke-width="1" filter="url(#shadow)"/>
+    <text x="710" y="340" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="#333">Platform Approach</text>
+    <text x="710" y="360" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">• Modular architecture design</text>
+    <text x="710" y="375" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">• Interchangeable components</text>
+    <text x="710" y="390" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">• Higher initial investment, future flexibility</text>
+
+    <!-- Three Horizons Model -->
+    <rect x="50" y="440" width="800" height="160" rx="10" ry="10" fill="url(#boxGrad3)" stroke="#ff9966" stroke-width="2"/>
+    <text x="450" y="465" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" fill="#333">Three Horizons Implementation Model</text>
+    
+    <!-- Horizon boxes -->
+    <rect x="70" y="490" width="240" height="90" rx="5" ry="5" fill="white" stroke="#ddd" stroke-width="1" filter="url(#shadow)"/>
+    <rect x="70" y="490" width="240" height="25" rx="5" ry="5" fill="#4CAF50" opacity="0.7"/>
+    <text x="190" y="508" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle" fill="white">Horizon 1 (0-18 months)</text>
+    <text x="190" y="530" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">• Naive RAG and Retrieve-and-Rerank</text>
+    <text x="190" y="545" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">• Focus: Operational efficiency</text>
+    <text x="190" y="560" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">• ROI: Cost reduction, productivity</text>
+    <text x="190" y="575" font-family="Arial" font-size="12" font-weight="bold" text-anchor="middle" fill="#4CAF50">70% of initial investment</text>
+    
+    <rect x="330" y="490" width="240" height="90" rx="5" ry="5" fill="white" stroke="#ddd" stroke-width="1" filter="url(#shadow)"/>
+    <rect x="330" y="490" width="240" height="25" rx="5" ry="5" fill="#2196F3" opacity="0.7"/>
+    <text x="450" y="508" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle" fill="white">Horizon 2 (18m-3 years)</text>
+    <text x="450" y="530" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">• Multimodal RAG and Graph RAG</text>
+    <text x="450" y="545" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">• Focus: New capabilities and content</text>
+    <text x="450" y="560" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">• ROI: Enhanced customer experience</text>
+    <text x="450" y="575" font-family="Arial" font-size="12" font-weight="bold" text-anchor="middle" fill="#2196F3">20% of initial investment</text>
+    
+    <rect x="590" y="490" width="240" height="90" rx="5" ry="5" fill="white" stroke="#ddd" stroke-width="1" filter="url(#shadow)"/>
+    <rect x="590" y="490" width="240" height="25" rx="5" ry="5" fill="#9C27B0" opacity="0.7"/>
+    <text x="710" y="508" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle" fill="white">Horizon 3 (3+ years)</text>
+    <text x="710" y="530" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">• Agentic RAG (Multi-Agent)</text>
+    <text x="710" y="545" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">• Focus: Transformational use cases</text>
+    <text x="710" y="560" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">• ROI: New markets, competitive edge</text>
+    <text x="710" y="575" font-family="Arial" font-size="12" font-weight="bold" text-anchor="middle" fill="#9C27B0">10% of initial investment</text>
+</svg>

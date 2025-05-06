@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="900" height="600" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <linearGradient id="headerGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#2193b0;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#6dd5ed;stop-opacity:1" />
+        </linearGradient>
+        <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.3"/>
+        </filter>
+        <!-- Define markers for arrows -->
+        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#333" />
+        </marker>
+    </defs>
+
+    <!-- Title -->
+    <rect x="50" y="20" width="800" height="60" rx="10" ry="10" fill="url(#headerGrad)" filter="url(#shadow)"/>
+    <text x="450" y="55" font-family="Arial" font-size="24" font-weight="bold" text-anchor="middle" fill="white">Continuous RAG Evaluation Process</text>
+    <text x="450" y="75" font-family="Arial" font-size="16" text-anchor="middle" fill="white">For 100K Pages Monthly Processing</text>
+
+    <!-- Circular Process Flow -->
+    <circle cx="450" cy="320" r="210" fill="none" stroke="#ddd" stroke-width="60" opacity="0.2"/>
+    
+    <!-- Process Stages -->
+    <g transform="translate(450, 320)">
+        <!-- Stage 1: Baseline Establishment -->
+        <g transform="rotate(-90) translate(160, 0)">
+            <circle r="50" fill="#4CAF50" opacity="0.8" filter="url(#shadow)"/>
+            <text font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle" fill="white" transform="rotate(90)">Baseline Establishment</text>
+        </g>
+        
+        <!-- Stage 2: A/B Testing -->
+        <g transform="rotate(-30) translate(160, 0)">
+            <circle r="50" fill="#2196F3" opacity="0.8" filter="url(#shadow)"/>
+            <text font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle" fill="white" transform="rotate(30)">A/B Testing</text>
+        </g>
+        
+        <!-- Stage 3: Continuous Monitoring -->
+        <g transform="rotate(30) translate(160, 0)">
+            <circle r="50" fill="#9C27B0" opacity="0.8" filter="url(#shadow)"/>
+            <text font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle" fill="white" transform="rotate(-30)">Continuous Monitoring</text>
+        </g>
+        
+        <!-- Stage 4: Error Analysis -->
+        <g transform="rotate(90) translate(160, 0)">
+            <circle r="50" fill="#FF9800" opacity="0.8" filter="url(#shadow)"/>
+            <text font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle" fill="white" transform="rotate(-90)">Error Analysis</text>
+        </g>
+        
+        <!-- Stage 5: Feedback Integration -->
+        <g transform="rotate(150) translate(160, 0)">
+            <circle r="50" fill="#F44336" opacity="0.8" filter="url(#shadow)"/>
+            <text font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle" fill="white" transform="rotate(-150)">Feedback Integration</text>
+        </g>
+        
+        <!-- Stage 6: Model Tuning -->
+        <g transform="rotate(210) translate(160, 0)">
+            <circle r="50" fill="#009688" opacity="0.8" filter="url(#shadow)"/>
+            <text font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle" fill="white" transform="rotate(-210)">Model Tuning</text>
+        </g>
+    </g>
+    
+    <!-- Process Flow Arrows -->
+    <path d="M450,160 Q400,240 450,310" fill="none" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+    <path d="M507,183 Q530,260 450,320" fill="none" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+    <path d="M557,263 Q520,320 450,320" fill="none" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+    <path d="M557,377 Q520,380 450,320" fill="none" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+    <path d="M507,457 Q430,420 450,320" fill="none" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+    <path d="M393,457 Q350,380 450,320" fill="none" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+    <path d="M343,377 Q320,300 450,320" fill="none" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+    <path d="M343,263 Q380,240 450,320" fill="none" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+    <!-- Stage Details -->
+    <rect x="50" y="90" width="250" height="120" rx="10" ry="10" fill="#f8f9fa" stroke="#4CAF50" stroke-width="2"/>
+    <text x="175" y="110" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="#4CAF50">1. Baseline Establishment</text>
+    <text x="175" y="130" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">• Create golden datasets</text>
+    <text x="175" y="150" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">• Establish key metrics for your domain</text>
+    <text x="175" y="170" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">• Set minimum performance thresholds</text>
+    <text x="175" y="190" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">• Document initial benchmark results</text>
+    
+    <rect x="600" y="90" width="250" height="120" rx="10" ry="10" fill="#f8f9fa" stroke="#2196F3" stroke-width="2"/>
+    <text x="725" y="110" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="#2196F3">2. A/B Testing</text>
+    <text x="725" y="130" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">• Compare architectural variants</text>
+    <text x="725" y="150" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">• Test multiple provider combinations</text>
+    <text x="725" y="170" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">• Evaluate performance differences</text>
+    <text x="725" y="190" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">• Document statistical significance</text>
+    
+    <rect x="600" y="430" width="250" height="120" rx="10" ry="10" fill="#f8f9fa" stroke="#9C27B0" stroke-width="2"/>
+    <text x="725" y="450" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="#9C27B0">3. Continuous Monitoring</text>
+    <text x="725" y="470" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">• Real-time performance dashboards</text>
+    <text x="725" y="490" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">• Alert systems for metric degradation</text>
+    <text x="725" y="510" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">• Regular performance reporting</text>
+    <text x="725" y="530" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">• Trend analysis over time</text>
+    
+    <rect x="50" y="430" width="250" height="120" rx="10" ry="10" fill="#f8f9fa" stroke="#FF9800" stroke-width="2"/>
+    <text x="175" y="450" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="#FF9800">4. Error Analysis</text>
+    <text x="175" y="470" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">• Systematic categorization of failures</text>
+    <text x="175" y="490" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">• Root cause analysis</text>
+    <text x="175" y="510" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">• Identify common failure patterns</text>
+    <text x="175" y="530" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">• Prioritize issues by impact</text>
+    
+    <rect x="50" y="260" width="250" height="120" rx="10" ry="10" fill="#f8f9fa" stroke="#F44336" stroke-width="2"/>
+    <text x="175" y="280" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="#F44336">5. Feedback Integration</text>
+    <text x="175" y="300" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">• Collect explicit user feedback</text>
+    <text x="175" y="320" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">• Analyze implicit usage patterns</text>
+    <text x="175" y="340" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">• Incorporate expert evaluations</text>
+    <text x="175" y="360" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">• Update evaluation datasets</text>
+    
+    <rect x="600" y="260" width="250" height="120" rx="10" ry="10" fill="#f8f9fa" stroke="#009688" stroke-width="2"/>
+    <text x="725" y="280" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="#009688">6. Model Tuning</text>
+    <text x="725" y="300" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">• Adjust retrieval parameters</text>
+    <text x="725" y="320" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">• Refine prompt templates</text>
+    <text x="725" y="340" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">• Optimize chunking strategies</text>
+    <text x="725" y="360" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">• Fine-tune model weights if possible</text>
+</svg>

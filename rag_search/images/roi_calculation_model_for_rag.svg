@@ -1,0 +1,46 @@
+<svg viewBox="0 0 900 550" xmlns="http://www.w3.org/2000/svg">
+    <!-- Background -->
+    <rect x="0" y="0" width="900" height="550" fill="#f8f8f8" />
+    
+    <!-- Title -->
+    <text x="450" y="40" font-family="Arial" font-size="24" font-weight="bold" text-anchor="middle">ROI Calculation Model for RAG Implementation</text>
+    <text x="450" y="70" font-family="Arial" font-size="18" font-style="italic" text-anchor="middle">Customer Support Example</text>
+    
+    <!-- ROI Formula -->
+    <rect x="100" y="100" width="700" height="80" rx="10" fill="#e6f2ff" stroke="#333" stroke-width="2" />
+    <text x="450" y="130" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle">ROI = ((Labor Savings + CSAT Value + Volume Scaling) - TCO) / TCO</text>
+    <text x="450" y="165" font-family="Arial" font-size="14" text-anchor="middle">Where each component represents financial impact of RAG implementation over time</text>
+    
+    <!-- Component explanations -->
+    <rect x="100" y="200" width="320" height="140" rx="10" fill="white" stroke="#4472c4" stroke-width="2" />
+    <text x="260" y="225" font-family="Arial" font-size="16" font-weight="bold" fill="#4472c4" text-anchor="middle">Labor Savings</text>
+    <text x="260" y="250" font-family="Arial" font-size="14" text-anchor="middle">= (Avg Support Hours × % Reduced</text>
+    <text x="260" y="275" font-family="Arial" font-size="14" text-anchor="middle">× Hourly Cost)</text>
+    <text x="260" y="300" font-family="Arial" font-size="14" text-anchor="middle">• Ticket volume reduction: 30-70%</text>
+    <text x="260" y="325" font-family="Arial" font-size="14" text-anchor="middle">• Time per ticket reduction: 20-40%</text>
+    
+    <rect x="100" y="350" width="320" height="140" rx="10" fill="white" stroke="#70ad47" stroke-width="2" />
+    <text x="260" y="375" font-family="Arial" font-size="16" font-weight="bold" fill="#70ad47" text-anchor="middle">CSAT Value</text>
+    <text x="260" y="400" font-family="Arial" font-size="14" text-anchor="middle">= (Increased CSAT % × Customer</text>
+    <text x="260" y="425" font-family="Arial" font-size="14" text-anchor="middle">Value Impact)</text>
+    <text x="260" y="450" font-family="Arial" font-size="14" text-anchor="middle">• Typically 1-5% CSAT improvement</text>
+    <text x="260" y="475" font-family="Arial" font-size="14" text-anchor="middle">• Direct revenue impact correlation</text>
+    
+    <rect x="450" y="200" width="350" height="140" rx="10" fill="white" stroke="#ffc000" stroke-width="2" />
+    <text x="625" y="225" font-family="Arial" font-size="16" font-weight="bold" fill="#ffc000" text-anchor="middle">Volume Scaling</text>
+    <text x="625" y="250" font-family="Arial" font-size="14" text-anchor="middle">= (Additional Volume Handled</text>
+    <text x="625" y="275" font-family="Arial" font-size="14" text-anchor="middle">Without Staffing)</text>
+    <text x="625" y="300" font-family="Arial" font-size="14" text-anchor="middle">• Scale support by 15-50%</text>
+    <text x="625" y="325" font-family="Arial" font-size="14" text-anchor="middle">• Without adding headcount</text>
+    
+    <rect x="450" y="350" width="350" height="140" rx="10" fill="white" stroke="#ed7d31" stroke-width="2" />
+    <text x="625" y="375" font-family="Arial" font-size="16" font-weight="bold" fill="#ed7d31" text-anchor="middle">Total Cost of Ownership</text>
+    <text x="625" y="400" font-family="Arial" font-size="14" text-anchor="middle">= Implementation + Licensing</text>
+    <text x="625" y="425" font-family="Arial" font-size="14" text-anchor="middle">+ Operational Costs</text>
+    <text x="625" y="450" font-family="Arial" font-size="14" text-anchor="middle">• DocsBot AI Business ($199/month)</text>
+    <text x="625" y="475" font-family="Arial" font-size="14" text-anchor="middle">• Implementation costs ($15,000)</text>
+    
+    <!-- Sample calculation -->
+    <rect x="100" y="500" width="700" height="40" rx="10" fill="#eaeaea" stroke="#333" stroke-width="1" />
+    <text x="450" y="525" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle">Example ROI: 418% ($312,400 net benefit over 3 years) for 10-person support team</text>
+  </svg>

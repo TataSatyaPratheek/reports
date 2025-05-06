@@ -1,0 +1,73 @@
+<svg viewBox="0 0 900 600" xmlns="http://www.w3.org/2000/svg">
+    <!-- Background -->
+    <rect x="0" y="0" width="900" height="600" fill="#f8f8f8" />
+    
+    <!-- Title -->
+    <text x="450" y="40" font-family="Arial" font-size="24" font-weight="bold" text-anchor="middle">RAG Solution Cost Breakdown by Component</text>
+    <text x="450" y="70" font-family="Arial" font-size="16" font-style="italic" text-anchor="middle">Annual Cost for 100,000 Documents</text>
+    
+    <!-- Pure SaaS -->
+    <rect x="100" y="100" width="200" height="30" fill="#4472c4" stroke="#333" stroke-width="1" />
+    <text x="200" y="120" font-family="Arial" font-size="16" font-weight="bold" fill="white" text-anchor="middle">Pure SaaS</text>
+    
+    <rect x="100" y="130" width="200" height="20" fill="#70ad47" fill-opacity="0.7" stroke="#333" stroke-width="1" />
+    <rect x="100" y="150" width="200" height="50" fill="#ffc000" fill-opacity="0.7" stroke="#333" stroke-width="1" />
+    <rect x="100" y="200" width="200" height="30" fill="#ed7d31" fill-opacity="0.7" stroke="#333" stroke-width="1" />
+    
+    <text x="310" y="143" font-family="Arial" font-size="14" text-anchor="start">Implementation: $10,000</text>
+    <text x="310" y="175" font-family="Arial" font-size="14" text-anchor="start">Subscription: $50,000</text>
+    <text x="310" y="215" font-family="Arial" font-size="14" text-anchor="start">Operational: $15,000</text>
+    <text x="310" y="245" font-family="Arial" font-size="16" font-weight="bold" text-anchor="start">Total: $75,000/year</text>
+    
+    <!-- Enterprise Platforms -->
+    <rect x="500" y="100" width="200" height="30" fill="#4472c4" stroke="#333" stroke-width="1" />
+    <text x="600" y="120" font-family="Arial" font-size="16" font-weight="bold" fill="white" text-anchor="middle">Enterprise Platforms</text>
+    
+    <rect x="500" y="130" width="200" height="80" fill="#70ad47" fill-opacity="0.7" stroke="#333" stroke-width="1" />
+    <rect x="500" y="210" width="200" height="100" fill="#ffc000" fill-opacity="0.7" stroke="#333" stroke-width="1" />
+    <rect x="500" y="310" width="200" height="40" fill="#ed7d31" fill-opacity="0.7" stroke="#333" stroke-width="1" />
+    
+    <text x="710" y="170" font-family="Arial" font-size="14" text-anchor="start">Implementation: $80,000</text>
+    <text x="710" y="260" font-family="Arial" font-size="14" text-anchor="start">Licensing: $100,000</text>
+    <text x="710" y="330" font-family="Arial" font-size="14" text-anchor="start">Operational: $40,000</text>
+    <text x="710" y="370" font-family="Arial" font-size="16" font-weight="bold" text-anchor="start">Total: $220,000/year</text>
+    
+    <!-- Component Frameworks -->
+    <rect x="100" y="280" width="200" height="30" fill="#4472c4" stroke="#333" stroke-width="1" />
+    <text x="200" y="300" font-family="Arial" font-size="16" font-weight="bold" fill="white" text-anchor="middle">Component Frameworks</text>
+    
+    <rect x="100" y="310" width="200" height="70" fill="#70ad47" fill-opacity="0.7" stroke="#333" stroke-width="1" />
+    <rect x="100" y="380" width="200" height="50" fill="#ffc000" fill-opacity="0.7" stroke="#333" stroke-width="1" />
+    <rect x="100" y="430" width="200" height="50" fill="#ed7d31" fill-opacity="0.7" stroke="#333" stroke-width="1" />
+    
+    <text x="310" y="345" font-family="Arial" font-size="14" text-anchor="start">Implementation: $75,000</text>
+    <text x="310" y="405" font-family="Arial" font-size="14" text-anchor="start">Infrastructure: $50,000</text>
+    <text x="310" y="455" font-family="Arial" font-size="14" text-anchor="start">Operational: $50,000</text>
+    <text x="310" y="495" font-family="Arial" font-size="16" font-weight="bold" text-anchor="start">Total: $175,000/year</text>
+    
+    <!-- Doc Processing + Vector DB -->
+    <rect x="500" y="400" width="200" height="30" fill="#4472c4" stroke="#333" stroke-width="1" />
+    <text x="600" y="420" font-family="Arial" font-size="15" font-weight="bold" fill="white" text-anchor="middle">Doc Processing + Vector DB</text>
+    
+    <rect x="500" y="430" width="200" height="60" fill="#70ad47" fill-opacity="0.7" stroke="#333" stroke-width="1" />
+    <rect x="500" y="490" width="200" height="40" fill="#5b9bd5" fill-opacity="0.7" stroke="#333" stroke-width="1" />
+    <rect x="500" y="530" width="200" height="30" fill="#ffc000" fill-opacity="0.7" stroke="#333" stroke-width="1" />
+    
+    <text x="710" y="460" font-family="Arial" font-size="14" text-anchor="start">Implementation: $60,000</text>
+    <text x="710" y="510" font-family="Arial" font-size="14" text-anchor="start">Document Processing: $40,000</text>
+    <text x="710" y="545" font-family="Arial" font-size="14" text-anchor="start">Vector Storage: $30,000</text>
+    <text x="710" y="575" font-family="Arial" font-size="16" font-weight="bold" text-anchor="start">Total: $130,000/year</text>
+    
+    <!-- Legend -->
+    <rect x="300" y="540" width="300" height="45" rx="5" fill="white" stroke="#333" stroke-width="1" />
+    <text x="450" y="560" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle">Cost Components Legend</text>
+    
+    <rect x="320" y="565" width="15" height="15" fill="#70ad47" fill-opacity="0.7" stroke="#333" stroke-width="1" />
+    <text x="345" y="577" font-family="Arial" font-size="12" text-anchor="start">Implementation</text>
+    
+    <rect x="420" y="565" width="15" height="15" fill="#ffc000" fill-opacity="0.7" stroke="#333" stroke-width="1" />
+    <text x="445" y="577" font-family="Arial" font-size="12" text-anchor="start">Subscription/Licensing</text>
+    
+    <rect x="570" y="565" width="15" height="15" fill="#ed7d31" fill-opacity="0.7" stroke="#333" stroke-width="1" />
+    <text x="595" y="577" font-family="Arial" font-size="12" text-anchor="start">Operational</text>
+  </svg>

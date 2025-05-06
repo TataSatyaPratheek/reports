@@ -1,0 +1,154 @@
+<svg viewBox="0 0 900 600" xmlns="http://www.w3.org/2000/svg">
+    <!-- Background -->
+    <rect x="0" y="0" width="900" height="600" fill="#f8f8f8" />
+    
+    <!-- Title -->
+    <text x="450" y="40" font-family="Arial" font-size="24" font-weight="bold" text-anchor="middle">Real Options Analysis for Implementation Approach</text>
+    
+    <!-- Table Header -->
+    <rect x="50" y="70" width="140" height="50" fill="#4472c4" stroke="black" stroke-width="1" />
+    <rect x="190" y="70" width="170" height="50" fill="#4472c4" stroke="black" stroke-width="1" />
+    <rect x="360" y="70" width="170" height="50" fill="#4472c4" stroke="black" stroke-width="1" />
+    <rect x="530" y="70" width="170" height="50" fill="#4472c4" stroke="black" stroke-width="1" />
+    <rect x="700" y="70" width="150" height="50" fill="#4472c4" stroke="black" stroke-width="1" />
+    
+    <text x="120" y="100" font-family="Arial" font-size="16" font-weight="bold" fill="white" text-anchor="middle">Option</text>
+    <text x="275" y="100" font-family="Arial" font-size="16" font-weight="bold" fill="white" text-anchor="middle">Strategic Value</text>
+    <text x="445" y="100" font-family="Arial" font-size="16" font-weight="bold" fill="white" text-anchor="middle">Implementation</text>
+    <text x="615" y="100" font-family="Arial" font-size="16" font-weight="bold" fill="white" text-anchor="middle">Future Flexibility</text>
+    <text x="775" y="100" font-family="Arial" font-size="16" font-weight="bold" fill="white" text-anchor="middle">Risk Profile</text>
+    
+    <!-- Option 1: Start Small -->
+    <rect x="50" y="120" width="140" height="80" fill="#e6f2ff" stroke="black" stroke-width="1" />
+    <rect x="190" y="120" width="170" height="80" fill="#f5f5f5" stroke="black" stroke-width="1" />
+    <rect x="360" y="120" width="170" height="80" fill="#f5f5f5" stroke="black" stroke-width="1" />
+    <rect x="530" y="120" width="170" height="80" fill="#f5f5f5" stroke="black" stroke-width="1" />
+    <rect x="700" y="120" width="150" height="80" fill="#f5f5f5" stroke="black" stroke-width="1" />
+    
+    <text x="120" y="145" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle">Option to</text>
+    <text x="120" y="165" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle">Start Small</text>
+    
+    <text x="275" y="140" font-family="Arial" font-size="14" text-anchor="middle">Test RAG value</text>
+    <text x="275" y="160" font-family="Arial" font-size="14" text-anchor="middle">proposition</text>
+    <text x="275" y="180" font-family="Arial" font-size="14" text-anchor="middle"></text>
+    
+    <text x="445" y="140" font-family="Arial" font-size="14" text-anchor="middle">Begin with SaaS</text>
+    <text x="445" y="160" font-family="Arial" font-size="14" text-anchor="middle">(DocsBot AI)</text>
+    <text x="445" y="180" font-family="Arial" font-size="14" text-anchor="middle"></text>
+    
+    <text x="615" y="140" font-family="Arial" font-size="14" text-anchor="middle">Limits some</text>
+    <text x="615" y="160" font-family="Arial" font-size="14" text-anchor="middle">future paths</text>
+    <text x="615" y="180" font-family="Arial" font-size="14" text-anchor="middle"></text>
+    
+    <text x="775" y="140" font-family="Arial" font-size="14" text-anchor="middle">Low risk,</text>
+    <text x="775" y="160" font-family="Arial" font-size="14" text-anchor="middle">modest returns</text>
+    <text x="775" y="180" font-family="Arial" font-size="14" text-anchor="middle"></text>
+    
+    <!-- Option 2: Build Foundation -->
+    <rect x="50" y="200" width="140" height="80" fill="#e6f2ff" stroke="black" stroke-width="1" />
+    <rect x="190" y="200" width="170" height="80" fill="#f5f5f5" stroke="black" stroke-width="1" />
+    <rect x="360" y="200" width="170" height="80" fill="#f5f5f5" stroke="black" stroke-width="1" />
+    <rect x="530" y="200" width="170" height="80" fill="#f5f5f5" stroke="black" stroke-width="1" />
+    <rect x="700" y="200" width="150" height="80" fill="#f5f5f5" stroke="black" stroke-width="1" />
+    
+    <text x="120" y="225" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle">Option to Build</text>
+    <text x="120" y="245" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle">Foundation</text>
+    
+    <text x="275" y="220" font-family="Arial" font-size="14" text-anchor="middle">Create future-proof</text>
+    <text x="275" y="240" font-family="Arial" font-size="14" text-anchor="middle">data layer</text>
+    <text x="275" y="260" font-family="Arial" font-size="14" text-anchor="middle"></text>
+    
+    <text x="445" y="220" font-family="Arial" font-size="14" text-anchor="middle">Invest in document</text>
+    <text x="445" y="240" font-family="Arial" font-size="14" text-anchor="middle">processing</text>
+    <text x="445" y="260" font-family="Arial" font-size="14" text-anchor="middle"></text>
+    
+    <text x="615" y="220" font-family="Arial" font-size="14" text-anchor="middle">Enables multiple</text>
+    <text x="615" y="240" font-family="Arial" font-size="14" text-anchor="middle">future paths</text>
+    <text x="615" y="260" font-family="Arial" font-size="14" text-anchor="middle"></text>
+    
+    <text x="775" y="220" font-family="Arial" font-size="14" text-anchor="middle">Medium risk,</text>
+    <text x="775" y="240" font-family="Arial" font-size="14" text-anchor="middle">high option value</text>
+    <text x="775" y="260" font-family="Arial" font-size="14" text-anchor="middle"></text>
+    
+    <!-- Option 3: Partner -->
+    <rect x="50" y="280" width="140" height="80" fill="#e6f2ff" stroke="black" stroke-width="1" />
+    <rect x="190" y="280" width="170" height="80" fill="#f5f5f5" stroke="black" stroke-width="1" />
+    <rect x="360" y="280" width="170" height="80" fill="#f5f5f5" stroke="black" stroke-width="1" />
+    <rect x="530" y="280" width="170" height="80" fill="#f5f5f5" stroke="black" stroke-width="1" />
+    <rect x="700" y="280" width="150" height="80" fill="#f5f5f5" stroke="black" stroke-width="1" />
+    
+    <text x="120" y="320" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle">Option to</text>
+    <text x="120" y="340" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle">Partner</text>
+    
+    <text x="275" y="310" font-family="Arial" font-size="14" text-anchor="middle">Leverage external</text>
+    <text x="275" y="330" font-family="Arial" font-size="14" text-anchor="middle">expertise</text>
+    <text x="275" y="350" font-family="Arial" font-size="14" text-anchor="middle"></text>
+    
+    <text x="445" y="310" font-family="Arial" font-size="14" text-anchor="middle">Work with</text>
+    <text x="445" y="330" font-family="Arial" font-size="14" text-anchor="middle">specialized vendor</text>
+    <text x="445" y="350" font-family="Arial" font-size="14" text-anchor="middle"></text>
+    
+    <text x="615" y="310" font-family="Arial" font-size="14" text-anchor="middle">Depends on</text>
+    <text x="615" y="330" font-family="Arial" font-size="14" text-anchor="middle">partner flexibility</text>
+    <text x="615" y="350" font-family="Arial" font-size="14" text-anchor="middle"></text>
+    
+    <text x="775" y="310" font-family="Arial" font-size="14" text-anchor="middle">Varied risk,</text>
+    <text x="775" y="330" font-family="Arial" font-size="14" text-anchor="middle">faster implementation</text>
+    <text x="775" y="350" font-family="Arial" font-size="14" text-anchor="middle"></text>
+    
+    <!-- Option 4: Pilot Multiple -->
+    <rect x="50" y="360" width="140" height="80" fill="#e6f2ff" stroke="black" stroke-width="1" />
+    <rect x="190" y="360" width="170" height="80" fill="#f5f5f5" stroke="black" stroke-width="1" />
+    <rect x="360" y="360" width="170" height="80" fill="#f5f5f5" stroke="black" stroke-width="1" />
+    <rect x="530" y="360" width="170" height="80" fill="#f5f5f5" stroke="black" stroke-width="1" />
+    <rect x="700" y="360" width="150" height="80" fill="#f5f5f5" stroke="black" stroke-width="1" />
+    
+    <text x="120" y="390" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle">Option to</text>
+    <text x="120" y="410" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle">Pilot Multiple</text>
+    
+    <text x="275" y="380" font-family="Arial" font-size="14" text-anchor="middle">Compare</text>
+    <text x="275" y="400" font-family="Arial" font-size="14" text-anchor="middle">approaches</text>
+    <text x="275" y="420" font-family="Arial" font-size="14" text-anchor="middle"></text>
+    
+    <text x="445" y="380" font-family="Arial" font-size="14" text-anchor="middle">Run parallel</text>
+    <text x="445" y="400" font-family="Arial" font-size="14" text-anchor="middle">SaaS solutions</text>
+    <text x="445" y="420" font-family="Arial" font-size="14" text-anchor="middle"></text>
+    
+    <text x="615" y="380" font-family="Arial" font-size="14" text-anchor="middle">Maximum learning,</text>
+    <text x="615" y="400" font-family="Arial" font-size="14" text-anchor="middle">evaluation</text>
+    <text x="615" y="420" font-family="Arial" font-size="14" text-anchor="middle"></text>
+    
+    <text x="775" y="380" font-family="Arial" font-size="14" text-anchor="middle">Higher initial cost,</text>
+    <text x="775" y="400" font-family="Arial" font-size="14" text-anchor="middle">reduced decision risk</text>
+    <text x="775" y="420" font-family="Arial" font-size="14" text-anchor="middle"></text>
+    
+    <!-- Option 5: Wait -->
+    <rect x="50" y="440" width="140" height="80" fill="#e6f2ff" stroke="black" stroke-width="1" />
+    <rect x="190" y="440" width="170" height="80" fill="#f5f5f5" stroke="black" stroke-width="1" />
+    <rect x="360" y="440" width="170" height="80" fill="#f5f5f5" stroke="black" stroke-width="1" />
+    <rect x="530" y="440" width="170" height="80" fill="#f5f5f5" stroke="black" stroke-width="1" />
+    <rect x="700" y="440" width="150" height="80" fill="#f5f5f5" stroke="black" stroke-width="1" />
+    
+    <text x="120" y="480" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle">Option to</text>
+    <text x="120" y="500" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle">Wait</text>
+    
+    <text x="275" y="470" font-family="Arial" font-size="14" text-anchor="middle">Observe market</text>
+    <text x="275" y="490" font-family="Arial" font-size="14" text-anchor="middle">maturation</text>
+    <text x="275" y="510" font-family="Arial" font-size="14" text-anchor="middle"></text>
+    
+    <text x="445" y="470" font-family="Arial" font-size="14" text-anchor="middle">Minimal investment</text>
+    <text x="445" y="490" font-family="Arial" font-size="14" text-anchor="middle">now</text>
+    <text x="445" y="510" font-family="Arial" font-size="14" text-anchor="middle"></text>
+    
+    <text x="615" y="470" font-family="Arial" font-size="14" text-anchor="middle">Preserves all</text>
+    <text x="615" y="490" font-family="Arial" font-size="14" text-anchor="middle">future options</text>
+    <text x="615" y="510" font-family="Arial" font-size="14" text-anchor="middle"></text>
+    
+    <text x="775" y="470" font-family="Arial" font-size="14" text-anchor="middle">Opportunity</text>
+    <text x="775" y="490" font-family="Arial" font-size="14" text-anchor="middle">cost risk</text>
+    <text x="775" y="510" font-family="Arial" font-size="14" text-anchor="middle"></text>
+    
+    <!-- Decision Framework -->
+    <rect x="50" y="540" width="800" height="50" rx="10" fill="#e6f2ff" stroke="#333" stroke-width="2" />
+    <text x="450" y="570" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle">Recommended Approach: Start Small + Build Foundation (Combined Strategy)</text>
+  </svg>

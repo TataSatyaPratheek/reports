@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="900" height="580" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <linearGradient id="headerGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#3494E6;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#EC6EAD;stop-opacity:1" />
+        </linearGradient>
+        <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.3"/>
+        </filter>
+    </defs>
+
+    <!-- Title -->
+    <rect x="50" y="20" width="800" height="60" rx="10" ry="10" fill="url(#headerGrad)" filter="url(#shadow)"/>
+    <text x="450" y="55" font-family="Arial" font-size="24" font-weight="bold" text-anchor="middle" fill="white">Evaluation Tools and Frameworks Comparison</text>
+    <text x="450" y="75" font-family="Arial" font-size="16" text-anchor="middle" fill="white">For 100K Pages Monthly RAG Processing</text>
+
+    <!-- Main Comparison Table -->
+    <rect x="50" y="100" width="800" height="360" rx="10" ry="10" fill="#f8f9fa" stroke="#ddd" stroke-width="2"/>
+
+    <!-- Table Headers -->
+    <rect x="50" y="100" width="200" height="60" rx="10" ry="0" fill="#3f51b5" opacity="0.8"/>
+    <rect x="250" y="100" width="200" height="60" fill="#3f51b5" opacity="0.8"/>
+    <rect x="450" y="100" width="200" height="60" fill="#3f51b5" opacity="0.8"/>
+    <rect x="650" y="100" width="200" height="60" rx="0" ry="10" fill="#3f51b5" opacity="0.8"/>
+    
+    <text x="150" y="135" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="white">Framework</text>
+    <text x="350" y="135" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="white">Key Metrics</text>
+    <text x="550" y="135" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="white">Integration Ease</text>
+    <text x="750" y="135" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="white">Best For</text>
+
+    <!-- Row 1: RAGAS -->
+    <rect x="50" y="160" width="200" height="70" fill="white" stroke="#ddd" stroke-width="1"/>
+    <rect x="250" y="160" width="200" height="70" fill="white" stroke="#ddd" stroke-width="1"/>
+    <rect x="450" y="160" width="200" height="70" fill="white" stroke="#ddd" stroke-width="1"/>
+    <rect x="650" y="160" width="200" height="70" fill="white" stroke="#ddd" stroke-width="1"/>
+    
+    <text x="150" y="185" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="#333">RAGAS</text>
+    <text x="150" y="205" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">Comprehensive RAG-specific</text>
+    
+    <text x="250" y="176" font-family="Arial" font-size="12" text-anchor="start" fill="#333">• Context Relevancy</text>
+    <text x="250" y="193" font-family="Arial" font-size="12" text-anchor="start" fill="#333">• Context Recall</text>
+    <text x="250" y="210" font-family="Arial" font-size="12" text-anchor="start" fill="#333">• Faithfulness</text>
+    <text x="250" y="227" font-family="Arial" font-size="12" text-anchor="start" fill="#333">• Answer Relevancy</text>
+    
+    <rect x="470" y="175" width="160" height="20" rx="10" ry="10" fill="#4CAF50" opacity="0.7"/>
+    <text x="550" y="190" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle" fill="white">High</text>
+    <text x="550" y="210" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">Python, easy integration</text>
+    
+    <text x="750" y="176" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">Comprehensive</text>
+    <text x="750" y="193" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">RAG Evaluation</text>
+    <text x="750" y="210" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">(All Component Focus)</text>
+
+    <!-- Row 2: ARAGOG -->
+    <rect x="50" y="230" width="200" height="70" fill="#f8f9fa" stroke="#ddd" stroke-width="1"/>
+    <rect x="250" y="230" width="200" height="70" fill="#f8f9fa" stroke="#ddd" stroke-width="1"/>
+    <rect x="450" y="230" width="200" height="70" fill="#f8f9fa" stroke="#ddd" stroke-width="1"/>
+    <rect x="650" y="230" width="200" height="70" fill="#f8f9fa" stroke="#ddd" stroke-width="1"/>
+    
+    <text x="150" y="255" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="#333">ARAGOG</text>
+    <text x="150" y="275" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">Advanced Grading Dataset</text>
+    
+    <text x="250" y="246" font-family="Arial" font-size="12" text-anchor="start" fill="#333">• Context Relevance</text>
+    <text x="250" y="263" font-family="Arial" font-size="12" text-anchor="start" fill="#333">• Faithfulness Score</text>
+    <text x="250" y="280" font-family="Arial" font-size="12" text-anchor="start" fill="#333">• Semantic Answer Similarity</text>
+    <text x="250" y="297" font-family="Arial" font-size="12" text-anchor="start" fill="#333">• (SAS Evaluator)</text>
+    
+    <rect x="470" y="245" width="160" height="20" rx="10" ry="10" fill="#FFC107" opacity="0.7"/>
+    <text x="550" y="260" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle" fill="white">Medium</text>
+    <text x="550" y="280" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">Custom dataset setup needed</text>
+    
+    <text x="750" y="246" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">Embedding Model</text>
+    <text x="750" y="263" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">Comparison and</text>
+    <text x="750" y="280" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">Semantic Similarity</text>
+
+    <!-- Row 3: RAGTruth -->
+    <rect x="50" y="300" width="200" height="70" fill="white" stroke="#ddd" stroke-width="1"/>
+    <rect x="250" y="300" width="200" height="70" fill="white" stroke="#ddd" stroke-width="1"/>
+    <rect x="450" y="300" width="200" height="70" fill="white" stroke="#ddd" stroke-width="1"/>
+    <rect x="650" y="300" width="200" height="70" fill="white" stroke="#ddd" stroke-width="1"/>
+    
+    <text x="150" y="325" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="#333">RAGTruth</text>
+    <text x="150" y="345" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">Hallucination Detection</text>
+    
+    <text x="250" y="316" font-family="Arial" font-size="12" text-anchor="start" fill="#333">• Case-Level Hallucination</text>
+    <text x="250" y="333" font-family="Arial" font-size="12" text-anchor="start" fill="#333">• Word-Level Hallucination</text>
+    <text x="250" y="350" font-family="Arial" font-size="12" text-anchor="start" fill="#333">• 18,000 Annotated Responses</text>
+    <text x="250" y="367" font-family="Arial" font-size="12" text-anchor="start" fill="#333">• Fine-tuning Support</text>
+    
+    <rect x="470" y="315" width="160" height="20" rx="10" ry="10" fill="#FFC107" opacity="0.7"/>
+    <text x="550" y="330" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle" fill="white">Medium</text>
+    <text x="550" y="350" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">Model training required</text>
+    
+    <text x="750" y="316" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">Specialized</text>
+    <text x="750" y="333" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">Hallucination</text>
+    <text x="750" y="350" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">Detection</text>
+
+    <!-- Row 4: LLM as Judge -->
+    <rect x="50" y="370" width="200" height="70" fill="#f8f9fa" stroke="#ddd" stroke-width="1"/>
+    <rect x="250" y="370" width="200" height="70" fill="#f8f9fa" stroke="#ddd" stroke-width="1"/>
+    <rect x="450" y="370" width="200" height="70" fill="#f8f9fa" stroke="#ddd" stroke-width="1"/>
+    <rect x="650" y="370" width="200" height="70" fill="#f8f9fa" stroke="#ddd" stroke-width="1"/>
+    
+    <text x="150" y="395" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="#333">LLM as Judge</text>
+    <text x="150" y="415" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">Model-Based Evaluation</text>
+    
+    <text x="250" y="386" font-family="Arial" font-size="12" text-anchor="start" fill="#333">• Generation Quality</text>
+    <text x="250" y="403" font-family="Arial" font-size="12" text-anchor="start" fill="#333">• Factuality Assessment</text>
+    <text x="250" y="420" font-family="Arial" font-size="12" text-anchor="start" fill="#333">• Usefulness Rating</text>
+    <text x="250" y="437" font-family="Arial" font-size="12" text-anchor="start" fill="#333">• Customizable Criteria</text>
+    
+    <rect x="470" y="385" width="160" height="20" rx="10" ry="10" fill="#4CAF50" opacity="0.7"/>
+    <text x="550" y="400" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle" fill="white">High</text>
+    <text x="550" y="420" font-family="Arial" font-size="12" text-anchor="middle" fill="#666">Simple prompt engineering</text>
+    
+    <text x="750" y="386" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">Flexible Evaluation</text>
+    <text x="750" y="403" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">Low-Resource</text>
+    <text x="750" y="420" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">Settings</text>
+
+    <!-- Implementation Recommendations -->
+    <rect x="50" y="480" width="800" height="80" rx="10" ry="10" fill="#f8f9fa" stroke="#ddd" stroke-width="2"/>
+    
+    <text x="450" y="500" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" fill="#333">Recommended Evaluation Strategy for 100K Pages</text>
+    <text x="450" y="525" font-family="Arial" font-size="14" text-anchor="middle" fill="#333">Begin with RAGAS for comprehensive evaluation, supplement with RAGTruth</text>
+    <text x="450" y="545" font-family="Arial" font-size="14" text-anchor="middle" fill="#333">for hallucination detection, and use LLM-as-Judge for periodic qualitative assessment</text>
+</svg>

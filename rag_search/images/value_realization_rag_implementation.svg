@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="900" height="650" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <linearGradient id="headerGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#00c6ff;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#0072ff;stop-opacity:1" />
+        </linearGradient>
+        <linearGradient id="boxGrad1" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#56ab2f;stop-opacity:0.1" />
+            <stop offset="100%" style="stop-color:#a8e063;stop-opacity:0.1" />
+        </linearGradient>
+        <linearGradient id="boxGrad2" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#4776E6;stop-opacity:0.1" />
+            <stop offset="100%" style="stop-color:#8E54E9;stop-opacity:0.1" />
+        </linearGradient>
+        <linearGradient id="boxGrad3" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#ff9966;stop-opacity:0.1" />
+            <stop offset="100%" style="stop-color:#ff5e62;stop-opacity:0.1" />
+        </linearGradient>
+        <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.3"/>
+        </filter>
+    </defs>
+
+    <!-- Title -->
+    <rect x="50" y="20" width="800" height="60" rx="10" ry="10" fill="url(#headerGrad)" filter="url(#shadow)"/>
+    <text x="450" y="55" font-family="Arial" font-size="24" font-weight="bold" text-anchor="middle" fill="white">Value Realization Framework</text>
+    <text x="450" y="75" font-family="Arial" font-size="16" text-anchor="middle" fill="white">For 100K Pages Monthly RAG Implementation</text>
+
+    <!-- ROI Calculation Model -->
+    <rect x="50" y="100" width="800" height="170" rx="10" ry="10" fill="url(#boxGrad1)" stroke="#56ab2f" stroke-width="2"/>
+    <text x="450" y="125" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" fill="#333">ROI Calculation Model</text>
+    
+    <rect x="70" y="140" width="760" height="110" fill="white" stroke="#ddd" stroke-width="1" rx="5" ry="5"/>
+    
+    <!-- ROI Formula -->
+    <text x="100" y="165" font-family="Arial" font-size="16" font-weight="bold" text-anchor="start" fill="#333">ROI = ( (Revenue Impact + Cost Savings + Productivity Gains) - Total Cost ) / Total Cost × 100%</text>
+    
+    <!-- Cost Components -->
+    <text x="100" y="195" font-family="Arial" font-size="14" font-weight="bold" text-anchor="start" fill="#333">Total Cost Components:</text>
+    <text x="100" y="215" font-family="Arial" font-size="14" text-anchor="start" fill="#666">• Implementation: $150K-$450K</text>
+    <text x="350" y="215" font-family="Arial" font-size="14" text-anchor="start" fill="#666">• Integration: $75K-$200K</text>
+    <text x="600" y="215" font-family="Arial" font-size="14" text-anchor="start" fill="#666">• Maintenance: 20-35% annually</text>
+    
+    <!-- Benefit Components -->
+    <text x="100" y="235" font-family="Arial" font-size="14" font-weight="bold" text-anchor="start" fill="#333">Benefit Components:</text>
+    <text x="350" y="235" font-family="Arial" font-size="14" text-anchor="start" fill="#666">• See benefit categories below</text>
+
+    <!-- Value Categories -->
+    <rect x="50" y="290" width="800" height="340" rx="10" ry="10" fill="#f8f9fa" stroke="#ddd" stroke-width="2"/>
+    <text x="450" y="315" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" fill="#333">Value Realization Categories</text>
+    
+    <!-- Category 1: Efficiency Gains -->
+    <rect x="70" y="340" width="240" height="130" rx="10" ry="10" fill="url(#boxGrad2)" stroke="#4776E6" stroke-width="2"/>
+    <text x="190" y="365" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="#333">Efficiency Gains</text>
+    
+    <rect x="85" y="380" width="210" height="80" rx="5" ry="5" fill="white" stroke="#ddd" stroke-width="1"/>
+    <text x="95" y="400" font-family="Arial" font-size="14" text-anchor="start" fill="#333">• Time savings: 30-50%</text>
+    <text x="95" y="420" font-family="Arial" font-size="14" text-anchor="start" fill="#333">• $1.2M/yr per 100 knowledge workers</text>
+    <text x="95" y="440" font-family="Arial" font-size="14" text-anchor="start" fill="#333">• Reduced search-to-answer time</text>
+    
+    <!-- Measurement Methods -->
+    <rect x="70" y="480" width="240" height="130" rx="5" ry="5" fill="white" stroke="#ddd" stroke-width="1"/>
+    <text x="190" y="500" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle" fill="#333">Measurement Methods</text>
+    <text x="95" y="520" font-family="Arial" font-size="12" text-anchor="start" fill="#666">• Time tracking for common tasks</text>
+    <text x="95" y="540" font-family="Arial" font-size="12" text-anchor="start" fill="#666">• Query-to-answer latency metrics</text>
+    <text x="95" y="560" font-family="Arial" font-size="12" text-anchor="start" fill="#666">• User productivity surveys</text>
+    <text x="95" y="580" font-family="Arial" font-size="12" text-anchor="start" fill="#666">• Task completion rate tracking</text>
+    
+    <!-- Category 2: Error Reduction -->
+    <rect x="330" y="340" width="240" height="130" rx="10" ry="10" fill="url(#boxGrad2)" stroke="#4776E6" stroke-width="2"/>
+    <text x="450" y="365" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="#333">Error Reduction</text>
+    
+    <rect x="345" y="380" width="210" height="80" rx="5" ry="5" fill="white" stroke="#ddd" stroke-width="1"/>
+    <text x="355" y="400" font-family="Arial" font-size="14" text-anchor="start" fill="#333">• Information accuracy: +35-60%</text>
+    <text x="355" y="420" font-family="Arial" font-size="14" text-anchor="start" fill="#333">• $650K/yr per 1% accuracy gain</text>
+    <text x="355" y="440" font-family="Arial" font-size="14" text-anchor="start" fill="#333">• Reduced rework and corrections</text>
+    
+    <!-- Measurement Methods -->
+    <rect x="330" y="480" width="240" height="130" rx="5" ry="5" fill="white" stroke="#ddd" stroke-width="1"/>
+    <text x="450" y="500" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle" fill="#333">Measurement Methods</text>
+    <text x="355" y="520" font-family="Arial" font-size="12" text-anchor="start" fill="#666">• Error rate tracking pre/post</text>
+    <text x="355" y="540" font-family="Arial" font-size="12" text-anchor="start" fill="#666">• Information accuracy audits</text>
+    <text x="355" y="560" font-family="Arial" font-size="12" text-anchor="start" fill="#666">• Factuality scoring via RAGAS</text>
+    <text x="355" y="580" font-family="Arial" font-size="12" text-anchor="start" fill="#666">• Hallucination detection metrics</text>
+    
+    <!-- Category 3: Strategic Value -->
+    <rect x="590" y="340" width="240" height="130" rx="10" ry="10" fill="url(#boxGrad2)" stroke="#4776E6" stroke-width="2"/>
+    <text x="710" y="365" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="#333">Strategic Value</text>
+    
+    <rect x="605" y="380" width="210" height="80" rx="5" ry="5" fill="white" stroke="#ddd" stroke-width="1"/>
+    <text x="615" y="400" font-family="Arial" font-size="14" text-anchor="start" fill="#333">• New capability enablement</text>
+    <text x="615" y="420" font-family="Arial" font-size="14" text-anchor="start" fill="#333">• 2-5x multiplier on impl. cost</text>
+    <text x="615" y="440" font-family="Arial" font-size="14" text-anchor="start" fill="#333">• Competitive differentiation</text>
+    
+    <!-- Measurement Methods -->
+    <rect x="590" y="480" width="240" height="130" rx="5" ry="5" fill="white" stroke="#ddd" stroke-width="1"/>
+    <text x="710" y="500" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle" fill="#333">Measurement Methods</text>
+    <text x="615" y="520" font-family="Arial" font-size="12" text-anchor="start" fill="#666">• New service offerings enabled</text>
+    <text x="615" y="540" font-family="Arial" font-size="12" text-anchor="start" fill="#666">• Customer satisfaction metrics</text>
+    <text x="615" y="560" font-family="Arial" font-size="12" text-anchor="start" fill="#666">• Market share changes</text>
+    <text x="615" y="580" font-family="Arial" font-size="12" text-anchor="start" fill="#666">• Customer retention improvements</text>
+</svg>

@@ -1,0 +1,112 @@
+<svg viewBox="0 0 900 600" xmlns="http://www.w3.org/2000/svg">
+    <!-- Background -->
+    <rect x="0" y="0" width="900" height="600" fill="#f8f8f8" />
+    
+    <!-- Title -->
+    <text x="450" y="40" font-family="Arial" font-size="24" font-weight="bold" text-anchor="middle">Embedding Model + LLM Combinations</text>
+    
+    <!-- Section title -->
+    <rect x="50" y="70" width="800" height="40" rx="5" fill="#eaeaea" stroke="#333" stroke-width="1" />
+    <text x="450" y="95" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle">Strategic Combinations for Optimal Performance</text>
+    
+    <!-- Combination matrix -->
+    <!-- Headers -->
+    <rect x="50" y="130" width="150" height="60" rx="5" fill="#4472c4" stroke="#333" stroke-width="1" />
+    <rect x="200" y="130" width="150" height="60" rx="5" fill="#4472c4" stroke="#333" stroke-width="1" />
+    <rect x="350" y="130" width="130" height="60" rx="5" fill="#4472c4" stroke="#333" stroke-width="1" />
+    <rect x="480" y="130" width="130" height="60" rx="5" fill="#4472c4" stroke="#333" stroke-width="1" />
+    <rect x="610" y="130" width="130" height="60" rx="5" fill="#4472c4" stroke="#333" stroke-width="1" />
+    <rect x="740" y="130" width="110" height="60" rx="5" fill="#4472c4" stroke="#333" stroke-width="1" />
+    
+    <text x="125" y="165" font-family="Arial" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Embedding</text>
+    <text x="275" y="165" font-family="Arial" font-size="14" font-weight="bold" fill="white" text-anchor="middle">LLM</text>
+    <text x="415" y="165" font-family="Arial" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Strategic Fit</text>
+    <text x="545" y="165" font-family="Arial" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Retrieval Quality</text>
+    <text x="675" y="165" font-family="Arial" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Generation Quality</text>
+    <text x="795" y="165" font-family="Arial" font-size="14" font-weight="bold" fill="white" text-anchor="middle">Cost Efficiency</text>
+    
+    <!-- OpenAI Embed + GPT-4o -->
+    <rect x="50" y="190" width="150" height="70" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    <rect x="200" y="190" width="150" height="70" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    <rect x="350" y="190" width="130" height="70" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    <rect x="480" y="190" width="130" height="70" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    <rect x="610" y="190" width="130" height="70" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    <rect x="740" y="190" width="110" height="70" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    
+    <text x="125" y="225" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle">OpenAI Embed</text>
+    <text x="275" y="225" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle">OpenAI GPT-4o</text>
+    <text x="415" y="215" font-family="Arial" font-size="12" text-anchor="middle">Highest quality,</text>
+    <text x="415" y="235" font-family="Arial" font-size="12" text-anchor="middle">customer-facing</text>
+    <text x="545" y="225" font-family="Arial" font-size="14" text-anchor="middle">Excellent</text>
+    <text x="675" y="225" font-family="Arial" font-size="14" text-anchor="middle">Excellent</text>
+    <text x="795" y="225" font-family="Arial" font-size="14" text-anchor="middle">Low</text>
+    
+    <!-- Cohere Embed + Claude -->
+    <rect x="50" y="260" width="150" height="70" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    <rect x="200" y="260" width="150" height="70" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    <rect x="350" y="260" width="130" height="70" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    <rect x="480" y="260" width="130" height="70" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    <rect x="610" y="260" width="130" height="70" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    <rect x="740" y="260" width="110" height="70" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    
+    <text x="125" y="295" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle">Cohere Embed</text>
+    <text x="275" y="295" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle">Anthropic Claude</text>
+    <text x="415" y="285" font-family="Arial" font-size="12" text-anchor="middle">Multilingual,</text>
+    <text x="415" y="305" font-family="Arial" font-size="12" text-anchor="middle">nuanced responses</text>
+    <text x="545" y="295" font-family="Arial" font-size="14" text-anchor="middle">Very Good</text>
+    <text x="675" y="295" font-family="Arial" font-size="14" text-anchor="middle">Excellent</text>
+    <text x="795" y="295" font-family="Arial" font-size="14" text-anchor="middle">Medium</text>
+    
+    <!-- BAAI/bge + Mistral Large -->
+    <rect x="50" y="330" width="150" height="70" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    <rect x="200" y="330" width="150" height="70" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    <rect x="350" y="330" width="130" height="70" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    <rect x="480" y="330" width="130" height="70" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    <rect x="610" y="330" width="130" height="70" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    <rect x="740" y="330" width="110" height="70" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    
+    <text x="125" y="358" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle">BAAI/bge</text>
+    <text x="125" y="378" font-family="Arial" font-size="12" text-anchor="middle">(open)</text>
+    <text x="275" y="365" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle">Mistral Large</text>
+    <text x="415" y="358" font-family="Arial" font-size="12" text-anchor="middle">Cost-sensitive,</text>
+    <text x="415" y="378" font-family="Arial" font-size="12" text-anchor="middle">internal tools</text>
+    <text x="545" y="365" font-family="Arial" font-size="14" text-anchor="middle">Good</text>
+    <text x="675" y="365" font-family="Arial" font-size="14" text-anchor="middle">Very Good</text>
+    <text x="795" y="365" font-family="Arial" font-size="14" text-anchor="middle">High</text>
+    
+    <!-- Voyage AI + Llama 3 70B -->
+    <rect x="50" y="400" width="150" height="70" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    <rect x="200" y="400" width="150" height="70" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    <rect x="350" y="400" width="130" height="70" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    <rect x="480" y="400" width="130" height="70" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    <rect x="610" y="400" width="130" height="70" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    <rect x="740" y="400" width="110" height="70" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    
+    <text x="125" y="435" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle">Voyage AI</text>
+    <text x="275" y="435" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle">Llama 3 70B</text>
+    <text x="415" y="425" font-family="Arial" font-size="12" text-anchor="middle">Privacy-focused,</text>
+    <text x="415" y="445" font-family="Arial" font-size="12" text-anchor="middle">customizable</text>
+    <text x="545" y="435" font-family="Arial" font-size="14" text-anchor="middle">Excellent</text>
+    <text x="675" y="435" font-family="Arial" font-size="14" text-anchor="middle">Very Good</text>
+    <text x="795" y="435" font-family="Arial" font-size="14" text-anchor="middle">Medium</text>
+    
+    <!-- Google Vertex + Gemini -->
+    <rect x="50" y="470" width="150" height="70" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    <rect x="200" y="470" width="150" height="70" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    <rect x="350" y="470" width="130" height="70" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    <rect x="480" y="470" width="130" height="70" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    <rect x="610" y="470" width="130" height="70" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    <rect x="740" y="470" width="110" height="70" fill="#f5f5f5" stroke="#333" stroke-width="1" />
+    
+    <text x="125" y="505" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle">Google Vertex</text>
+    <text x="275" y="505" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle">Google Gemini</text>
+    <text x="415" y="495" font-family="Arial" font-size="12" text-anchor="middle">Google ecosystem,</text>
+    <text x="415" y="515" font-family="Arial" font-size="12" text-anchor="middle">multimodal</text>
+    <text x="545" y="505" font-family="Arial" font-size="14" text-anchor="middle">Very Good</text>
+    <text x="675" y="505" font-family="Arial" font-size="14" text-anchor="middle">Very Good</text>
+    <text x="795" y="505" font-family="Arial" font-size="14" text-anchor="middle">Medium</text>
+    
+    <!-- Strategy note -->
+    <rect x="50" y="550" width="800" height="40" rx="5" fill="#e6f2ff" stroke="#333" stroke-width="1" />
+    <text x="450" y="575" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle">Recommended Strategy: Dual approach with premium models for customer-facing and cost-efficient for internal</text>
+  </svg>

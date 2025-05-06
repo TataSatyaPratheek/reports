@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="900" height="650" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <linearGradient id="headerGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#5433FF;stop-opacity:1" />
+            <stop offset="50%" style="stop-color:#20BDFF;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#A5FECB;stop-opacity:1" />
+        </linearGradient>
+        <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.3"/>
+        </filter>
+    </defs>
+
+    <!-- Title -->
+    <text x="450" y="30" font-family="Arial" font-size="24" font-weight="bold" text-anchor="middle" filter="url(#shadow)">Vector Database Comparison</text>
+    <text x="450" y="60" font-family="Arial" font-size="16" text-anchor="middle">Optimized for 100K Pages Monthly Processing</text>
+
+    <!-- Table Header -->
+    <rect x="50" y="80" width="800" height="60" rx="10" ry="10" fill="url(#headerGrad)" filter="url(#shadow)"/>
+    <line x1="230" y1="80" x2="230" y2="140" stroke="white" stroke-width="2"/>
+    <line x1="410" y1="80" x2="410" y2="140" stroke="white" stroke-width="2"/>
+    <line x1="590" y1="80" x2="590" y2="140" stroke="white" stroke-width="2"/>
+    <line x1="770" y1="80" x2="770" y2="140" stroke="white" stroke-width="2"/>
+    
+    <text x="140" y="110" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="white">Provider</text>
+    <text x="140" y="130" font-family="Arial" font-size="12" text-anchor="middle" fill="white">Key Features</text>
+    
+    <text x="320" y="110" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="white">Architecture Support</text>
+    <text x="320" y="130" font-family="Arial" font-size="12" text-anchor="middle" fill="white">Compatible RAG Types</text>
+    
+    <text x="500" y="110" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="white">Cost Structure</text>
+    <text x="500" y="130" font-family="Arial" font-size="12" text-anchor="middle" fill="white">For 100K Pages (Monthly)</text>
+    
+    <text x="680" y="110" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="white">Key Differentiators</text>
+    <text x="680" y="130" font-family="Arial" font-size="12" text-anchor="middle" fill="white">Unique Selling Points</text>
+    
+    <text x="835" y="110" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle" fill="white">Ratings</text>
+    <text x="835" y="130" font-family="Arial" font-size="12" text-anchor="middle" fill="white">(1-5)</text>
+
+    <!-- Pinecone Row -->
+    <rect x="50" y="140" width="800" height="80" fill="#f8f9fa" stroke="#ddd" stroke-width="1"/>
+    <line x1="230" y1="140" x2="230" y2="220" stroke="#ddd" stroke-width="1"/>
+    <line x1="410" y1="140" x2="410" y2="220" stroke="#ddd" stroke-width="1"/>
+    <line x1="590" y1="140" x2="590" y2="220" stroke="#ddd" stroke-width="1"/>
+    <line x1="770" y1="140" x2="770" y2="220" stroke="#ddd" stroke-width="1"/>
+    
+    <text x="60" y="160" font-family="Arial" font-size="16" font-weight="bold" fill="#333">Pinecone</text>
+    <text x="60" y="180" font-family="Arial" font-size="12" fill="#666">• Purpose-built for RAG</text>
+    <text x="60" y="200" font-family="Arial" font-size="12" fill="#666">• Managed service</text>
+    
+    <text x="240" y="160" font-family="Arial" font-size="14" fill="#333">• Naive RAG</text>
+    <text x="240" y="180" font-family="Arial" font-size="14" fill="#333">• Advanced RAG</text>
+    <text x="240" y="200" font-family="Arial" font-size="14" fill="#333">• Hybrid RAG</text>
+    
+    <text x="420" y="160" font-family="Arial" font-size="14" fill="#333">• $70-$500+/month</text>
+    <text x="420" y="180" font-family="Arial" font-size="12" fill="#666">• Based on vector dimensions</text>
+    <text x="420" y="200" font-family="Arial" font-size="12" fill="#666">• Query volume dependent</text>
+    
+    <text x="600" y="160" font-family="Arial" font-size="14" fill="#333">• Hybrid search capability</text>
+    <text x="600" y="180" font-family="Arial" font-size="12" fill="#666">• Strong enterprise support</text>
+    <text x="600" y="200" font-family="Arial" font-size="12" fill="#666">• Wide integration options</text>
+    
+    <circle cx="790" cy="160" r="15" fill="#4CAF50" stroke="#ddd" stroke-width="1"/>
+    <text x="790" y="165" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle" fill="white">4</text>
+    <text x="820" y="165" font-family="Arial" font-size="12" fill="#666">Performance</text>
+    <circle cx="790" cy="190" r="15" fill="#FF9800" stroke="#ddd" stroke-width="1"/>
+    <text x="790" y="195" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle" fill="white">3</text>
+    <text x="825" y="195" font-family="Arial" font-size="12" fill="#666">Cost-efficiency</text>
+
+    <!-- Weaviate Row -->
+    <rect x="50" y="220" width="800" height="80" fill="white" stroke="#ddd" stroke-width="1"/>
+    <line x1="230" y1="220" x2="230" y2="300" stroke="#ddd" stroke-width="1"/>
+    <line x1="410" y1="220" x2="410" y2="300" stroke="#ddd" stroke-width="1"/>
+    <line x1="590" y1="220" x2="590" y2="300" stroke="#ddd" stroke-width="1"/>
+    <line x1="770" y1="220" x2="770" y2="300" stroke="#ddd" stroke-width="1"/>
+    
+    <text x="60" y="240" font-family="Arial" font-size="16" font-weight="bold" fill="#333">Weaviate</text>
+    <text x="60" y="260" font-family="Arial" font-size="12" fill="#666">• Open-source core</text>
+    <text x="60" y="280" font-family="Arial" font-size="12" fill="#666">• Managed cloud service</text>
+    
+    <text x="240" y="240" font-family="Arial" font-size="14" fill="#333">• All architectures</text>
+    <text x="240" y="260" font-family="Arial" font-size="14" fill="#333">• Strong with Multimodal</text>
+    <text x="240" y="280" font-family="Arial" font-size="14" fill="#333">• Graph capability</text>
+    
+    <text x="420" y="240" font-family="Arial" font-size="14" fill="#333">• $75-$600+/month</text>
+    <text x="420" y="260" font-family="Arial" font-size="12" fill="#666">• Self-host option available</text>
+    <text x="420" y="280" font-family="Arial" font-size="12" fill="#666">• Pay-as-you-go tiers</text>
+    
+    <text x="600" y="240" font-family="Arial" font-size="14" fill="#333">• Native multimodal support</text>
+    <text x="600" y="260" font-family="Arial" font-size="12" fill="#666">• GraphQL interface</text>
+    <text x="600" y="280" font-family="Arial" font-size="12" fill="#666">• Module ecosystem</text>
+    
+    <circle cx="790" cy="240" r="15" fill="#4CAF50" stroke="#ddd" stroke-width="1"/>
+    <text x="790" y="245" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle" fill="white">5</text>
+    <text x="820" y="245" font-family="Arial" font-size="12" fill="#666">Flexibility</text>
+    <circle cx="790" cy="270" r="15" fill="#FF9800" stroke="#ddd" stroke-width="1"/>
+    <text x="790" y="275" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle" fill="white">3</text>
+    <text x="825" y="275" font-family="Arial" font-size="12" fill="#666">Setup Complexity</text>
+
+    <!-- Qdrant Row -->
+    <rect x="50" y="300" width="800" height="80" fill="#f8f9fa" stroke="#ddd" stroke-width="1"/>
+    <line x1="230" y1="300" x2="230" y2="380" stroke="#ddd" stroke-width="1"/>
+    <line x1="410" y1="300" x2="410" y2="380" stroke="#ddd" stroke-width="1"/>
+    <line x1="590" y1="300" x2="590" y2="380" stroke="#ddd" stroke-width="1"/>
+    <line x1="770" y1="300" x2="770" y2="380" stroke="#ddd" stroke-width="1"/>
+    
+    <text x="60" y="320" font-family="Arial" font-size="16" font-weight="bold" fill="#333">Qdrant</text>
+    <text x="60" y="340" font-family="Arial" font-size="12" fill="#666">• Open-source</text>
+    <text x="60" y="360" font-family="Arial" font-size="12" fill="#666">• Cloud or self-hosted</text>
+    
+    <text x="240" y="320" font-family="Arial" font-size="14" fill="#333">• All architectures</text>
+    <text x="240" y="340" font-family="Arial" font-size="14" fill="#333">• Filtering capabilities</text>
+    <text x="240" y="360" font-family="Arial" font-size="14" fill="#333">• Hybrid search</text>
+    
+    <text x="420" y="320" font-family="Arial" font-size="14" fill="#333">• $50-$400+/month</text>
+    <text x="420" y="340" font-family="Arial" font-size="12" fill="#666">• Lower entry pricing</text>
+    <text x="420" y="360" font-family="Arial" font-size="12" fill="#666">• Free tier available</text>
+    
+    <text x="600" y="320" font-family="Arial" font-size="14" fill="#333">• Strong filtering capabilities</text>
+    <text x="600" y="340" font-family="Arial" font-size="12" fill="#666">• Fast queries</text>
+    <text x="600" y="360" font-family="Arial" font-size="12" fill="#666">• Rust performance</text>
+    
+    <circle cx="790" cy="320" r="15" fill="#4CAF50" stroke="#ddd" stroke-width="1"/>
+    <text x="790" y="325" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle" fill="white">4</text>
+    <text x="825" y="325" font-family="Arial" font-size="12" fill="#666">Cost-efficiency</text>
+    <circle cx="790" cy="350" r="15" fill="#FFC107" stroke="#ddd" stroke-width="1"/>
+    <text x="790" y="355" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle" fill="white">4</text>
+    <text x="820" y="355" font-family="Arial" font-size="12" fill="#666">Performance</text>
+
+    <!-- Chroma Row -->
+    <rect x="50" y="380" width="800" height="80" fill="white" stroke="#ddd" stroke-width="1"/>
+    <line x1="230" y1="380" x2="230" y2="460" stroke="#ddd" stroke-width="1"/>
+    <line x1="410" y1="380" x2="410" y2="460" stroke="#ddd" stroke-width="1"/>
+    <line x1="590" y1="380" x2="590" y2="460" stroke="#ddd" stroke-width="1"/>
+    <line x1="770" y1="380" x2="770" y2="460" stroke="#ddd" stroke-width="1"/>
+    
+    <text x="60" y="400" font-family="Arial" font-size="16" font-weight="bold" fill="#333">Chroma</text>
+    <text x="60" y="420" font-family="Arial" font-size="12" fill="#666">• Open-source focus</text>
+    <text x="60" y="440" font-family="Arial" font-size="12" fill="#666">• Developer-friendly</text>
+    
+    <text x="240" y="400" font-family="Arial" font-size="14" fill="#333">• Naive RAG</text>
+    <text x="240" y="420" font-family="Arial" font-size="14" fill="#333">• Advanced RAG</text>
+    <text x="240" y="440" font-family="Arial" font-size="14" fill="#333">• Limited advanced features</text>
+    
+    <text x="420" y="400" font-family="Arial" font-size="14" fill="#333">• Self-hosted or managed</text>
+    <text x="420" y="420" font-family="Arial" font-size="12" fill="#666">• Free self-hosting</text>
+    <text x="420" y="440" font-family="Arial" font-size="12" fill="#666">• Cloud pricing varies</text>
+    
+    <text x="600" y="400" font-family="Arial" font-size="14" fill="#333">• Developer-friendly API</text>
+    <text x="600" y="420" font-family="Arial" font-size="12" fill="#666">• Python-first design</text>
+    <text x="600" y="440" font-family="Arial" font-size="12" fill="#666">• Simple integration</text>
+    
+    <circle cx="790" cy="400" r="15" fill="#4CAF50" stroke="#ddd" stroke-width="1"/>
+    <text x="790" y="405" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle" fill="white">5</text>
+    <text x="835" y="405" font-family="Arial" font-size="12" fill="#666">Ease of use</text>
+    <circle cx="790" cy="430" r="15" fill="#F44336" stroke="#ddd" stroke-width="1"/>
+    <text x="790" y="435" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle" fill="white">2</text>
+    <text x="830" y="435" font-family="Arial" font-size="12" fill="#666">Enterprise ready</text>
+
+    <!-- Milvus Row -->
+    <rect x="50" y="460" width="800" height="80" fill="#f8f9fa" stroke="#ddd" stroke-width="1"/>
+    <line x1="230" y1="460" x2="230" y2="540" stroke="#ddd" stroke-width="1"/>
+    <line x1="410" y1="460" x2="410" y2="540" stroke="#ddd" stroke-width="1"/>
+    <line x1="590" y1="460" x2="590" y2="540" stroke="#ddd" stroke-width="1"/>
+    <line x1="770" y1="460" x2="770" y2="540" stroke="#ddd" stroke-width="1"/>
+    
+    <text x="60" y="480" font-family="Arial" font-size="16" font-weight="bold" fill="#333">Milvus</text>
+    <text x="60" y="500" font-family="Arial" font-size="12" fill="#666">• CNCF project</text>
+    <text x="60" y="520" font-family="Arial" font-size="12" fill="#666">• Enterprise-focused</text>
+    
+    <text x="240" y="480" font-family="Arial" font-size="14" fill="#333">• All architectures</text>
+    <text x="240" y="500" font-family="Arial" font-size="14" fill="#333">• High scalability</text>
+    <text x="240" y="520" font-family="Arial" font-size="14" fill="#333">• Advanced features</text>
+    
+    <text x="420" y="480" font-family="Arial" font-size="14" fill="#333">• Self-hosted or managed</text>
+    <text x="420" y="500" font-family="Arial" font-size="12" fill="#666">• Zilliz offers managed option</text>
+    <text x="420" y="520" font-family="Arial" font-size="12" fill="#666">• Infrastructure costs</text>
+    
+    <text x="600" y="480" font-family="Arial" font-size="14" fill="#333">• High scalability</text>
+    <text x="600" y="500" font-family="Arial" font-size="12" fill="#666">• Cloud-native design</text>
+    <text x="600" y="520" font-family="Arial" font-size="12" fill="#666">• Kubernetes integration</text>
+    
+    <circle cx="790" cy="480" r="15" fill="#4CAF50" stroke="#ddd" stroke-width="1"/>
+    <text x="790" y="485" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle" fill="white">5</text>
+    <text x="820" y="485" font-family="Arial" font-size="12" fill="#666">Scalability</text>
+    <circle cx="790" cy="510" r="15" fill="#F44336" stroke="#ddd" stroke-width="1"/>
+    <text x="790" y="515" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle" fill="white">2</text>
+    <text x="830" y="515" font-family="Arial" font-size="12" fill="#666">Setup simplicity</text>
+
+    <!-- Aerospike Row -->
+    <rect x="50" y="540" width="800" height="80" fill="white" stroke="#ddd" stroke-width="1"/>
+    <line x1="230" y1="540" x2="230" y2="620" stroke="#ddd" stroke-width="1"/>
+    <line x1="410" y1="540" x2="410" y2="620" stroke="#ddd" stroke-width="1"/>
+    <line x1="590" y1="540" x2="590" y2="620" stroke="#ddd" stroke-width="1"/>
+    <line x1="770" y1="540" x2="770" y2="620" stroke="#ddd" stroke-width="1"/>
+    
+    <text x="60" y="560" font-family="Arial" font-size="16" font-weight="bold" fill="#333">Aerospike</text>
+    <text x="60" y="580" font-family="Arial" font-size="12" fill="#666">• Enterprise DB</text>
+    <text x="60" y="600" font-family="Arial" font-size="12" fill="#666">• Graph capabilities</text>
+    
+    <text x="240" y="560" font-family="Arial" font-size="14" fill="#333">• Graph RAG specialist</text>
+    <text x="240" y="580" font-family="Arial" font-size="14" fill="#333">• Complex relationship</text>
+    <text x="240" y="600" font-family="Arial" font-size="14" fill="#333">• queries</text>
+    
+    <text x="420" y="560" font-family="Arial" font-size="14" fill="#333">• Custom pricing</text>
+    <text x="420" y="580" font-family="Arial" font-size="12" fill="#666">• Enterprise licensing</text>
+    <text x="420" y="600" font-family="Arial" font-size="12" fill="#666">• Higher than average</text>
+    
+    <text x="600" y="560" font-family="Arial" font-size="14" fill="#333">• Native graph capabilities</text>
+    <text x="600" y="580" font-family="Arial" font-size="12" fill="#666">• High performance</text>
+    <text x="600" y="600" font-family="Arial" font-size="12" fill="#666">• Enterprise support</text>
+    
+    <circle cx="790" cy="560" r="15" fill="#4CAF50" stroke="#ddd" stroke-width="1"/>
+    <text x="790" y="565" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle" fill="white">5</text>
+    <text x="825" y="565" font-family="Arial" font-size="12" fill="#666">Graph queries</text>
+    <circle cx="790" cy="590" r="15" fill="#F44336" stroke="#ddd" stroke-width="1"/>
+    <text x="790" y="595" font-family="Arial" font-size="14" font-weight="bold" text-anchor="middle" fill="white">2</text>
+    <text x="820" y="595" font-family="Arial" font-size="12" fill="#666">Cost value</text>
+</svg>
