@@ -1,4 +1,4 @@
-# app.py - Memory-optimized version with performance monitoring
+# app.py - Fully optimized version with improved UI based on CEO recommendations
 import streamlit as st
 import time
 import sys
@@ -13,10 +13,10 @@ from modules.system_setup import (
 )
 from modules.vector_store import initialize_vector_db, reset_vector_db, get_chroma_collection, hybrid_retrieval
 from modules.pdf_processor import process_uploaded_pdf
-from modules.nlp_models import load_embedding_model, get_embedding_dimensions # Changed import source
+from modules.nlp_models import load_embedding_model, get_embedding_dimensions
 from modules.vector_store import add_chunks_to_collection
 from modules.llm_interface import query_llm, SlidingWindowMemory
-from modules.ui_components import display_chat, show_system_resources, apply_tourism_theme, render_tourism_dashboard_lazy
+from modules.ui_components import show_system_resources, apply_tourism_theme, render_tourism_dashboard_lazy, display_chat
 from modules.utils import log_error, TourismLogger
 from modules.model_selection import render_model_selection_dashboard, ModelSelector
 from modules.insights_generator import render_insights_dashboard, TourismInsightsGenerator
@@ -36,15 +36,23 @@ DEFAULT_HYBRID_ALPHA = 0.7
 
 # Enhanced agent roles
 AGENT_ROLES = {
-    "Travel Trends Analyst": "You are an expert travel trends analyst...",
-    "Payment Specialist": "You are a payment systems specialist...",
-    "Market Segmentation Expert": "You are a tourism market segmentation expert...",
-    "Sustainability Tourism Advisor": "You are a sustainability tourism advisor...",
-    "Gen Z Travel Specialist": "You are a Gen Z travel specialist...",
-    "Luxury Tourism Consultant": "You are a luxury tourism consultant...",
-    "Tourism Analytics Expert": "You are a tourism analytics expert...",
-    "General Tourism Assistant": "You are a helpful tourism information assistant..."
+    "Travel Trends Analyst": "You are an expert travel trends analyst specializing in identifying emerging patterns and shifts in tourism behavior.",
+    "Payment Specialist": "You are a payment systems specialist focused on financial technology trends in the travel and tourism sector.",
+    "Market Segmentation Expert": "You are a tourism market segmentation expert who can analyze different traveler demographics and preferences.",
+    "Sustainability Tourism Advisor": "You are a sustainability tourism advisor helping organizations implement eco-friendly practices.",
+    "Gen Z Travel Specialist": "You are a Gen Z travel specialist with deep knowledge of youth travel preferences and digital engagement.",
+    "Luxury Tourism Consultant": "You are a luxury tourism consultant specializing in high-end travel experiences and premium markets.",
+    "Tourism Analytics Expert": "You are a tourism analytics expert who excels at interpreting data trends and providing actionable insights.",
+    "General Tourism Assistant": "You are a helpful tourism information assistant with broad knowledge of the travel industry."
 }
+
+# Key insight questions
+KEY_TOURISM_QUESTIONS = [
+    "What are the current macro travel trends?",
+    "How do payment methods vary across market segments?",
+    "What are the key market segmentation types in tourism?",
+    "Tell me about sustainability initiatives in tourism"
+]
 
 def initialize_session_state():
     """Initialize session state with enhanced features and memory monitoring"""
@@ -77,6 +85,10 @@ def initialize_session_state():
     # Memory monitoring
     st.session_state.setdefault("memory_monitoring_enabled", True)
     st.session_state.setdefault("performance_target", "balanced")
+    
+    # UI state
+    st.session_state.setdefault("welcome_message_shown", False)
+    st.session_state.setdefault("sidebar_section", "setup")
 
 @st.cache_resource
 def get_memory_monitor():
@@ -84,19 +96,17 @@ def get_memory_monitor():
     return memory_monitor
 
 def main():
-    """Memory-optimized main application entry point"""
+    """Memory-optimized main application entry point with improved UI"""
     st.set_page_config(
         page_title="Tourism Insights Explorer Pro",
         page_icon="🌍",
         layout="wide",
-        initial_sidebar_state="expanded"
+        initial_sidebar_state="expanded"  # Start with expanded sidebar initially for visibility
     )
     
+    # Apply light-themed custom CSS
     apply_tourism_theme()
     
-    st.markdown('<p class="main-header">🌍 Tourism Insights Explorer Pro</p>', unsafe_allow_html=True)
-    st.markdown('<p class="sub-header">Advanced AI-powered travel industry analysis with memory optimization</p>', unsafe_allow_html=True)
-
     if "system_initialized" not in st.session_state:
         initialize_session_state()
     
@@ -106,49 +116,85 @@ def main():
     # Check memory before rendering
     if st.session_state.get("memory_monitoring_enabled", True):
         monitor.check()
-    
-    # Display system resources in the header
-    with st.container():
-        show_system_resources()
-    
-    sidebar_params = render_enhanced_sidebar()
 
+    # Render sidebar with all complexity
+    sidebar_params = render_enhanced_sidebar()
+    
+    # Main content area with centered chat experience
     if not sidebar_params["system_initialized"]:
-        st.warning("System not ready. Please initialize the system via the sidebar.")
+        # High visibility initialization message
+        st.markdown("""
+        <div style="background-color: #e8f4f8; padding: 20px; border-radius: 10px; 
+                   text-align: center; border: 1px solid #b3e5fc; margin: 30px 0;">
+            <h2 style="color: #0277bd; margin-bottom: 15px;">Welcome to Tourism Insights Explorer Pro</h2>
+            <p style="font-size: 18px; color: #01579b; margin-bottom: 20px;">
+                System needs initialization before you can start exploring tourism insights.
+            </p>
+            <p style="font-size: 16px; color: #0288d1;">
+                Please click the "Initialize System" button in the sidebar to get started.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Large arrow pointing to sidebar
+        st.markdown("""
+        <div style="text-align: center; margin: 30px 0;">
+            <span style="font-size: 40px; color: #0277bd;">👈</span>
+            <p style="font-size: 18px; color: #0277bd; font-weight: bold;">Click "Initialize System" in the sidebar</p>
+        </div>
+        """, unsafe_allow_html=True)
     else:
-        # Main content area with tabs - using memory-aware lazy loading
-        tab1, tab2, tab3, tab4 = st.tabs(["📊 Model Selection", "📄 Document Processing", "🔍 Insights Dashboard", "💬 Chat Interface"])
-        
-        with tab1:
-            # Check memory before model selection
-            monitor.check()
-            selected_model = render_model_selection_dashboard(st.container())
-            st.session_state.selected_embedding_model = selected_model
-        
-        with tab2:
-            # Check memory before document processing
-            monitor.check()
-            process_tourism_documents_enhanced(
-                sidebar_params["uploaded_files"],
-                sidebar_params["chunk_size"],
-                sidebar_params["overlap"]
+        # Clean, central container for the main chat interface with clear styling
+        with st.container():
+            st.markdown('<div class="main-container">', unsafe_allow_html=True)
+            
+            # Bold, visible header
+            st.markdown('<h1 class="main-header">🌍 Tourism Insights Explorer Pro</h1>', unsafe_allow_html=True)
+            st.markdown('<p class="sub-header">Your AI-powered guide to travel industry analysis</p>', unsafe_allow_html=True)
+            
+            # Add prominent welcome message
+            if not st.session_state.get("welcome_message_shown", False):
+                st.markdown("""
+                <div class="welcome-message">
+                    <h3>Welcome to Tourism Insights Explorer Pro!</h3>
+                    <p>How can I help you with travel trends today? Choose a question below or type your own.</p>
+                </div>
+                """, unsafe_allow_html=True)
+                st.session_state.welcome_message_shown = True
+            
+            # Quick access prompt buttons with high visibility
+            st.markdown("<p style='font-weight:500; color:#0277bd; margin-bottom:10px;'>Explore key tourism questions:</p>", unsafe_allow_html=True)
+            prompt_cols = st.columns(2)
+            for i, question in enumerate(KEY_TOURISM_QUESTIONS):
+                col = prompt_cols[i % 2]
+                with col:
+                    if st.button(question, key=f"prompt_{i}", use_container_width=True):
+                        st.session_state.messages.append({"role": "user", "content": question})
+                        st.rerun()
+            
+            # High visibility separator
+            st.markdown("<hr style='margin: 20px 0; border-color: #e0e0e0;'>", unsafe_allow_html=True)
+            
+            # Clean, central chat interface
+            st.markdown('<div class="chat-container">', unsafe_allow_html=True)
+            
+            # Display chat history
+            display_chat(
+                st.session_state.messages,
+                current_role=st.session_state.get("current_agent_role", "Tourism Assistant")
             )
-        
-        with tab3:
-            # Check memory before insights generation
-            monitor.check()
-            if st.session_state.get("document_chunks"):
-                render_insights_dashboard(
-                    st.session_state.document_chunks,
-                    sidebar_params["local_llm_model"]
-                )
-            else:
-                st.info("Please process documents first to generate insights.")
-        
-        with tab4:
-            # Check memory before chat interface
-            monitor.check()
-            render_tourism_chat_interface(sidebar_params)
+            
+            # Clean chat input
+            user_query = st.chat_input(
+                "Ask about travel trends, market segments, payment methods, or deep dive topics...",
+                disabled=not bool(st.session_state.processed_files)
+            )
+            
+            st.markdown('</div>', unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+            
+            if user_query:
+                process_user_query(user_query, sidebar_params)
     
     # Periodic memory cleanup
     if time.time() % 60 < 1:  # Every minute
@@ -157,29 +203,25 @@ def main():
             torch.cuda.empty_cache()
 
 def render_enhanced_sidebar():
-    """Enhanced sidebar with memory monitoring and optimization controls"""
+    """Enhanced sidebar with clean organization (no nested expanders)"""
     with st.sidebar:
         st.markdown("## 🌍 Tourism Explorer Pro")
-        st.markdown("---")
         
-        # Memory monitoring toggle
-        st.session_state.memory_monitoring_enabled = st.toggle(
-            "Memory Monitoring",
-            value=st.session_state.get("memory_monitoring_enabled", True)
-        )
+        # Sidebar navigation
+        sections = ["Setup", "Documents", "Models", "Analytics", "Settings"]
+        cols = st.columns(len(sections))
         
-        # Performance target selection
-        st.session_state.performance_target = st.select_slider(
-            "Performance Target",
-            options=["low_latency", "balanced", "high_accuracy"],
-            value=st.session_state.get("performance_target", "balanced")
-        )
+        for i, section in enumerate(sections):
+            if cols[i].button(section, key=f"nav_{section.lower()}"):
+                st.session_state.sidebar_section = section.lower()
         
-        # System initialization
+        st.divider()
+        
+        # Main system initialization section (always visible if not initialized)
         if not st.session_state.get("initialization_complete", False):
-            st.markdown("### 🚀 System Setup")
+            st.markdown("### 🚀 System Initialization")
             
-            if st.button("Initialize System", type="primary"):
+            if st.button("Initialize System", type="primary", use_container_width=True):
                 with st.status("Setting up tourism system...", expanded=True) as status:
                     try:
                         # Check dependencies
@@ -198,7 +240,18 @@ def render_enhanced_sidebar():
                         status.update(label="Setting up Ollama...")
                         if not setup_ollama():
                             st.error("Ollama setup failed")
-                            return
+                            return {
+                                "system_initialized": False,
+                                "uploaded_files": None,
+                                "chunk_size": DEFAULT_CHUNK_SIZE,
+                                "overlap": DEFAULT_OVERLAP,
+                                "top_n": DEFAULT_TOP_N,
+                                "local_llm_model": DEFAULT_MODEL_NAME,
+                                "system_prompt": "",
+                                "use_hybrid_retrieval": True,
+                                "use_reranker": True,
+                                "hybrid_alpha": DEFAULT_HYBRID_ALPHA
+                            }
                         
                         # Check models
                         status.update(label="Checking available models...")
@@ -229,126 +282,271 @@ def render_enhanced_sidebar():
                         st.error(f"Initialization error: {str(e)}")
                         log_error(f"System init error: {str(e)}")
         
-        # Model selection parameters
+        # Display appropriate section based on selection
         if st.session_state.get("system_initialized", False):
-            with st.expander("🎯 Model Selection", expanded=True):
-                st.session_state.model_selection_params["priority"] = st.select_slider(
-                    "Performance Priority",
+            current_section = st.session_state.get("sidebar_section", "setup")
+            
+            # SETUP SECTION
+            if current_section == "setup":
+                st.markdown("### 🚀 System Status")
+                
+                # Show resource monitoring
+                show_system_resources()
+                
+                st.markdown("##### System Options")
+                st.toggle("Memory Monitoring", value=st.session_state.get("memory_monitoring_enabled", True), 
+                         key="memory_monitoring_toggle")
+                
+                performance_target = st.select_slider(
+                    "Performance Target",
+                    options=["low_latency", "balanced", "high_accuracy"],
+                    value=st.session_state.get("performance_target", "balanced")
+                )
+                if performance_target != st.session_state.get("performance_target"):
+                    st.session_state.performance_target = performance_target
+            
+            # DOCUMENTS SECTION
+            elif current_section == "documents":
+                st.markdown("### 📑 Document Management")
+                
+                # Document upload
+                uploaded_files = st.file_uploader(
+                    "Upload Tourism Documents",
+                    type=["pdf"],
+                    accept_multiple_files=True
+                )
+                
+                # Processing settings
+                st.markdown("##### Processing Settings")
+                chunk_size = st.slider("Document Chunk Size", 256, 1024, DEFAULT_CHUNK_SIZE, 128)
+                overlap = st.slider("Context Overlap", 0, 128, DEFAULT_OVERLAP, 16)
+                top_n = st.slider("Search Results", 1, 20, DEFAULT_TOP_N)
+                
+                # Process documents button
+                if uploaded_files and st.button("Process Documents", type="primary", use_container_width=True):
+                    process_documents(uploaded_files, chunk_size, overlap)
+                
+                # Show processed files
+                if st.session_state.processed_files:
+                    st.markdown("##### Processed Documents")
+                    for file in st.session_state.processed_files:
+                        st.markdown(f"✅ {file}")
+                
+                # Reset database option
+                with st.container():
+                    st.markdown("##### Database Management")
+                    if st.button("Reset Database", type="secondary", use_container_width=True):
+                        success, message = reset_vector_db()
+                        if success:
+                            st.session_state.processed_files.clear()
+                            st.session_state.messages = []
+                            st.session_state.document_chunks = []
+                            st.session_state.tourism_insights = {}
+                            gc.collect()
+                            st.success(message)
+                            st.rerun()
+                        else:
+                            st.error(message)
+            
+            # MODELS SECTION
+            elif current_section == "models":
+                st.markdown("### 🎯 Model Selection")
+                
+                # Performance settings
+                st.markdown("##### Performance Priority")
+                priority = st.select_slider(
+                    "Optimization Priority",
                     options=["speed", "balanced", "accuracy"],
                     value=st.session_state.model_selection_params.get("priority", "balanced")
                 )
                 
-                st.session_state.model_selection_params["max_latency"] = st.slider(
+                if priority != st.session_state.model_selection_params.get("priority"):
+                    st.session_state.model_selection_params["priority"] = priority
+                
+                # Latency and accuracy sliders
+                max_latency = st.slider(
                     "Max Latency (ms)",
-                    10, 500, 
-                    st.session_state.model_selection_params.get("max_latency", 100),
+                    min_value=10,
+                    max_value=500,
+                    value=st.session_state.model_selection_params.get("max_latency", 100),
                     step=10
                 )
                 
-                st.session_state.model_selection_params["min_accuracy"] = st.slider(
+                if max_latency != st.session_state.model_selection_params.get("max_latency"):
+                    st.session_state.model_selection_params["max_latency"] = max_latency
+                
+                min_accuracy = st.slider(
                     "Min Accuracy Score",
-                    58.0, 66.0,
-                    st.session_state.model_selection_params.get("min_accuracy", 60.0),
+                    min_value=58.0,
+                    max_value=66.0,
+                    value=st.session_state.model_selection_params.get("min_accuracy", 60.0),
                     step=0.5
                 )
+                
+                if min_accuracy != st.session_state.model_selection_params.get("min_accuracy"):
+                    st.session_state.model_selection_params["min_accuracy"] = min_accuracy
+                
+                # Embedding model selection (compact mode)
+                st.markdown("##### Embedding Model")
+                selector = ModelSelector()
+                selected_model = selector.select_model(
+                    max_latency_ms=max_latency,
+                    priority=priority,
+                    min_accuracy=min_accuracy
+                )
+                
+                # Show recommended model
+                st.info(f"Recommended model: **{selected_model}**")
+                
+                if st.button("Use Recommended Model", key="use_recommended", use_container_width=True):
+                    st.session_state.selected_embedding_model = selected_model
+                    st.success(f"Selected model: {selected_model}")
+                
+                # LLM Model selection
+                st.markdown("##### LLM Model")
+                local_llm_model = st.selectbox(
+                    "Select Model",
+                    options=st.session_state.get("available_models", [DEFAULT_MODEL_NAME]),
+                    index=0
+                )
             
-            # Document upload
-            st.markdown("### 📑 Tourism Documents")
-            uploaded_files = st.file_uploader(
-                "Upload Tourism Documents",
-                type=["pdf"],
-                accept_multiple_files=True
-            )
-            
-            # Analysis settings
-            with st.expander("⚙️ Analysis Settings", expanded=False):
-                chunk_size = st.slider("Document Chunk Size", 256, 1024, DEFAULT_CHUNK_SIZE, 128)
-                overlap = st.slider("Context Overlap", 0, 128, DEFAULT_OVERLAP, 16)
-                top_n = st.slider("Search Results", 1, 20, DEFAULT_TOP_N)
-            
-            # Tourism expertise selection
-            st.markdown("### 🔍 Tourism Analysis")
-            selected_role = st.selectbox(
-                "Tourism Expertise",
-                options=list(AGENT_ROLES.keys()),
-                index=list(AGENT_ROLES.keys()).index(st.session_state.get("current_agent_role", "Travel Trends Analyst"))
-            )
-            
-            if selected_role != st.session_state.get("current_agent_role"):
-                st.session_state.current_agent_role = selected_role
-                st.session_state.custom_prompt = AGENT_ROLES.get(selected_role, "")
-            
-            # LLM Model selection
-            local_llm_model = st.selectbox(
-                "LLM Model",
-                options=st.session_state.get("available_models", [DEFAULT_MODEL_NAME]),
-                index=0
-            )
-            
-            # Advanced features
-            with st.expander("🧠 Advanced Features", expanded=False):
-                st.session_state.use_hybrid_retrieval = st.toggle(
+            # ANALYTICS SECTION
+            elif current_section == "analytics":
+                st.markdown("### 💡 Tourism Expertise")
+                
+                # Tourism expertise selection
+                selected_role = st.selectbox(
+                    "Select Expertise",
+                    options=list(AGENT_ROLES.keys()),
+                    index=list(AGENT_ROLES.keys()).index(st.session_state.get("current_agent_role", "Travel Trends Analyst"))
+                )
+                
+                if selected_role != st.session_state.get("current_agent_role"):
+                    st.session_state.current_agent_role = selected_role
+                    st.session_state.custom_prompt = AGENT_ROLES.get(selected_role, "")
+                    st.success(f"Role changed to: {selected_role}")
+                
+                # Show role description
+                st.markdown(f"**Description**: {AGENT_ROLES.get(selected_role, '')}")
+                
+                # Insights Dashboard
+                st.markdown("##### Insights Dashboard")
+                if st.button("Open Full Insights Dashboard", use_container_width=True):
+                    st.session_state.show_insights_dashboard = True
+                    st.session_state.active_tab = 2  # Switch to insights tab
+                    st.rerun()
+                    
+                # Feature toggles
+                st.markdown("##### Features")
+                
+                # Hybrid retrieval
+                use_hybrid = st.toggle(
                     "Hybrid Search",
-                    value=st.session_state.get("use_hybrid_retrieval", True)
+                    value=st.session_state.get("use_hybrid_retrieval", True),
+                    key="use_hybrid_toggle"
                 )
                 
-                if st.session_state.use_hybrid_retrieval:
-                    st.session_state.hybrid_alpha = st.slider(
-                        "Semantic/Keyword Balance",
-                        0.0, 1.0, DEFAULT_HYBRID_ALPHA, 0.1
+                if use_hybrid != st.session_state.get("use_hybrid_retrieval"):
+                    st.session_state.use_hybrid_retrieval = use_hybrid
+                
+                # Show hybrid slider only if hybrid is enabled
+                if use_hybrid:
+                    hybrid_alpha = st.slider(
+                        "Vector/Keyword Balance",
+                        0.0, 1.0, DEFAULT_HYBRID_ALPHA, 0.1,
+                        help="1.0 = vector only, 0.0 = keywords only"
                     )
+                    
+                    if hybrid_alpha != st.session_state.get("hybrid_alpha"):
+                        st.session_state.hybrid_alpha = hybrid_alpha
                 
-                st.session_state.use_reranker = st.toggle(
+                # Reranker toggle
+                use_reranker = st.toggle(
                     "Neural Reranking",
-                    value=st.session_state.get("use_reranker", True)
+                    value=st.session_state.get("use_reranker", True),
+                    key="use_reranker_toggle"
                 )
+                
+                if use_reranker != st.session_state.get("use_reranker"):
+                    st.session_state.use_reranker = use_reranker
             
-            # Memory Management
-            with st.expander("💾 Memory Management", expanded=False):
-                if st.button("Clear GPU Memory", type="secondary"):
-                    if torch.cuda.is_available():
+            # SETTINGS SECTION
+            elif current_section == "settings":
+                st.markdown("### ⚙️ System Settings")
+                
+                # Memory Management
+                st.markdown("##### Memory Management")
+                
+                # GPU memory
+                if torch.cuda.is_available():
+                    if st.button("Clear GPU Memory", use_container_width=True):
                         torch.cuda.empty_cache()
                         st.success("GPU memory cleared")
                 
-                if st.button("Run Garbage Collection", type="secondary"):
+                # Garbage collection
+                if st.button("Run Garbage Collection", use_container_width=True):
                     gc.collect()
                     st.success("Garbage collection completed")
                 
-                if st.button("Clear All Caches", type="secondary"):
+                # Cache clearing
+                if st.button("Clear All Caches", use_container_width=True):
                     st.cache_resource.clear()
                     st.cache_data.clear()
                     gc.collect()
                     st.success("All caches cleared")
-            
-            # Reset database
-            with st.expander("🗑️ Reset Database", expanded=False):
-                if st.button("Reset All Data", type="secondary"):
-                    success, message = reset_vector_db()
-                    if success:
-                        st.session_state.processed_files.clear()
-                        st.session_state.messages = []
-                        st.session_state.document_chunks = []
-                        st.session_state.tourism_insights = {}
-                        gc.collect()
-                        st.success(message)
-                        st.rerun()
-                    else:
-                        st.error(message)
-    
-    return {
-        "uploaded_files": uploaded_files if 'uploaded_files' in locals() else None,
-        "chunk_size": chunk_size if 'chunk_size' in locals() else DEFAULT_CHUNK_SIZE,
-        "overlap": overlap if 'overlap' in locals() else DEFAULT_OVERLAP,
-        "top_n": top_n if 'top_n' in locals() else DEFAULT_TOP_N,
-        "local_llm_model": local_llm_model if 'local_llm_model' in locals() else DEFAULT_MODEL_NAME,
-        "system_prompt": st.session_state.get("custom_prompt", ""),
-        "system_initialized": st.session_state.get("system_initialized", False),
-        "use_hybrid_retrieval": st.session_state.get("use_hybrid_retrieval", True),
-        "use_reranker": st.session_state.get("use_reranker", True),
-        "hybrid_alpha": st.session_state.get("hybrid_alpha", DEFAULT_HYBRID_ALPHA)
-    }
+                
+                # Status logs
+                st.markdown("##### Error Logs")
+                if st.session_state.get("error_log"):
+                    log_count = len(st.session_state.error_log)
+                    st.markdown(f"**{log_count} log entries**")
+                    
+                    if st.button("View Logs"):
+                        for log in st.session_state.error_log[-10:]:  # Show last 10 logs
+                            st.text(log)
+                    
+                    if st.button("Clear Logs"):
+                        st.session_state.error_log = []
+                        st.success("Logs cleared")
+                else:
+                    st.info("No error logs")
+        
+        # Initialize potentially undefined variables with defaults before returning
+        uploaded_files = None
+        chunk_size = DEFAULT_CHUNK_SIZE
+        overlap = DEFAULT_OVERLAP
+        top_n = DEFAULT_TOP_N
+        local_llm_model = DEFAULT_MODEL_NAME
 
-def process_tourism_documents_enhanced(uploaded_files, chunk_size, overlap):
+        # Determine parameters to return based on current section
+        if current_section == "documents":
+            return {
+                "uploaded_files": uploaded_files if 'uploaded_files' in locals() else None,
+                "chunk_size": chunk_size if 'chunk_size' in locals() else DEFAULT_CHUNK_SIZE,
+                "overlap": overlap if 'overlap' in locals() else DEFAULT_OVERLAP,
+                "top_n": top_n if 'top_n' in locals() else DEFAULT_TOP_N,
+                "local_llm_model": local_llm_model if 'local_llm_model' in locals() else DEFAULT_MODEL_NAME,
+                "system_prompt": st.session_state.get("custom_prompt", ""),
+                "system_initialized": st.session_state.get("system_initialized", False),
+                "use_hybrid_retrieval": st.session_state.get("use_hybrid_retrieval", True),
+                "use_reranker": st.session_state.get("use_reranker", True),
+                "hybrid_alpha": st.session_state.get("hybrid_alpha", DEFAULT_HYBRID_ALPHA)
+            }
+        else:
+            return {
+                "uploaded_files": None,
+                "chunk_size": DEFAULT_CHUNK_SIZE,
+                "overlap": DEFAULT_OVERLAP,
+                "top_n": DEFAULT_TOP_N,
+                "local_llm_model": local_llm_model if 'local_llm_model' in locals() else DEFAULT_MODEL_NAME,
+                "system_prompt": st.session_state.get("custom_prompt", ""),
+                "system_initialized": st.session_state.get("system_initialized", False),
+                "use_hybrid_retrieval": st.session_state.get("use_hybrid_retrieval", True),
+                "use_reranker": st.session_state.get("use_reranker", True),
+                "hybrid_alpha": st.session_state.get("hybrid_alpha", DEFAULT_HYBRID_ALPHA)
+            }
+
+def process_documents(uploaded_files, chunk_size, overlap):
     """Memory-optimized document processing"""
     if not uploaded_files:
         return
@@ -356,30 +554,30 @@ def process_tourism_documents_enhanced(uploaded_files, chunk_size, overlap):
     files_to_process = [f for f in uploaded_files if f.name not in st.session_state.processed_files]
     
     if not files_to_process:
+        st.success("All files already processed!")
         return
     
-    st.markdown("### 📝 Document Processing with Memory Optimization")
-    
-    # Check memory before processing
-    available_memory = get_available_memory_mb()
-    if available_memory < 1000:  # Less than 1GB available
-        st.warning(f"Low memory warning: {available_memory:.0f}MB available. Processing may be slower.")
-    
-    # Use the selected embedding model with performance target
-    embedding_model = load_embedding_model(
-        st.session_state.get("selected_embedding_model", "all-MiniLM-L6-v2"),
-        st.session_state.get("performance_target", "balanced")
-    )
-    collection = get_chroma_collection()
-    
-    if not embedding_model or not collection:
-        st.error("Core components not available.")
-        return
-    
-    all_chunks = []
-    
-    for pdf_file in files_to_process:
-        with st.status(f"Processing: {pdf_file.name}...", expanded=True) as status:
+    with st.status("Processing Documents", expanded=True) as status:
+        # Check memory before processing
+        available_memory = get_available_memory_mb()
+        if available_memory < 1000:  # Less than 1GB available
+            st.warning(f"Low memory warning: {available_memory:.0f}MB available. Processing may be slower.")
+        
+        # Use the selected embedding model with performance target
+        embedding_model = load_embedding_model(
+            st.session_state.get("selected_embedding_model", "all-MiniLM-L6-v2"),
+            st.session_state.get("performance_target", "balanced")
+        )
+        collection = get_chroma_collection()
+        
+        if not embedding_model or not collection:
+            st.error("Core components not available.")
+            return
+        
+        all_chunks = []
+        
+        for pdf_file in files_to_process:
+            status.update(f"Processing: {pdf_file.name}...")
             try:
                 # Check memory before each file
                 memory_monitor.check()
@@ -412,31 +610,18 @@ def process_tourism_documents_enhanced(uploaded_files, chunk_size, overlap):
             except Exception as e:
                 logger.error(f"Error processing {pdf_file.name}: {str(e)}")
                 status.update(label=f"❌ Error: {pdf_file.name}", state="error")
-    
-    # Store chunks for insights generation
-    st.session_state.document_chunks = all_chunks
+        
+        # Store chunks for insights generation
+        st.session_state.document_chunks = all_chunks
+        status.update(label=f"✅ Processed {len(files_to_process)} documents", state="complete")
 
-def render_tourism_chat_interface(params):
-    """Memory-optimized chat interface"""
-    st.markdown("### 💬 Tourism Insights Chat")
+def process_user_query(user_query, params):
+    """Process a user query and generate response"""
+    st.session_state.messages.append({"role": "user", "content": user_query})
     
-    # Check memory before rendering
-    memory_monitor.check()
-    
-    # Display chat history (with memory limits)
-    display_chat(
-        st.session_state.messages,
-        current_role=st.session_state.get("current_agent_role", "Tourism Assistant")
-    )
-    
-    # Chat input
-    user_query = st.chat_input(
-        "Ask about travel trends, market segments, sustainability...",
-        disabled=not bool(st.session_state.processed_files)
-    )
-    
-    if user_query:
-        st.session_state.messages.append({"role": "user", "content": user_query})
+    with st.chat_message("assistant"):
+        message_placeholder = st.empty()
+        message_placeholder.markdown("Thinking...")
         
         embedding_model = load_embedding_model(
             st.session_state.get("selected_embedding_model"),
@@ -449,7 +634,7 @@ def render_tourism_chat_interface(params):
                 # Check memory before inference
                 memory_monitor.check()
                 
-                # Show inference timing
+                # Show typing indicator
                 start_time = time.time()
                 
                 answer = query_llm(
@@ -466,19 +651,18 @@ def render_tourism_chat_interface(params):
                 
                 inference_time = (time.time() - start_time) * 1000  # ms
                 
-                # Add timing and memory info to response
-                memory_info = get_available_memory_mb()
-                answer_with_info = f"{answer}\n\n---\n*Response generated in {inference_time:.0f}ms using {st.session_state.get('selected_embedding_model', 'default model')} with {memory_info:.0f}MB available memory*"
+                # Add timing info subtly
+                answer_with_info = f"{answer}\n\n<small>*Generated in {inference_time:.0f}ms*</small>"
                 
+                message_placeholder.markdown(answer_with_info, unsafe_allow_html=True)
                 st.session_state.messages.append({"role": "assistant", "content": answer_with_info})
                 
                 # Clear memory after response
                 gc.collect()
                 
             except Exception as e:
+                message_placeholder.markdown(f"Error: {str(e)}")
                 st.session_state.messages.append({"role": "assistant", "content": f"Error: {str(e)}"})
-        
-        st.rerun()
 
 if __name__ == "__main__":
     try:
